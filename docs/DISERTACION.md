@@ -428,7 +428,7 @@ La validacion devuelve errores por campo y la UI los muestra. Las operaciones de
 - [ ] Revisar que el emulador tenga Android 13 (API 33) o superior.
 - [ ] Probar la app de punta a punta una vez.
 - [ ] Confirmar que `docs/GUIA_ESTUDIO.md` y `docs/DISERTACION.md` estan actualizados.
-- [ ] Hacer el commit y el push si el repositorio ya existe.
+- [ ] Verificar que el repositorio local este limpio y hacer el push cuando el repositorio remoto ya exista.
 
 ### El dia de la presentacion
 

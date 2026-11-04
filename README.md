@@ -158,29 +158,36 @@ Documentacion detallada:
 
 ## Como subir este proyecto a Git
 
-El proyecto **todavia no es un repositorio Git** en el momento de escribir esta guia. Estos son los comandos de ejemplo para inicializarlo y publicarlo. Reemplazar `USUARIO` y `REPOSITORIO` por los valores reales.
+El repositorio local **ya esta creado**. Estado actual:
+
+- Rama principal: `main`.
+- Primer commit: `3867001` (`chore(3907532d): version inicial de Lemac DataLab`).
+- Arbol limpio, sin cambios pendientes.
+
+Falta solo crear el repositorio remoto y hacer el primer push. Reemplazar `USUARIO` y `REPOSITORIO` por los valores reales.
 
 ### 1. Crear el repositorio remoto
 
 Crear primero un repositorio vacio en GitHub, GitLab o el servicio elegido. Conviene **no** marcar la opcion de agregar README, `.gitignore` ni licencia, para evitar conflictos con el primer push.
 
-### 2. Inicializar el repositorio local
+### 2. Revisar el estado local
+
+Desde la raiz del proyecto (o con `cd limpio_moviles` si se esta en la carpeta padre):
 
 ```bash
-cd /home/simon/AndroidStudioProjects/limpio_moviles
+cd limpio_moviles
 
-git init
-git add .
 git status
-git commit -m "Version inicial de Lemac DataLab"
+git log --oneline -1
 ```
 
-Antes de confirmar, revisar la salida de `git status`. No deben aparecer `local.properties`, `build/`, `.gradle/`, `.idea/` ni archivos `.apk`. El archivo `.gitignore` ya los excluye.
+La salida debe mostrar el commit `3867001` y un arbol limpio. No deben aparecer `local.properties`, `build/`, `.gradle/`, `.idea/` ni archivos `.apk`. El archivo `.gitignore` ya los excluye.
 
-### 3. Renombrar la rama principal y conectar el remoto
+El comando `git init` ya no forma parte de esta guia porque el repositorio local existe. Solo seria necesario si en otra maquina se parte de una copia de archivos sin historial Git.
+
+### 3. Conectar el remoto y hacer el primer push
 
 ```bash
-git branch -M main
 git remote add origin https://github.com/USUARIO/REPOSITORIO.git
 git push -u origin main
 ```
