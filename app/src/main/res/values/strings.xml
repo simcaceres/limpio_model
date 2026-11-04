@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Lemac DataLab</string>
+    <string name="canal_recordatorios_nombre">Recordatorios Lemac</string>
+    <string name="canal_recordatorios_descripcion">Recordatorios discretos para registrar tu estado</string>
+    <string name="recordatorio_titulo">Momento de registrar</string>
+    <string name="recordatorio_texto">Tómate un minuto para tu autorregistro. Sin datos sensibles en pantalla.</string>
+</resources>
