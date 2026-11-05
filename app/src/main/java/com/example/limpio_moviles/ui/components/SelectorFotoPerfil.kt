@@ -1,7 +1,5 @@
 package com.example.limpio_moviles.ui.components
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,54 +26,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Image
 
 /**
  * Selector de foto de perfil (opcional).
  *
- * Encapsula el permiso de cámara y la captura de una vista previa para que
- * Onboarding y Ajustes compartan el mismo comportamiento. Si el permiso se
- * rechaza se notifica a quien lo usa para que muestre el mensaje adecuado.
+ * Encapsula la captura de una vista previa de cámara para que Onboarding y
+ * Ajustes compartan el mismo comportamiento. [onCamaraNoDisponible] se invoca
+ * cuando el usuario cancela la captura o no hay una app de cámara disponible,
+ * para que quien lo usa muestre el mensaje adecuado.
  */
 @Composable
 fun SelectorFotoPerfil(
     bitmap: Bitmap?,
     textoBoton: String,
     onFotoCapturada: (Bitmap) -> Unit,
-    onPermisoDenegado: () -> Unit
+    onCamaraNoDisponible: () -> Unit
 ) {
-    val context = LocalContext.current
-
     val camaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { foto ->
-        if (foto != null) onFotoCapturada(foto)
-    }
-
-    val permisoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { concedido ->
-        if (concedido) {
-            camaraLauncher.launch(null)
+        if (foto != null) {
+            onFotoCapturada(foto)
         } else {
-            onPermisoDenegado()
+            onCamaraNoDisponible()
         }
     }
 
     val abrirCamara: () -> Unit = {
-        val concedido = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (concedido) {
-            camaraLauncher.launch(null)
-        } else {
-            permisoLauncher.launch(Manifest.permission.CAMERA)
-        }
+        val resultado = runCatching { camaraLauncher.launch(null) }
+        if (resultado.isFailure) onCamaraNoDisponible()
     }
 
     Column(

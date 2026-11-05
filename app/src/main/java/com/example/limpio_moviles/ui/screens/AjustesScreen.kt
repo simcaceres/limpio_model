@@ -168,8 +168,8 @@ fun AjustesScreen(
                     bitmap = viewModel.fotoPerfil,
                     textoBoton = "Cambiar foto",
                     onFotoCapturada = { viewModel.actualizarFoto(it) },
-                    onPermisoDenegado = {
-                        viewModel.mostrarMensaje("Permiso de cámara rechazado")
+                    onCamaraNoDisponible = {
+                        viewModel.mostrarMensaje("No se capturo la foto")
                     }
                 )
             }

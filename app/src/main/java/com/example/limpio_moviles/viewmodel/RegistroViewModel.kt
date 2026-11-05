@@ -21,6 +21,8 @@ import com.example.limpio_moviles.model.ResumenAmbito
 import com.example.limpio_moviles.model.ResumenCalculator
 import com.example.limpio_moviles.util.FotoStorage
 import com.example.limpio_moviles.util.RecordatorioScheduler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -66,7 +68,12 @@ class RegistroViewModel(
             fotoPath = fotoPath,
             recordatorioActivo = recordatorioActivo
         )
-        fotoPerfil = FotoStorage.cargar(fotoPath)
+        viewModelScope.launch {
+            val bitmap = withContext(Dispatchers.IO) { FotoStorage.cargar(fotoPath) }
+            if (fotoPerfil == null) {
+                fotoPerfil = bitmap
+            }
+        }
     }
 
     fun guardarAlias(alias: String) {
@@ -76,10 +83,19 @@ class RegistroViewModel(
     }
 
     fun actualizarFoto(bitmap: Bitmap) {
-        val path = FotoStorage.guardar(getApplication<Application>(), bitmap)
         fotoPerfil = bitmap
-        perfil = perfil.copy(fotoPath = path)
-        perfilRepository.guardarFotoPath(path)
+        viewModelScope.launch {
+            val context = getApplication<Application>()
+            val path = withContext(Dispatchers.IO) {
+                runCatching { FotoStorage.guardar(context, bitmap) }.getOrNull()
+            }
+            if (path == null) {
+                uiState = uiState.copy(mensaje = "No se pudo guardar la foto")
+                return@launch
+            }
+            perfil = perfil.copy(fotoPath = path)
+            perfilRepository.guardarFotoPath(path)
+        }
     }
 
     fun activarRecordatorio(activo: Boolean) {

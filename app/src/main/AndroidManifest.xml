@@ -2,8 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Recurso nativo: camara para foto de perfil opcional -->
-    <uses-permission android:name="android.permission.CAMERA" />
     <!-- Recordatorios discretos (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 

@@ -41,7 +41,7 @@ Puntos:
 - Aqui se elige lo contrario: alias, almacenamiento local y una advertencia clara.
 - El aviso de privacidad aparece en Onboarding y en Ajustes.
 - No hay registro en linea, no hay nombre real y las notificaciones son genericas.
-- Decir con claridad: "No debe usarse con datos reales de salud; el proyecto no tiene cifrado ni una politica de backup restrictiva".
+- Decir con claridad: "No debe usarse con datos reales de salud; el proyecto no tiene cifrado, aunque el backup esta acotado a la base de datos y las preferencias, excluye explicitamente la foto y no incluye la cache (la plataforma la excluye automaticamente)".
 
 Frase de transicion:
 
@@ -75,7 +75,7 @@ Orden:
 
 1. Abrir la app con datos borrados para que aparezca Onboarding.
 2. Mostrar el aviso de privacidad, escribir un alias y marcar el checkbox.
-3. Explicar que la foto es opcional y que si se deniega el permiso la app sigue.
+3. Explicar que la foto es opcional y que si no hay camara o se cancela la captura, la app sigue.
 4. Entrar a Home.
 5. Abrir un ambito, por ejemplo Neurodesarrollo.
 6. Intentar guardar sin tipo para mostrar la validacion.
@@ -133,7 +133,7 @@ Que decir:
 - "El canal de notificaciones se crea en `LemacApplication.onCreate`."
 - "El worker solo llama a `NotificacionHelper.mostrar`; el texto no tiene datos del registro."
 - "La foto no necesita permiso de almacenamiento porque queda en el directorio interno de la app."
-- "El permiso de camara se pide en el momento de usarlo, no al instalar."
+- "La app no pide permiso de camara: `TakePicturePreview` no lo requiere. Solo declara la caracteristica de hardware como opcional."
 
 ### Bloque 6. Limites, pruebas y cierre (13:00 a 15:00)
 
@@ -147,7 +147,7 @@ Puntos:
 - No hay pruebas instrumentadas ni de interfaz.
 - El ViewModel es unico y compartido; para una app mas grande convendria separar por pantalla.
 - `fallbackToDestructiveMigration` es aceptable en el MVP, no en produccion.
-- `allowBackup="true"` y las reglas de backup de ejemplo son un punto a revisar.
+- `allowBackup="true"` se mantiene, pero el backup esta acotado: incluye Room y las preferencias, excluye explicitamente la foto y no incluye la cache (la plataforma la excluye automaticamente y la lista de `<include>` es una allowlist). Sigue faltando cifrado.
 
 Cierre sugerido:
 
@@ -312,7 +312,7 @@ Si se quiere mostrar el borrado total, hacerlo al final y decir que solo borra r
 9. **Room con Flow.** Las consultas reactivas evitan refrescos manuales.
 10. **Validacion fuera de la UI.** `RegistroValidator` es testeable y reutilizable.
 11. **Calculo puro.** `ResumenCalculator` no depende de Android y se prueba con JUnit.
-12. **Permisos en contexto.** Camara y notificaciones se piden cuando se necesitan, no al iniciar.
+12. **Permisos en contexto.** Las notificaciones se piden cuando se necesitan, no al iniciar. La camara no requiere permiso porque se usa `TakePicturePreview`.
 13. **WorkManager para trabajo diferible.** Sobrevive a reinicios y no requiere la app abierta.
 14. **Privacidad por diseno y por omision.** Sin `INTERNET`, datos locales, notificaciones genericas y advertencias visibles.
 15. **Honestidad sobre limites.** No hay cifrado, migraciones ni pruebas de UI; decirlo suma criterio.
@@ -364,11 +364,11 @@ Porque el proyecto usa APIs modernas y simplifica el manejo del permiso de notif
 
 ### 11. Como se protege la privacidad
 
-Con alias en lugar de nombre real, datos locales, ausencia de permiso `INTERNET`, foto en almacenamiento interno, notificaciones genericas y advertencias visibles. Con honestidad: no hay cifrado ni backups restringidos; eso falta para produccion.
+Con alias en lugar de nombre real, datos locales, ausencia de permiso `INTERNET`, foto en almacenamiento interno, notificaciones genericas y advertencias visibles. El backup esta acotado a Room y preferencias, excluye explicitamente la foto y no incluye la cache (la plataforma la excluye automaticamente). Con honestidad: no hay cifrado; eso falta para produccion.
 
-### 12. Que pasa si el usuario deniega la camara
+### 12. Que pasa si no hay camara o se cancela la captura
 
-La app sigue funcionando. El selector informa el rechazo, no se guarda foto y el resto de las funciones no se ve afectado. La foto es opcional por diseno.
+La app sigue funcionando. El selector llama a `onCamaraNoDisponible`, la pantalla muestra "No se capturo la foto" y el perfil queda sin foto o conserva la anterior. No hay permiso de camara que denegar; la foto es opcional por diseno.
 
 ### 13. Que pasa si deniega las notificaciones
 
@@ -408,7 +408,7 @@ Porque es un MVP con version 1 y se prioriza no bloquear el arranque ante un cam
 
 ### 22. Que mejoraria primero
 
-Antes de agregar funciones: migraciones de Room, pruebas de repositorio y ViewModel, cifrado o almacenamiento seguro, y una politica de backup. Despues: backend real, exportacion de datos y configuracion de la hora del recordatorio.
+Antes de agregar funciones: migraciones de Room, pruebas de repositorio y ViewModel, cifrado o almacenamiento seguro, y completar la politica de backup (hoy acotada a Room y preferencias, y sin cifrado). Despues: backend real, exportacion de datos y configuracion de la hora del recordatorio.
 
 ### 23. Por que el ViewModel es compartido
 

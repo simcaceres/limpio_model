@@ -167,7 +167,7 @@ com.example.limpio_moviles/
 | `ui/components/TarjetaAmbito.kt` | Tarjeta de ambito en Home | Icono, color, descripcion y ultimo registro; recibe un callback. |
 | `ui/components/BarraResumen.kt` | Barra de actividad | Calcula la fraccion respecto del maximo y anima el ancho. |
 | `ui/components/SelectorIntensidad.kt` | Slider de intensidad | Recibe valor, rango y error; muestra extremos bajo y alto. |
-| `ui/components/SelectorFotoPerfil.kt` | Captura de foto | Encapsula permisos de camara y `TakePicturePreview`; comparte comportamiento entre pantallas. |
+| `ui/components/SelectorFotoPerfil.kt` | Captura de foto | Lanza `TakePicturePreview` directamente, sin permiso de camara; comparte comportamiento entre pantallas. |
 | `ui/components/ColoresAmbito.kt` | Identidad visual | Funciones `colorAmbito` e `iconoAmbito` con `when` exhaustivo. |
 | `ui/util/Formato.kt` | Formato de fecha | `dd/MM/yyyy HH:mm` con `Locale.getDefault()`. |
 | `util/FotoStorage.kt` | Archivo de foto | Guarda `perfil.png` en `filesDir` y lo carga con `BitmapFactory`. |
@@ -568,12 +568,11 @@ Combina un texto "Intensidad: N", un `Slider` y etiquetas de extremos. El `value
 
 #### `SelectorFotoPerfil`
 
-Encapsula dos launchers:
+Usa un unico launcher:
 
-- `TakePicturePreview`: devuelve un `Bitmap` de vista previa.
-- `RequestPermission`: solicita `CAMERA`.
+- `TakePicturePreview`: devuelve un `Bitmap` de vista previa y no requiere permiso.
 
-Primero verifica si el permiso ya esta concedido; si no, lo solicita. Si se concede, abre la camara. Si se deniega, llama a `onPermisoDenegado`. La imagen se muestra en un circulo de 104 dp. No usa galeria ni permisos de almacenamiento.
+No solicita `CAMERA`. Al pulsar el boton, `launch(null)` abre directamente la app de camara del dispositivo. Si no hay app de camara, si el lanzamiento falla o si la captura devuelve `null` (por ejemplo, al cancelar), llama a `onCamaraNoDisponible`. Si devuelve un `Bitmap`, llama a `onFotoCapturada`. La imagen se muestra en un circulo de 104 dp. No usa galeria ni permisos de almacenamiento.
 
 #### `ColoresAmbito`
 
@@ -865,17 +864,17 @@ Aclaracion importante: la sincronizacion es **simulada**. Los datos no salen del
 
 ### 6.9 Foto de perfil
 
-1. `SelectorFotoPerfil` verifica el permiso `CAMERA`.
-2. Si esta concedido, lanza `TakePicturePreview`; si no, solicita el permiso.
-3. Si el permiso se concede, se abre la camara; si se deniega, se llama a `onPermisoDenegado`.
-4. Si la captura devuelve un `Bitmap`, se llama a `onFotoCapturada`.
-5. En Onboarding y Ajustes, ese callback es `viewModel.actualizarFoto(it)`.
-6. El ViewModel guarda el PNG en `filesDir/perfil.png` con `FotoStorage.guardar`.
-7. Actualiza `fotoPerfil` (para que Compose la muestre) y `perfil.fotoPath`.
-8. Guarda la ruta en `SharedPreferences`.
-9. En el siguiente arranque, el `init` del ViewModel lee la ruta y carga el `Bitmap` con `FotoStorage.cargar`.
+1. `SelectorFotoPerfil` crea un launcher con `TakePicturePreview`; no solicita ningun permiso.
+2. Al pulsar el boton, `launch(null)` abre directamente la app de camara.
+3. Si no hay app de camara, si el lanzamiento falla o si la captura devuelve `null` (cancelacion), se llama a `onCamaraNoDisponible`.
+4. En Onboarding y Ajustes, ese callback muestra "No se capturo la foto".
+5. Si la captura devuelve un `Bitmap`, se llama a `onFotoCapturada`, que en ambas pantallas es `viewModel.actualizarFoto(it)`.
+6. El ViewModel actualiza `fotoPerfil` en el hilo principal para que Compose la muestre.
+7. Lanza una corrutina y guarda el PNG en `filesDir/perfil.png` con `FotoStorage.guardar` dentro de `withContext(Dispatchers.IO)`.
+8. De vuelta en el hilo principal, actualiza `perfil.fotoPath` y guarda la ruta en `SharedPreferences`.
+9. En el siguiente arranque, el `init` del ViewModel lee la ruta y carga el `Bitmap` con `FotoStorage.cargar` dentro de `withContext(Dispatchers.IO)`; luego asigna `fotoPerfil` en el hilo principal.
 
-No hay permiso de almacenamiento porque la imagen se guarda en el directorio interno de la app y la camara devuelve una vista previa en memoria.
+No hay permiso de camara porque `TakePicturePreview` no lo requiere. Tampoco hay permiso de almacenamiento: la imagen se guarda en el directorio interno de la app y la camara devuelve una vista previa en memoria.
 
 ### 6.10 Cargar y borrar datos demo
 
@@ -1026,11 +1025,11 @@ La contrapartida es que `uiState` es unico para toda la app. Por eso `RegistroSc
 
 | Permiso | Declarado en manifiesto | Donde se solicita | Si se concede | Si se deniega |
 |---|---|---|---|---|
-| `CAMERA` | Si | `SelectorFotoPerfil`, usado en Onboarding y Ajustes | Se abre `TakePicturePreview` | Se llama a `onPermisoDenegado` y se muestra "Permiso de camara rechazado". La app sigue funcionando sin foto. |
 | `POST_NOTIFICATIONS` | Si | `AjustesScreen` al activar el recordatorio | Se activa el recordatorio y se programa el trabajo | Se muestra "Permiso de notificaciones rechazado" y el interruptor queda apagado. |
 
 Detalles:
 
+- La app **no declara `CAMERA`**. La vista previa de camara usa `TakePicturePreview`, que no requiere ese permiso; el boton abre la camara directamente y, si no esta disponible o se cancela, muestra "No se capturo la foto".
 - El manifiesto declara `android.hardware.camera` con `required="false"`, por lo que la app puede instalarse en dispositivos sin camara.
 - No se pide permiso de almacenamiento: la foto se guarda en `filesDir`.
 - No se declara `INTERNET`; la sincronizacion es local y simulada.
@@ -1083,7 +1082,7 @@ Conviene decirlas con claridad en la disertacion, porque demuestran criterio:
 
 1. **No hay backend real.** `FakeLemacApi` solo espera y devuelve exito. No hay HTTP, autenticacion ni servidor.
 2. **No hay cifrado.** Room y `SharedPreferences` guardan en claro dentro del sandbox de la app.
-3. **El backup esta permitido.** `allowBackup="true"` y las reglas de backup son las de ejemplo; en produccion habria que definir inclusiones y exclusiones.
+3. **El backup esta acotado, pero la base sigue sin cifrar.** `allowBackup="true"` se mantiene. Las reglas incluyen explicitamente Room (`database`) y las `SharedPreferences` (`sharedpref`: alias/seudonimo y ruta de foto), y excluyen explicitamente la foto (`file/perfil.png`). La cache no se incluye porque la plataforma la excluye siempre de forma automatica y, al usar `<include>`, la lista de respaldo es una allowlist limitada a Room y `SharedPreferences`; el XML no declara una exclusion de cache. Se aplican igual en `backup_rules.xml` (API 30 o inferior) y en `data_extraction_rules.xml` para `<cloud-backup>` y `<device-transfer>` (API 31 o superior). Falta cifrar la base de datos.
 4. **No hay migraciones.** `fallbackToDestructiveMigration()` puede borrar datos al cambiar la version de la base.
 5. **No hay pruebas instrumentadas ni de UI.**
 6. **El ViewModel es unico y compartido.** Para una app mas grande convendria separar ViewModels por pantalla o por flujo.
@@ -1124,11 +1123,11 @@ Porque el objetivo del MVP es demostrar el flujo de sincronizacion sin depender 
 - Las notificaciones no muestran datos del registro.
 - La app advierte que es un MVP con datos ficticios y que no debe usarse con datos reales de salud.
 
-Con honestidad, tambien hay que decir que no hay cifrado ni una politica de backup restrictiva; eso queda para produccion.
+Con honestidad, tambien hay que decir que no hay cifrado. El backup esta acotado a Room y preferencias, excluye explicitamente la foto y no incluye la cache (la plataforma la excluye automaticamente y la lista de `<include>` es una allowlist), pero la base de datos sigue sin cifrar; eso queda para produccion.
 
-### Que pasa si se deniega el permiso de camara
+### Que pasa si no hay camara o se cancela la captura
 
-La app sigue funcionando. `SelectorFotoPerfil` llama a `onPermisoDenegado`, la pantalla muestra un mensaje y el perfil queda sin foto o conserva la anterior.
+La app sigue funcionando. `SelectorFotoPerfil` llama a `onCamaraNoDisponible`, la pantalla muestra "No se capturo la foto" y el perfil queda sin foto o conserva la anterior. No hay permiso de camara que denegar.
 
 ### Que pasa si se deniega el permiso de notificaciones
 

@@ -25,7 +25,7 @@ En el estado actual del codigo:
 - El manifiesto no declara el permiso `INTERNET`.
 - Las notificaciones tienen un texto generico, sin contenido sensible.
 
-Limites de privacidad que conviene conocer: el manifiesto tiene `android:allowBackup="true"` y las reglas de backup son las de ejemplo de Android Studio, por lo que el sistema podria respaldar datos segun la configuracion del dispositivo. La base de datos no esta cifrada. Para un producto real habria que revisar estos puntos.
+Limites de privacidad que conviene conocer: el manifiesto mantiene `android:allowBackup="true"`, pero las reglas de backup estan acotadas. Se incluyen explicitamente la base de datos Room (`database`) y las `SharedPreferences` (`sharedpref`, con el alias o seudonimo y la ruta de la foto), y se excluye explicitamente la foto de perfil (`file/perfil.png`). La cache no se incluye porque la plataforma la excluye siempre de forma automatica y, al usar `<include>`, la lista de respaldo es una allowlist limitada a Room y `SharedPreferences`; las reglas XML no declaran una exclusion de cache. Las mismas reglas se aplican en `backup_rules.xml` para API 30 o inferior y en `data_extraction_rules.xml` para `<cloud-backup>` y `<device-transfer>` en API 31 o superior. La base de datos sigue sin cifrar. Ademas, la app no declara el permiso `CAMERA`: la vista previa de camara usa `TakePicturePreview`, que no lo requiere, y `uses-feature android.hardware.camera required="false"` permite instalar la app en equipos sin camara. Para un producto real habria que revisar el cifrado y el borrado de datos.
 
 ## Tecnologias y versiones reales
 

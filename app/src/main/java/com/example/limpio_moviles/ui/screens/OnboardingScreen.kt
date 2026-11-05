@@ -170,8 +170,8 @@ fun OnboardingScreen(
                 bitmap = viewModel.fotoPerfil,
                 textoBoton = "Añadir foto (opcional)",
                 onFotoCapturada = { viewModel.actualizarFoto(it) },
-                onPermisoDenegado = {
-                    viewModel.mostrarMensaje("Permiso de cámara rechazado")
+                onCamaraNoDisponible = {
+                    viewModel.mostrarMensaje("No se capturo la foto")
                 }
             )
 
