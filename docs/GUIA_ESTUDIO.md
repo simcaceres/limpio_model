@@ -13,7 +13,8 @@ El proyecto es un MVP academico:
 - No hay backend real: la sincronizacion es simulada con `FakeLemacApi`.
 - No hay autenticacion ni cuentas.
 - Los datos se guardan localmente con Room y `SharedPreferences`.
-- La app no declara el permiso `INTERNET`.
+- Los registros se pueden exportar a un archivo CSV local mediante el selector de documentos del sistema (SAF); no se sube nada a la nube.
+- La app no declara el permiso `INTERNET` ni permisos de almacenamiento.
 - Los textos de la interfaz aclaran que se usan datos ficticios o sinteticos y que la app no es diagnostico ni tratamiento.
 
 La aplicacion tiene una sola `Activity` (`MainActivity`) y toda la interfaz se escribe con Jetpack Compose. La navegacion se resuelve con Navigation Compose dentro de un `NavHost`.
@@ -45,6 +46,7 @@ flowchart LR
         ROOM[("Room: lemac_datalab.db")]
         PREFS[("SharedPreferences: perfil_lemac")]
         API["FakeLemacApi"]
+        CSV["RegistroCsvExporter"]
         FILE[("Archivo interno: perfil.png")]
     end
 
@@ -54,11 +56,13 @@ flowchart LR
     RVM --> STATE
     RVM --> RR
     RVM --> PR
+    RVM --> CSV
     RR --> DAO
     DAO --> ROOM
     RR --> API
     PR --> PREFS
     RVM --> FILE
+    CSV -. "texto CSV" .-> SAF["Selector de documentos (SAF)"]
     API -. "simula 700 ms, no usa red" .-> RR
 ```
 
@@ -69,7 +73,7 @@ flowchart LR
 | Interfaz (UI) | `ui/screens/*`, `ui/components/*`, `ui/theme/*` | Mostrar estado, capturar eventos del usuario, navegar | Acceder directamente a Room o a `SharedPreferences` |
 | Presentacion (ViewModel) | `viewmodel/RegistroViewModel.kt` | Mantener estado, validar el formulario, lanzar corrutinas, coordinar repositorios | Conocer detalles de SQL ni construir pantallas |
 | Repositorios | `data/repository/*` | Ofrecer operaciones de negocio y ocultar la fuente de datos | Manejar estado de Compose |
-| Datos | `data/local/*`, `data/remote/*`, `util/FotoStorage.kt` | Persistir, consultar, simular red y guardar archivos | Decidir textos o navegacion |
+| Datos | `data/local/*`, `data/remote/*`, `util/FotoStorage.kt` | Persistir, consultar, simular red, generar CSV y guardar archivos | Decidir textos o navegacion |
 
 ### Inyeccion de dependencias manual
 
@@ -91,6 +95,7 @@ com.example.limpio_moviles/
 ├── data/
 │   ├── local/
 │   │   ├── LemacDatabase.kt
+│   │   ├── RegistroCsvExporter.kt
 │   │   ├── RegistroDao.kt
 │   │   └── RegistroEntity.kt
 │   ├── remote/
@@ -111,6 +116,7 @@ com.example.limpio_moviles/
 ├── ui/
 │   ├── components/
 │   │   ├── BarraResumen.kt
+│   │   ├── BotonExportarCsv.kt
 │   │   ├── ColoresAmbito.kt
 │   │   ├── SelectorFotoPerfil.kt
 │   │   ├── SelectorIntensidad.kt
@@ -144,10 +150,11 @@ com.example.limpio_moviles/
 | `LemacApplication.kt` | Punto de entrada de la aplicacion | Crea la base de datos, los repositorios y el canal de notificaciones. Es el contenedor manual de dependencias. |
 | `MainActivity.kt` | Unica Activity | Aplica `LemacTheme` y monta `LemacApp()` con `setContent`. |
 | `data/local/RegistroEntity.kt` | Entidad Room de la tabla `registros` | Define columnas, clave primaria autoincremental y valores por defecto. |
-| `data/local/RegistroDao.kt` | Interfaz de acceso a datos | Consultas `Flow` para observar, `suspend` para obtener, insertar, actualizar, eliminar y marcar sincronizados. |
+| `data/local/RegistroDao.kt` | Interfaz de acceso a datos | Consultas `Flow` para observar, `suspend` para obtener (`obtenerPorId`, `obtenerTodos`, `obtenerPendientes`), insertar, actualizar, eliminar y marcar sincronizados. |
 | `data/local/LemacDatabase.kt` | Base de datos Room | Version 1, una entidad, singleton con `@Volatile` y `synchronized`. |
+| `data/local/RegistroCsvExporter.kt` | Generador de CSV puro | Recibe `List<RegistroEntity>` y produce texto UTF-8 con BOM, cabecera exacta, CRLF, escapado RFC 4180 y `nombreArchivo()`. No conoce Android ni el sistema de archivos. |
 | `data/remote/LemacApi.kt` | Contrato de sincronizacion y simulacion | `LemacApi` define `sincronizar`; `FakeLemacApi` espera 700 ms y devuelve exito. |
-| `data/repository/RegistroRepository.kt` | Repositorio de registros | Expone `Flow`, decide insertar o actualizar, elimina, sincroniza y carga datos demo. |
+| `data/repository/RegistroRepository.kt` | Repositorio de registros | Expone `Flow`, decide insertar o actualizar, obtiene todos (`obtenerTodos`), elimina, sincroniza y carga datos demo. |
 | `data/repository/PerfilRepository.kt` | Persistencia del perfil | Guarda alias, ruta de foto y estado del recordatorio en `SharedPreferences`. |
 | `model/Ambito.kt` | Enumeracion de los cuatro ambitos | Cada valor tiene `etiqueta` y `descripcion`; `desdeNombre` convierte texto a enum con valor por defecto. |
 | `model/Catalogos.kt` | Catalogos dependientes del ambito | Tipos disponibles, rango de intensidad, etiquetas de contexto y estrategia. |
@@ -157,15 +164,16 @@ com.example.limpio_moviles/
 | `model/ResumenAmbito.kt` | Resultado del resumen por ambito | Cantidad, promedio de intensidad y ultima fecha. |
 | `model/ResumenCalculator.kt` | Calculo del resumen | Recorre los cuatro ambitos y calcula sobre la lista de registros. |
 | `navigation/AppNavigation.kt` | Rutas, `NavHost` y creacion del ViewModel | Define `Rutas`, decide el destino inicial y conecta pantallas con callbacks. |
-| `viewmodel/RegistroViewModel.kt` | Estado y logica de presentacion | Mantiene formulario y perfil, expone `StateFlow`, valida, guarda, elimina, sincroniza y programa recordatorios. |
+| `viewmodel/RegistroViewModel.kt` | Estado y logica de presentacion | Mantiene formulario y perfil, expone `StateFlow`, valida, guarda, elimina, sincroniza, exporta CSV (`nombreArchivoCsv`, `exportarCsv`) y programa recordatorios. |
 | `ui/screens/OnboardingScreen.kt` | Primera pantalla | Alias, aviso de privacidad, foto opcional y boton para comenzar. |
 | `ui/screens/HomeScreen.kt` | Pantalla principal | Saludo, foto, accesos rapidos, tarjetas de ambito y carga de datos demo cuando no hay registros. |
 | `ui/screens/RegistroScreen.kt` | Formulario de registro | Chips de tipo, selector de intensidad, campos, validacion visible, guardado y confirmacion. |
 | `ui/screens/HistorialScreen.kt` | Lista de registros | Filtro por ambito, tarjetas, editar, eliminar con dialogo y estado vacio. |
-| `ui/screens/ResumenScreen.kt` | Resumen estadistico | Total, promedio y actividad por ambito, mas boton de sincronizacion. |
-| `ui/screens/AjustesScreen.kt` | Configuracion | Alias, foto, recordatorio, sincronizacion, datos demo, borrado total y aviso de privacidad. |
+| `ui/screens/ResumenScreen.kt` | Resumen estadistico | Total, promedio y actividad por ambito, mas accion principal de exportacion CSV. |
+| `ui/screens/AjustesScreen.kt` | Configuracion | Alias, foto, recordatorio, exportacion CSV, sincronizacion simulada, datos demo, borrado total y aviso de privacidad. |
 | `ui/components/TarjetaAmbito.kt` | Tarjeta de ambito en Home | Icono, color, descripcion y ultimo registro; recibe un callback. |
 | `ui/components/BarraResumen.kt` | Barra de actividad | Calcula la fraccion respecto del maximo y anima el ancho. |
+| `ui/components/BotonExportarCsv.kt` | Boton de exportacion | Lanza `ActivityResultContracts.CreateDocument("text/csv")` (SAF), pasa el nombre sugerido y llama a `viewModel.exportarCsv(uri)`; se deshabilita mientras `cargando` es true. |
 | `ui/components/SelectorIntensidad.kt` | Slider de intensidad | Recibe valor, rango y error; muestra extremos bajo y alto. |
 | `ui/components/SelectorFotoPerfil.kt` | Captura de foto | Lanza `TakePicturePreview` directamente, sin permiso de camara; comparte comportamiento entre pantallas. |
 | `ui/components/ColoresAmbito.kt` | Identidad visual | Funciones `colorAmbito` e `iconoAmbito` con `when` exhaustivo. |
@@ -179,6 +187,7 @@ com.example.limpio_moviles/
 | `ui/theme/Type.kt` | Tipografia | `Typography()` por defecto de Material 3. |
 | `app/src/test/.../RegistroValidatorTest.kt` | Pruebas del validador | 9 casos: tipo, rangos, campos obligatorios y limite de nota. |
 | `app/src/test/.../ResumenCalculatorTest.kt` | Pruebas del resumen | 4 casos: lista vacia, promedios, ultima fecha y ambito sin datos. |
+| `app/src/test/.../data/local/RegistroCsvExporterTest.kt` | Pruebas del generador CSV | 6 casos: BOM y cabecera, fila completa, escapado RFC 4180, lista vacia, nombre de archivo y CRLF. |
 
 ## 4. Componentes explicados
 
@@ -319,6 +328,7 @@ Es una interfaz anotada con `@Dao`. Metodos:
 | `observarTodos()` | `Flow<List<RegistroEntity>>` | Todos, ordenados por `fechaHora DESC` |
 | `observarPorAmbito(ambito)` | `Flow<List<RegistroEntity>>` | Filtrados por ambito, ordenados por fecha |
 | `obtenerPorId(id)` | `suspend` | Un registro por id |
+| `obtenerTodos()` | `suspend` | Todos, ordenados por `fechaHora DESC`; se usa para exportar |
 | `obtenerPendientes()` | `suspend` | Los que tienen `sincronizado = 0` |
 | `insertar(registro)` | `suspend` | Devuelve el id generado |
 | `actualizar(registro)` | `suspend` | Actualiza la fila completa |
@@ -362,6 +372,7 @@ Es la fachada de los registros. Recibe `RegistroDao` y `LemacApi` (por defecto `
 - `guardar(registro)`: si `id == 0` inserta; si no, actualiza.
 - `eliminar(registro)`: borra la entidad.
 - `obtener(id)`: busca por id.
+- `obtenerTodos()`: devuelve todos los registros ordenados por fecha descendente; es la fuente de la exportacion CSV.
 - `eliminarTodos()`: borra toda la tabla.
 - `sincronizar()`: obtiene pendientes; si no hay, devuelve `0`; si hay, llama a la API, marca los ids como sincronizados y devuelve la cantidad.
 - `cargarDemo(alias)`: si la base ya tiene registros, no hace nada; si esta vacia, inserta cuatro registros de ejemplo.
@@ -411,6 +422,8 @@ Metodos importantes:
 - `guardar()`: valida, construye la entidad y llama al repositorio.
 - `eliminar(registro)`: borra y publica un mensaje.
 - `sincronizar()`: llama al repositorio y publica cuantos registros proceso.
+- `nombreArchivoCsv()`: devuelve `RegistroCsvExporter.nombreArchivo()`, por ejemplo `lemac_datalab_20261104_233000.csv`.
+- `exportarCsv(uri)`: lee todos los registros, genera el CSV con `RegistroCsvExporter.generar`, escribe en el `uri` con `contentResolver.openOutputStream` dentro de `Dispatchers.IO` y publica un mensaje de exito, lista vacia o fallo.
 - `cargarDemo()`: inserta datos de ejemplo si la base esta vacia.
 - `borrarTodos()`: elimina todos los registros.
 - `limpiarMensaje()`, `limpiarFormulario()`, `mostrarMensaje()`: utilidades de estado.
@@ -536,8 +549,9 @@ Objetivo: mostrar estadisticas simples.
 - Una tarjeta por ambito con cantidad, promedio y ultima fecha.
 - `maximo` es la mayor cantidad entre los cuatro ambitos; se usa para escalar las barras.
 - `BarraResumen` recibe cantidad, promedio, maximo y color.
-- Boton "Sincronizar" que llama al ViewModel y cambia el texto mientras carga.
-- Nota al pie: los promedios se calculan sobre los registros guardados en el dispositivo.
+- Boton principal **Exportar datos (CSV)** (`BotonExportarCsv` con `primario = true`); abre el selector del sistema y exporta los registros locales.
+- Nota al pie: los promedios se calculan sobre los registros guardados en el dispositivo y el CSV se exporta localmente, sin enviar datos a Internet.
+- La sincronizacion simulada sigue disponible en Ajustes; ya no es la accion principal de esta pantalla.
 
 #### `AjustesScreen`
 
@@ -547,7 +561,7 @@ Secciones:
 
 1. **Perfil**: editar alias con minimo 3 caracteres, guardar y cambiar foto.
 2. **Recordatorios**: interruptor de recordatorio diario a las 20:00. Antes de activar verifica `POST_NOTIFICATIONS`.
-3. **Datos**: sincronizar, cargar datos de ejemplo y borrar todos los registros con dialogo de confirmacion.
+3. **Datos**: exportar a CSV, sincronizar (simulado), cargar datos de ejemplo y borrar todos los registros con dialogo de confirmacion. La exportacion usa `BotonExportarCsv` y un texto aclara que el archivo se guarda en el dispositivo y no se envia a Internet.
 4. **Privacidad**: texto que recuerda que es un MVP con datos ficticios, que no es diagnostico y que la informacion se guarda en el dispositivo.
 
 La foto usa el mismo `SelectorFotoPerfil` que Onboarding. El alias se guarda solo al pulsar "Guardar alias".
@@ -561,6 +575,15 @@ Tarjeta clickeable de Home. Recibe `ambito`, `ultimoRegistro` y `onClick`. Usa `
 #### `BarraResumen`
 
 Muestra una barra horizontal animada. La fraccion es `cantidad / maximo`, acotada entre 0 y 1. Si `maximo <= 0`, la fraccion es 0 para evitar division por cero. Usa `animateFloatAsState` y agrega una descripcion semantica con cantidad y promedio.
+
+#### `BotonExportarCsv`
+
+Envuelve el flujo de exportacion en un boton reutilizable. Crea un launcher con `ActivityResultContracts.CreateDocument("text/csv")`, que abre el selector de documentos del sistema (SAF). Al pulsar, llama a `launcher.launch(viewModel.nombreArchivoCsv())`; el sistema muestra el nombre sugerido y deja elegir carpeta. En el callback:
+
+- Si el `uri` no es nulo, llama a `viewModel.exportarCsv(uri)`.
+- Si es nulo (el usuario cancela), llama a `viewModel.mostrarMensaje("Exportación cancelada")`.
+
+Recibe `primario` para usar `Button` o `OutlinedButton`, y `texto` para personalizar la etiqueta. Se deshabilita cuando `uiState.cargando` es true. Se usa en Ajustes (seccion Datos) y en Resumen (accion principal).
 
 #### `SelectorIntensidad`
 
@@ -895,6 +918,35 @@ Borrar:
 4. Se muestra "Registros eliminados".
 5. No se borran el alias, la foto ni el estado del recordatorio; solo los registros.
 
+### 6.11 Exportar los registros a CSV
+
+1. El usuario pulsa **Exportar datos (CSV)** en Ajustes (seccion Datos) o en Resumen (accion principal).
+2. `BotonExportarCsv` llama a `launcher.launch(viewModel.nombreArchivoCsv())`. El nombre sugerido es `lemac_datalab_yyyyMMdd_HHmmss.csv`.
+3. El contrato `ActivityResultContracts.CreateDocument("text/csv")` abre el selector de documentos del sistema (SAF). El usuario elige carpeta y confirma el nombre; la app **no** pide permiso de almacenamiento.
+4. El selector devuelve un `Uri` de destino. Si el usuario cancela, el `Uri` es `null` y se muestra "Exportación cancelada".
+5. `BotonExportarCsv` llama a `viewModel.exportarCsv(uri)`.
+6. `exportarCsv` pone `cargando = true` y lanza una corrutina en `viewModelScope`.
+7. `RegistroRepository.obtenerTodos()` llama a `RegistroDao.obtenerTodos()`, que ejecuta `SELECT * FROM registros ORDER BY fechaHora DESC`.
+8. Si la lista esta vacia, publica "No hay registros para exportar" y termina.
+9. `RegistroCsvExporter.generar(lista)` construye el texto CSV.
+10. La escritura se hace con `withContext(Dispatchers.IO)`: `contentResolver.openOutputStream(uri)?.use { salida -> salida.write(contenido.toByteArray(Charsets.UTF_8)) }`.
+11. Si la escritura devuelve un stream valido, publica "Datos exportados (N registros)"; si falla o el stream es nulo, "No se pudo exportar".
+12. En `finally` se restaura `cargando = false`, y el boton vuelve a estar habilitado.
+
+Detalles del formato que conviene poder explicar:
+
+- **BOM UTF-8 (`\uFEFF`)**: se escribe al inicio para que Excel reconozca la codificacion y muestre bien los acentos.
+- **CRLF (`\r\n`)**: se usa como salto de linea, compatible con Excel y con el estandar CSV.
+- **Cabecera exacta**: `id,alias,ambito,tipo,intensidad,contexto,estrategia,nota,objetivo,fecha_hora_iso,fecha_hora_millis,sincronizado`.
+- **Escapado RFC 4180**: si un campo contiene coma, comillas dobles, `\n` o `\r`, se encierra entre comillas dobles y cada comilla interna se duplica (`"` -> `""`).
+- **Fechas**: `fecha_hora_iso` usa `Instant.ofEpochMilli(fechaHora).toString()`; `fecha_hora_millis` conserva el valor numerico original.
+- **Una fila por registro**, en el mismo orden que devuelve el DAO (mas reciente primero).
+- **Texto plano**: el CSV no esta cifrado e incluye alias y notas; conviene guardarlo en un lugar privado.
+
+`RegistroCsvExporter` es un objeto puro: no conoce Android, ni `Uri`, ni el sistema de archivos. Eso permite probarlo con JUnit sin emulador. La escritura real queda en el ViewModel, que si tiene acceso al `contentResolver`.
+
+Aclaracion: exportar **no** reemplaza a la sincronizacion. La sincronizacion sigue siendo simulada con `FakeLemacApi` en Ajustes y no usa red; la exportacion es un archivo local real que el usuario decide donde guardar.
+
 ## 7. Reglas de validacion por ambito
 
 ### Tipos disponibles
@@ -1038,7 +1090,7 @@ Detalles:
 
 ## 10. Pruebas existentes
 
-Hay 13 pruebas unitarias con JUnit 4, ubicadas en `app/src/test/java/com/example/limpio_moviles/model/`:
+Hay 19 pruebas unitarias con JUnit 4, ubicadas en `app/src/test/java/com/example/limpio_moviles/` (9 del validador, 4 del resumen y 6 del generador CSV):
 
 ### `RegistroValidatorTest` (9 pruebas)
 
@@ -1059,11 +1111,21 @@ Hay 13 pruebas unitarias con JUnit 4, ubicadas en `app/src/test/java/com/example
 3. Un ambito sin registros queda en cero aunque otros tengan datos.
 4. `ultimaFecha` es el maximo de las fechas del ambito.
 
+### `RegistroCsvExporterTest` (6 pruebas)
+
+1. La salida empieza con el BOM UTF-8 y la cabecera exacta aparece justo despues.
+2. Un registro completo genera la fila con todos los campos en el orden esperado.
+3. Un campo con coma, comillas dobles y salto de linea se escapa con comillas y comillas internas dobladas (RFC 4180).
+4. Una lista vacia produce solo BOM, cabecera y CRLF.
+5. `nombreArchivo(millis)` cumple el patron `lemac_datalab_yyyyMMdd_HHmmss.csv`.
+6. Las filas usan CRLF y no quedan `\n` sueltos.
+
 ### Que no esta probado
 
 - Room y el DAO.
 - Los repositorios.
 - El ViewModel.
+- La escritura real del archivo y el selector SAF (la generacion del texto si esta probada).
 - La interfaz Compose.
 - WorkManager y las notificaciones.
 - La captura de foto.
@@ -1090,7 +1152,7 @@ Conviene decirlas con claridad en la disertacion, porque demuestran criterio:
 8. **Editar cambia la fecha original.** `guardar()` usa `System.currentTimeMillis()` tambien al actualizar.
 9. **Cargar datos demo no avisa si la base ya tenia datos.** El repositorio retorna sin insertar, pero el ViewModel muestra el mensaje de exito igual.
 10. **El recordatorio es aproximado y fijo a las 20:00.** WorkManager no garantiza puntualidad exacta y no hay configuracion de hora.
-11. **No hay exportacion ni borrado selectivo por ambito.** Solo borrado total.
+11. **La exportacion CSV es texto plano y no esta cifrada.** Incluye alias y notas, y se guarda donde el usuario elija; conviene tratarla como informacion privada. Tampoco hay borrado selectivo por ambito: solo borrado total.
 12. **No hay accesibilidad avanzada ni pruebas con TalkBack.** Hay algunas descripciones semanticas, pero no una auditoria.
 13. **El nombre del paquete sigue siendo `com.example.limpio_moviles`.** Para publicar en una tienda habria que cambiarlo.
 14. **La foto es una vista previa de baja resolucion.** `TakePicturePreview` no guarda la foto original en alta calidad.

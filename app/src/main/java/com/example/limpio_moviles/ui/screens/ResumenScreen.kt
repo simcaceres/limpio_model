@@ -19,8 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.limpio_moviles.model.ResumenAmbito
 import com.example.limpio_moviles.ui.components.BarraResumen
+import com.example.limpio_moviles.ui.components.BotonExportarCsv
 import com.example.limpio_moviles.ui.components.colorAmbito
 import com.example.limpio_moviles.ui.components.iconoAmbito
 import com.example.limpio_moviles.ui.util.formatearFecha
@@ -144,25 +143,19 @@ fun ResumenScreen(
                 )
             }
 
-            Button(
-                onClick = { viewModel.sincronizar() },
-                enabled = !uiState.cargando,
+            BotonExportarCsv(
+                viewModel = viewModel,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Sync,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(if (uiState.cargando) "Sincronizando..." else "Sincronizar")
-            }
+                    .height(50.dp),
+                primario = true,
+                hayRegistros = registros.isNotEmpty()
+            )
 
             Text(
                 text = "Los promedios se calculan sobre los registros guardados " +
-                    "en este dispositivo.",
+                    "en este dispositivo. El CSV se exporta localmente, sin enviar " +
+                    "datos a Internet.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

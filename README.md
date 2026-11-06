@@ -2,7 +2,7 @@
 
 Aplicacion Android de autorregistro desarrollada en Kotlin y Jetpack Compose. Permite anotar, en pocos pasos, como se siente la persona y que estrategias utiliza en cuatro ambitos de bienestar: neurodesarrollo, habilidades DBT, estado de animo y adicciones.
 
-El proyecto se presenta como un **MVP academico**. Su objetivo es demostrar un flujo completo de aplicacion movil: interfaz Compose, navegacion, estado, persistencia local, recordatorios y una capa de sincronizacion simulada.
+El proyecto se presenta como un **MVP academico**. Su objetivo es demostrar un flujo completo de aplicacion movil: interfaz Compose, navegacion, estado, persistencia local, recordatorios, una capa de sincronizacion simulada y exportacion local de los datos a CSV.
 
 ## Publico objetivo
 
@@ -10,7 +10,7 @@ El proyecto se presenta como un **MVP academico**. Su objetivo es demostrar un f
 - Estudiantes o docentes que necesiten un ejemplo funcional de arquitectura Android moderna.
 - Publico de una disertacion que quiera entender el recorrido de los datos dentro de una app.
 
-La aplicacion usa un **alias o seudonimo**, no el nombre real. No hay cuentas, registro en linea ni perfiles en la nube.
+La aplicacion usa un **alias o seudonimo**, no el nombre real. No hay cuentas, registro en linea ni perfiles en la nube. La exportacion CSV tambien es local: el archivo se genera en el dispositivo y se guarda donde el usuario lo indique.
 
 ## Aviso de privacidad
 
@@ -21,9 +21,11 @@ En el estado actual del codigo:
 - Los registros se guardan en una base de datos Room local del dispositivo.
 - El alias, la ruta de la foto y el estado del recordatorio se guardan en `SharedPreferences`.
 - La foto de perfil se guarda como un archivo PNG en el almacenamiento interno de la app.
+- La exportacion CSV es **local**: el archivo se genera en el dispositivo y se guarda donde el usuario elige con el selector de documentos del sistema (SAF). No hay subida a la nube ni permiso de almacenamiento.
 - No existe un backend real ni se envian datos a Internet. La sincronizacion usa `FakeLemacApi`, que solo simula una espera de 700 ms.
 - El manifiesto no declara el permiso `INTERNET`.
 - Las notificaciones tienen un texto generico, sin contenido sensible.
+- El CSV es **texto plano** e incluye el alias y las notas, asi que conviene tratarlo como informacion privada.
 
 Limites de privacidad que conviene conocer: el manifiesto mantiene `android:allowBackup="true"`, pero las reglas de backup estan acotadas. Se incluyen explicitamente la base de datos Room (`database`) y las `SharedPreferences` (`sharedpref`, con el alias o seudonimo y la ruta de la foto), y se excluye explicitamente la foto de perfil (`file/perfil.png`). La cache no se incluye porque la plataforma la excluye siempre de forma automatica y, al usar `<include>`, la lista de respaldo es una allowlist limitada a Room y `SharedPreferences`; las reglas XML no declaran una exclusion de cache. Las mismas reglas se aplican en `backup_rules.xml` para API 30 o inferior y en `data_extraction_rules.xml` para `<cloud-backup>` y `<device-transfer>` en API 31 o superior. La base de datos sigue sin cifrar. Ademas, la app no declara el permiso `CAMERA`: la vista previa de camara usa `TakePicturePreview`, que no lo requiere, y `uses-feature android.hardware.camera required="false"` permite instalar la app en equipos sin camara. Para un producto real habria que revisar el cifrado y el borrado de datos.
 
@@ -105,9 +107,62 @@ El proyecto sí incluye pruebas unitarias; conviene decirlo con precisión:
 
 - `app/src/test/java/com/example/limpio_moviles/model/RegistroValidatorTest.kt` contiene 9 pruebas de validacion.
 - `app/src/test/java/com/example/limpio_moviles/model/ResumenCalculatorTest.kt` contiene 4 pruebas de calculo del resumen.
-- En total son 13 pruebas unitarias con JUnit 4.
+- `app/src/test/java/com/example/limpio_moviles/data/local/RegistroCsvExporterTest.kt` contiene 6 pruebas del generador CSV:
+  1. La salida empieza con BOM UTF-8 y contiene la cabecera exacta.
+  2. Un registro completo genera la fila con todos los campos.
+  3. Un campo con coma, comillas y salto de linea se escapa con comillas dobladas.
+  4. Una lista vacia produce solo BOM, cabecera y CRLF.
+  5. `nombreArchivo(millis)` cumple el patron `lemac_datalab_yyyyMMdd_HHmmss.csv`.
+  6. Las filas usan saltos de linea CRLF, sin `\n` sueltos.
+- En total son 19 pruebas unitarias con JUnit 4 (9 + 4 + 6).
 - **No hay pruebas instrumentadas ni pruebas de interfaz** (`app/src/androidTest` no existe).
 - **No hay pruebas de Room, repositorios, ViewModel ni WorkManager.**
+
+## Exportar los datos
+
+La app permite exportar todos los registros guardados en Room a un archivo **CSV local**. La exportacion no usa backend ni sube nada a Internet.
+
+### Pasos
+
+1. Abrir **Ajustes** y, en la seccion **Datos**, pulsar **Exportar datos (CSV)**. Tambien se puede hacer desde **Resumen**, con el boton principal **Exportar datos (CSV)**.
+2. Se abre el selector de documentos del sistema (`ActivityResultContracts.CreateDocument("text/csv")`, SAF).
+3. Elegir la carpeta de destino (por ejemplo, `Descargas` / `Downloads`) y confirmar el nombre sugerido.
+4. La app escribe el archivo y muestra un mensaje: `Datos exportados (N registros)`. Si no hay registros muestra `No hay registros para exportar`; si falla la escritura, `No se pudo exportar`; si se cancela el selector, `Exportación cancelada`.
+
+El archivo se guarda **donde el usuario lo indique con el selector del sistema**. La app no pide permiso de almacenamiento porque usa el mecanismo SAF y escribe a traves de `contentResolver.openOutputStream`.
+
+### Nombre y formato
+
+- Nombre sugerido: `lemac_datalab_yyyyMMdd_HHmmss.csv` (por ejemplo, `lemac_datalab_20261104_233000.csv`).
+- Codificacion: **UTF-8 con BOM**, para que Excel y otras hojas de calculo muestren bien los acentos.
+- Saltos de linea: **CRLF** (`\r\n`), compatible con Excel.
+- Una fila por registro, ordenadas por `fechaHora DESC` (la mas reciente primero).
+- Escapado **RFC 4180**: si un campo contiene coma, comillas o salto de linea, se encierra entre comillas dobles y las comillas internas se duplican.
+
+### Columnas
+
+Cabecera exacta:
+
+```text
+id,alias,ambito,tipo,intensidad,contexto,estrategia,nota,objetivo,fecha_hora_iso,fecha_hora_millis,sincronizado
+```
+
+| Columna | Contenido |
+|---|---|
+| `id` | Identificador interno del registro |
+| `alias` | Alias o seudonimo del perfil |
+| `ambito` | Nombre del ambito (`NEURODESARROLLO`, `DBT`, `ANIMO`, `ADICCIONES`) |
+| `tipo` | Tipo elegido del catalogo |
+| `intensidad` | Valor entero dentro del rango del ambito |
+| `contexto` | Situacion o desencadenante |
+| `estrategia` | Habilidad o accion registrada |
+| `nota` | Nota libre (maximo 200 caracteres) |
+| `objetivo` | Estado del objetivo (solo adicciones) |
+| `fecha_hora_iso` | Fecha y hora en formato ISO 8601 (`Instant.toString()`) |
+| `fecha_hora_millis` | La misma fecha en milisegundos desde epoch |
+| `sincronizado` | `true` o `false` segun la bandera local |
+
+> El CSV es **texto plano**: incluye el alias y las notas. No esta cifrado. Guardarlo en un lugar privado y no compartirlo sin necesidad.
 
 ## Estructura de carpetas resumida
 
@@ -121,23 +176,25 @@ limpio_moviles/
 │       │   ├── java/com/example/limpio_moviles/
 │       │   │   ├── LemacApplication.kt   Contenedor manual de dependencias
 │       │   │   ├── MainActivity.kt       Unica Activity; monta Compose
-│       │   │   ├── data/
-│       │   │   │   ├── local/            Room: entidad, DAO y base de datos
-│       │   │   │   ├── remote/           LemacApi y FakeLemacApi
-│       │   │   │   └── repository/       RegistroRepository y PerfilRepository
-│       │   │   ├── model/                Ambito, catalogos, estados y calculos
-│       │   │   ├── navigation/           Rutas y NavHost
-│       │   │   ├── ui/
-│       │   │   │   ├── components/       Componentes reutilizables
-│       │   │   │   ├── screens/          Seis pantallas
-│       │   │   │   ├── theme/            Color, tipografia y tema
-│       │   │   │   └── util/             Formato de fechas
-│       │   │   ├── util/                 Foto, notificaciones y recordatorios
-│       │   │   └── viewmodel/            RegistroViewModel y su Factory
-│       │   └── res/                      Strings, colores, temas e iconos
-│       └── test/java/com/example/limpio_moviles/model/
-│           ├── RegistroValidatorTest.kt
-│           └── ResumenCalculatorTest.kt
+│   │   │   ├── data/
+│   │   │   │   ├── local/            Room (entidad, DAO, base) y RegistroCsvExporter.kt
+│   │   │   │   ├── remote/           LemacApi y FakeLemacApi
+│   │   │   │   └── repository/       RegistroRepository y PerfilRepository
+│   │   │   ├── model/                Ambito, catalogos, estados y calculos
+│   │   │   ├── navigation/           Rutas y NavHost
+│   │   │   ├── ui/
+│   │   │   │   ├── components/       Componentes reutilizables (incluye BotonExportarCsv.kt)
+│   │   │   │   ├── screens/          Seis pantallas
+│   │   │   │   ├── theme/            Color, tipografia y tema
+│   │   │   │   └── util/             Formato de fechas
+│   │   │   ├── util/                 Foto, notificaciones y recordatorios
+│   │   │   └── viewmodel/            RegistroViewModel y su Factory
+│   │   └── res/                      Strings, colores, temas e iconos
+│       └── test/java/com/example/limpio_moviles/
+│           ├── data/local/RegistroCsvExporterTest.kt
+│           └── model/
+│               ├── RegistroValidatorTest.kt
+│               └── ResumenCalculatorTest.kt
 ├── docs/
 │   ├── GUIA_ESTUDIO.md                   Guia principal de estudio
 │   └── DISERTACION.md                    Guion de exposicion y demo
@@ -158,13 +215,9 @@ Documentacion detallada:
 
 ## Como subir este proyecto a Git
 
-El repositorio local **ya esta creado**. Estado actual:
+El repositorio local **ya esta creado**. Para ver el estado real y el ultimo commit, ejecutar `git status` y `git log --oneline -1`; no conviene asumir un estado fijo, porque el arbol cambia a medida que se trabaja. La rama principal es `main`.
 
-- Rama principal: `main`.
-- Primer commit: `3867001` (`chore(3907532d): version inicial de Lemac DataLab`).
-- Arbol limpio, sin cambios pendientes.
-
-Falta solo crear el repositorio remoto y hacer el primer push. Reemplazar `USUARIO` y `REPOSITORIO` por los valores reales.
+Si aun no existe un remoto configurado, falta crearlo y hacer el primer push. Reemplazar `USUARIO` y `REPOSITORIO` por los valores reales.
 
 ### 1. Crear el repositorio remoto
 
@@ -181,7 +234,7 @@ git status
 git log --oneline -1
 ```
 
-La salida debe mostrar el commit `3867001` y un arbol limpio. No deben aparecer `local.properties`, `build/`, `.gradle/`, `.idea/` ni archivos `.apk`. El archivo `.gitignore` ya los excluye.
+`git log --oneline -1` muestra el ultimo commit y `git status` indica si hay cambios pendientes. No deben aparecer `local.properties`, `build/`, `.gradle/`, `.idea/` ni archivos `.apk` como archivos versionados. El archivo `.gitignore` ya los excluye.
 
 El comando `git init` ya no forma parte de esta guia porque el repositorio local existe. Solo seria necesario si en otra maquina se parte de una copia de archivos sin historial Git.
 

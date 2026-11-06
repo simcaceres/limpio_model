@@ -6,7 +6,6 @@ import com.example.limpio_moviles.data.remote.FakeLemacApi
 import com.example.limpio_moviles.data.remote.LemacApi
 import com.example.limpio_moviles.model.Ambito
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 
 class RegistroRepository(
     private val dao: RegistroDao,
@@ -18,19 +17,20 @@ class RegistroRepository(
     fun observarPorAmbito(ambito: Ambito): Flow<List<RegistroEntity>> =
         dao.observarPorAmbito(ambito.name)
 
-    suspend fun guardar(registro: RegistroEntity) {
+    suspend fun guardar(registro: RegistroEntity): Boolean =
         if (registro.id == 0) {
-            dao.insertar(registro)
+            dao.insertar(registro) != -1L
         } else {
-            dao.actualizar(registro)
+            dao.actualizar(registro) > 0
         }
-    }
 
     suspend fun eliminar(registro: RegistroEntity) {
         dao.eliminar(registro)
     }
 
     suspend fun obtener(id: Int): RegistroEntity? = dao.obtenerPorId(id)
+
+    suspend fun obtenerTodos(): List<RegistroEntity> = dao.obtenerTodos()
 
     suspend fun eliminarTodos() {
         dao.eliminarTodos()
@@ -45,9 +45,7 @@ class RegistroRepository(
         return pendientes.size
     }
 
-    suspend fun cargarDemo(alias: String) {
-        if (dao.observarTodos().first().isNotEmpty()) return
-
+    suspend fun cargarDemo(alias: String): Boolean {
         val ahora = System.currentTimeMillis()
         val registrosDemo = listOf(
             RegistroEntity(
@@ -100,7 +98,7 @@ class RegistroRepository(
             )
         )
 
-        registrosDemo.forEach { dao.insertar(it) }
+        return dao.insertarDemoSiVacio(registrosDemo)
     }
 
     private companion object {

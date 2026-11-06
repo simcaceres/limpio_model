@@ -2,6 +2,7 @@ package com.example.limpio_moviles.viewmodel
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,6 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.limpio_moviles.data.local.RegistroCsvExporter
 import com.example.limpio_moviles.data.local.RegistroEntity
 import com.example.limpio_moviles.data.repository.PerfilRepository
 import com.example.limpio_moviles.data.repository.RegistroRepository
@@ -184,6 +186,18 @@ class RegistroViewModel(
         uiState = uiState.copy(cargando = true, guardadoExitoso = false, errores = emptyMap())
 
         viewModelScope.launch {
+            val existente = formulario.editandoId?.let { id ->
+                runCatching { registroRepository.obtener(id) }.getOrNull()
+            }
+            if (formulario.editandoId != null && existente == null) {
+                uiState = uiState.copy(
+                    cargando = false,
+                    guardadoExitoso = false,
+                    mensaje = "No se encontró el registro que intentas editar"
+                )
+                return@launch
+            }
+            val ahora = System.currentTimeMillis()
             val registro = RegistroEntity(
                 id = formulario.editandoId ?: 0,
                 usuarioAlias = perfil.alias.ifBlank { "Usuario de prueba" },
@@ -194,12 +208,24 @@ class RegistroViewModel(
                 estrategia = formulario.estrategia.trim(),
                 nota = formulario.nota.trim(),
                 estadoObjetivo = formulario.estadoObjetivo.trim(),
-                fechaHora = System.currentTimeMillis(),
+                fechaHora = existente?.fechaHora ?: ahora,
                 sincronizado = false
             )
 
             runCatching { registroRepository.guardar(registro) }
-                .onSuccess {
+                .onSuccess { guardado ->
+                    if (!guardado) {
+                        uiState = uiState.copy(
+                            cargando = false,
+                            guardadoExitoso = false,
+                            mensaje = if (formulario.editandoId != null) {
+                                "No se pudo actualizar el registro"
+                            } else {
+                                "No se pudo guardar el registro"
+                            }
+                        )
+                        return@onSuccess
+                    }
                     uiState = uiState.copy(
                         cargando = false,
                         guardadoExitoso = true,
@@ -260,10 +286,14 @@ class RegistroViewModel(
             uiState = uiState.copy(cargando = true)
             val alias = perfil.alias.ifBlank { "Usuario de prueba" }
             runCatching { registroRepository.cargarDemo(alias) }
-                .onSuccess {
+                .onSuccess { insertados ->
                     uiState = uiState.copy(
                         cargando = false,
-                        mensaje = "Datos de demostración cargados"
+                        mensaje = if (insertados) {
+                            "Datos de demostración cargados"
+                        } else {
+                            "Ya hay registros; no se duplicaron los datos de ejemplo"
+                        }
                     )
                 }
                 .onFailure {
@@ -284,6 +314,45 @@ class RegistroViewModel(
                 .onFailure {
                     uiState = uiState.copy(mensaje = "No se pudieron eliminar los registros")
                 }
+        }
+    }
+
+    fun nombreArchivoCsv(): String = RegistroCsvExporter.nombreArchivo()
+
+    fun exportarCsv(uri: Uri) {
+        viewModelScope.launch {
+            uiState = uiState.copy(cargando = true)
+            try {
+                val lista = runCatching { registroRepository.obtenerTodos() }
+                    .getOrElse {
+                        uiState = uiState.copy(mensaje = "No se pudieron leer los registros")
+                        return@launch
+                    }
+
+                if (lista.isEmpty()) {
+                    uiState = uiState.copy(mensaje = "No hay registros para exportar")
+                    return@launch
+                }
+
+                val exportado = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val contenido = RegistroCsvExporter.generar(lista)
+                        getApplication<Application>().contentResolver.openOutputStream(uri)?.use { salida ->
+                            salida.write(contenido.toByteArray(Charsets.UTF_8))
+                        } != null
+                    }.getOrDefault(false)
+                }
+
+                uiState = uiState.copy(
+                    mensaje = if (exportado) {
+                        "Datos exportados (${lista.size} registros)"
+                    } else {
+                        "No se pudo exportar"
+                    }
+                )
+            } finally {
+                uiState = uiState.copy(cargando = false)
+            }
         }
     }
 

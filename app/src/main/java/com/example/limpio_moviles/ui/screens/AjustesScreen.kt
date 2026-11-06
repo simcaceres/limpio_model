@@ -56,6 +56,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.limpio_moviles.ui.components.BotonExportarCsv
 import com.example.limpio_moviles.ui.components.SelectorFotoPerfil
 import com.example.limpio_moviles.viewmodel.RegistroViewModel
 
@@ -73,6 +75,7 @@ fun AjustesScreen(
     val context = LocalContext.current
     var alias by rememberSaveable { mutableStateOf(viewModel.perfil.alias) }
     var mostrarDialogoBorrado by remember { mutableStateOf(false) }
+    val registros by viewModel.registros.collectAsStateWithLifecycle()
 
     val mensaje = viewModel.uiState.mensaje
 
@@ -205,6 +208,19 @@ fun AjustesScreen(
             }
 
             SeccionAjustes(titulo = "Datos") {
+                BotonExportarCsv(
+                    viewModel = viewModel,
+                    modifier = Modifier.fillMaxWidth(),
+                    hayRegistros = registros.isNotEmpty()
+                )
+
+                Text(
+                    text = "Guarda un archivo CSV en este dispositivo para " +
+                        "analizarlo después. No se envía nada a Internet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
                 OutlinedButton(
                     onClick = { viewModel.sincronizar() },
                     modifier = Modifier.fillMaxWidth()
@@ -220,6 +236,7 @@ fun AjustesScreen(
 
                 OutlinedButton(
                     onClick = { viewModel.cargarDemo() },
+                    enabled = !viewModel.uiState.cargando,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
