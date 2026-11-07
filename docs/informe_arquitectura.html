@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe tecnico - Lemac DataLab</title>
+<style>
+  @page { size: A4; margin: 1.7cm 1.7cm 1.7cm 1.7cm; }
+  body { font-family: "DejaVu Sans", Arial, Helvetica, sans-serif; font-size: 10.2pt; color: #1f2933; line-height: 1.42; }
+  h1 { color: #0b5d6b; font-size: 20pt; margin: 0 0 6px 0; }
+  h2 { color: #0b5d6b; font-size: 14.5pt; border-bottom: 2px solid #0b5d6b; padding-bottom: 3px; margin: 22px 0 10px 0; }
+  h3 { color: #116a7b; font-size: 12pt; margin: 16px 0 6px 0; }
+  h4 { color: #2b4a52; font-size: 10.8pt; margin: 12px 0 4px 0; }
+  p { margin: 6px 0; text-align: justify; }
+  ul, ol { margin: 6px 0 6px 18px; padding: 0; }
+  li { margin: 3px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 12px 0; font-size: 8.9pt; }
+  th { background: #0b5d6b; color: #ffffff; text-align: left; padding: 5px 6px; border: 1px solid #0b5d6b; }
+  td { padding: 4px 6px; border: 1px solid #b9c6c9; vertical-align: top; }
+  tr:nth-child(even) td { background: #f2f7f8; }
+  code { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.8pt; background: #eef2f3; padding: 1px 3px; }
+  pre { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.4pt; background: #f4f7f8; border: 1px solid #c6d3d6; padding: 8px; margin: 8px 0; white-space: pre-wrap; }
+  .pagebreak { page-break-before: always; }
+  .cover { width: 100%; border: none; margin: 0; }
+  .cover td { border: none; padding: 0; }
+  .tag { font-size: 8.5pt; letter-spacing: 1.5px; color: #6b7c82; }
+  .callout { border-left: 4px solid #0b5d6b; background: #eef7f8; padding: 8px 10px; margin: 10px 0; }
+  .warn { border-left: 4px solid #b45309; background: #fdf3e7; padding: 8px 10px; margin: 10px 0; }
+  .ok { border-left: 4px solid #15803d; background: #eefaf1; padding: 8px 10px; margin: 10px 0; }
+  .small { font-size: 8.6pt; color: #52636a; }
+  .center { text-align: center; }
+  .toc td { border: none; padding: 2px 4px; }
+  .toc tr:nth-child(even) td { background: transparent; }
+  .kicker { color: #0b5d6b; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- ================= PORTADA ================= -->
+<table class="cover">
+  <tr>
+    <td style="background:#0b5d6b; color:#ffffff; padding:34px 30px;">
+      <div style="font-size:9pt; letter-spacing:3px; color:#bfe3e8;">INFORME TECNICO</div>
+      <div style="font-size:30pt; font-weight:bold; margin-top:8px;">Lemac DataLab</div>
+      <div style="font-size:14pt; margin-top:6px;">Arquitectura, flujo de datos y revision frente a los requisitos MVP</div>
+      <div style="font-size:9.5pt; margin-top:18px; color:#d7eef1;">Proyecto Android <b>limpio_moviles</b> &middot; Kotlin + Jetpack Compose + Room</div>
+    </td>
+  </tr>
+</table>
+
+<table style="margin-top:26px; font-size:9.4pt;">
+  <tr><td style="width:26%; background:#eef2f3; border:1px solid #c6d3d6;"><b>Preparado para</b></td><td style="border:1px solid #c6d3d6;">Simon</td></tr>
+  <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Fecha</b></td><td style="border:1px solid #c6d3d6;">7 de noviembre de 2026</td></tr>
+  <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Proyecto revisado</b></td><td style="border:1px solid #c6d3d6;">/home/simon/AndroidStudioProjects/limpio_moviles</td></tr>
+  <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Documentos revisados</b></td><td style="border:1px solid #c6d3d6;">trabajo moviles.docx &middot; Respuestas _MVP (2).docx &middot; cartadeanimo.cl</td></tr>
+  <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Alcance</b></td><td style="border:1px solid #c6d3d6;">(1) Revisar si la app cumple lo pedido. (2) Explicar el flujo model &rarr; repository &rarr; datos &rarr; ViewModel &rarr; UI para estudiarlo. (3) Recomendar como crear un proyecto propio con la misma idea.</td></tr>
+</table>
+
+<div class="callout" style="margin-top:22px;">
+  <b>Como leer este informe.</b> Las secciones 1 a 6 responden la revision del trabajo (que tienes y que te falta). Las secciones 7 a 11 son la guia de estudio del flujo, en el orden que pediste: primero <b>model</b>, despues <b>repository</b>, despues las fuentes de datos, el ViewModel y la UI. La seccion 12 es la receta para crear tu propio proyecto.
+</div>
+
+<!-- ================= INDICE ================= -->
+<div class="pagebreak"></div>
+<h1>Contenido</h1>
+<table class="toc" style="font-size:10pt;">
+<tr><td style="border:none;"><b style="color:#0b5d6b;">1.</b>&nbsp; Resumen ejecutivo y veredicto</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">2.</b>&nbsp; Que dicen realmente los dos documentos adjuntos</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">3.</b>&nbsp; Que es la app actual (Lemac DataLab / Carta de Animo)</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">4.</b>&nbsp; Veredicto: tienes o no tienes lo que necesita el trabajo</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">5.</b>&nbsp; Matriz de brechas requisito por requisito</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">6.</b>&nbsp; Lo que si puedes reutilizar</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">7.</b>&nbsp; Arquitectura por capas: el mapa completo</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">8.</b>&nbsp; El flujo en orden: model, repository y demas</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">9.</b>&nbsp; Un registro paso a paso, de la pantalla a la base de datos</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">10.</b>&nbsp; Otros flujos: sincronizar, exportar CSV y recordatorio</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">11.</b>&nbsp; Pruebas, calidad y limitaciones</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">12.</b>&nbsp; Como crear tu propio proyecto con esta misma idea</td></tr>
+<tr><td style="border:none;"><b style="color:#0b5d6b;">13.</b>&nbsp; Glosario y anexo de archivos y comandos</td></tr>
+</table>
+
+<h3>Resumen en una pagina</h3>
+<table>
+<tr><th style="width:30%;">Pregunta</th><th>Respuesta corta</th></tr>
+<tr><td>Que es la app que tienes?</td><td>Una app Android de autorregistro de bienestar (neurodesarrollo, DBT, animo y adicciones) llamada Lemac DataLab, con datos locales, sin login y con exportacion CSV.</td></tr>
+<tr><td>Que pide <i>Respuestas_MVP</i>?</td><td>Un sistema de gestion documental de RR.HH. para una corporacion/area de salud: usuarios, 5 perfiles, matriz de permisos, documentos, aprobaciones, versionado, auditoria y el flujo RF12.</td></tr>
+<tr><td>La app cumple eso?</td><td><b>No.</b> No tiene login, roles, permisos, documentos, aprobaciones, historial ni auditoria. Es otro producto.</td></tr>
+<tr><td>Y la web Cartadeanimo.cl?</td><td>Esa web si coincide con tu app (registro de animo para pacientes y profesionales). Hay una discrepancia entre los dos adjuntos que debes aclarar.</td></tr>
+<tr><td>Que hago entonces?</td><td>Reutiliza la arquitectura (MVVM + Repository + Room) y construye el dominio documental desde cero. La seccion 12 trae la receta.</td></tr>
+</table>
+
+<!-- ================= 1 ================= -->
+<div class="pagebreak"></div>
+<h1>1. Resumen ejecutivo y veredicto</h1>
+
+<p>Revisé el proyecto Android que has trabajado en los últimos días (<code>limpio_moviles</code>, nombre visible <b>Lemac DataLab</b>), los dos documentos que descargaste (<code>trabajo moviles.docx</code> y <code>Respuestas _MVP (2).docx</code>) y la página del cliente (<code>cartadeanimo.cl</code>). El objetivo era responder una pregunta concreta: <b>¿lo que tengo en Android Studio sirve para el trabajo que estamos viendo?</b></p>
+
+<div class="warn">
+<b>Veredicto corto: no.</b> La app actual <b>no implementa</b> los requisitos de <code>Respuestas_MVP</code>. Es una app de autorregistro de bienestar, no un sistema de gestión documental de RR.HH. Lo que sí tienes es una <b>base técnica sólida y reutilizable</b> (arquitectura por capas, Room, repositorios, ViewModel, Compose, pruebas unitarias), pero el dominio, los roles, los permisos, los documentos y los flujos de aprobación hay que construirlos desde cero.
+</div>
+
+<p>La confusión tiene una explicación: los dos adjuntos no describen el mismo producto.</p>
+<ul>
+  <li><code>trabajo moviles.docx</code> es una instrucción general: revisar la información nueva del cliente <b>Cartadeanimo.cl</b>, compararla con la app, corregir y recién después grabar el video. La web <b>sí</b> coincide con tu app: es una herramienta de registro de ánimo para pacientes y profesionales, creada por Terapéuticamente y desarrollada por Lemac Datalab.</li>
+  <li><code>Respuestas _MVP (2).docx</code> es otra cosa: habla de funcionarios con contrato, jefaturas, licencias médicas, expedientes, RR.HH. y del requisito <b>RF12</b> de modificación con trazabilidad. Eso es un <b>sistema documental interno</b>, no la app pública de ánimo.</li>
+</ul>
+
+<p>Por eso, antes de grabar el video, conviene aclarar con el equipo o el docente <b>a cuál de los dos productos corresponde la entrega</b>. Si la entrega es la de <code>Respuestas_MVP</code>, la app actual no sirve tal como está. Si la entrega es Carta de Ánimo, vas bien encaminado, pero todavía te faltan cuentas reales, roles paciente/profesional, backend y la vista de “carta” que muestra la web.</p>
+
+<h3>Qué sí tienes (y es valioso)</h3>
+<table>
+<tr><th style="width:34%;">Pieza</th><th>Por qué sirve para el próximo proyecto</th></tr>
+<tr><td>Arquitectura MVVM + Repository</td><td>Separa UI, lógica de presentación y datos. Es exactamente el esqueleto que necesita un sistema documental.</td></tr>
+<tr><td>Room (Entity, DAO, Database)</td><td>Ya sabes persistir y observar datos con <code>Flow</code>. Cambias la entidad y reutilizas el patrón.</td></tr>
+<tr><td>Inyección de dependencias manual</td><td><code>LemacApplication</code> actúa como contenedor. Para un MVP alcanza y se entiende mejor que Hilt.</td></tr>
+<tr><td>ViewModel + StateFlow</td><td>Manejo de estado y corrutinas probado. Se replica tal cual.</td></tr>
+<tr><td>Compose + Navigation</td><td>Pantallas, rutas y navegación ya funcionando.</td></tr>
+<tr><td>WorkManager y notificaciones</td><td>Base para recordatorios, vencimientos y avisos de aprobación/rechazo.</td></tr>
+<tr><td>Exportador CSV puro y testeable</td><td>Se puede adaptar a reportes de cumplimiento documental.</td></tr>
+<tr><td>19 pruebas unitarias</td><td>Demuestran que sabes separar lógica testeable de Android.</td></tr>
+</table>
+
+<div class="ok">
+<b>En una frase:</b> no tienes el <i>producto</i> que pide <code>Respuestas_MVP</code>, pero sí tienes el <i>andamio</i> para construirlo. El trabajo real no es renombrar pantallas: es modelar usuarios, roles, permisos, documentos, estados y auditoría.
+</div>
+
+<!-- ================= 2 ================= -->
+<div class="pagebreak"></div>
+<h1>2. Qué dicen realmente los dos documentos adjuntos</h1>
+
+<h2>2.1. <code>trabajo moviles.docx</code></h2>
+<p>Es una comunicación de <b>Bastián Lisperguer</b> que adjunta “nueva información relevante entregada por la contraparte”. Los puntos concretos son:</p>
+<ul>
+  <li>Página web del cliente: <b>Cartadeanimo.cl</b>.</li>
+  <li>Respuestas a las dudas levantadas por los equipos.</li>
+  <li>Requerimientos y definiciones actualizadas del proyecto.</li>
+  <li>Antes de grabar el video, cada grupo debe <b>revisar</b> esta información y <b>contrastarla</b> con el estado actual de su aplicación.</li>
+  <li>Ajustar lo que corresponda: <b>flujos, permisos, roles, validaciones, estados, reglas de negocio y acceso a la información</b>.</li>
+  <li>Secuencia recomendada: revisar &rarr; comparar &rarr; corregir/actualizar &rarr; probar &rarr; recién después grabar.</li>
+</ul>
+<p class="small">Fuente: <code>/home/simon/Descargas/trabajo moviles.docx</code> (13 líneas).</p>
+
+<h2>2.2. <code>Respuestas _MVP (2).docx</code></h2>
+<p>Es el documento de respuestas del cliente. Se organiza en tres bloques:</p>
+
+<h3>Bloque 1 — Usuarios, perfiles y control de acceso</h3>
+<ul>
+  <li>La creación y habilitación de usuarios la hace un <b>administrador de RR.HH.</b></li>
+  <li>Solo acceden <b>funcionarios con contrato a plazo fijo o indefinido</b> de la Corporación/Área de Salud.</li>
+  <li><b>Perfiles oficiales del MVP:</b> Funcionario, Jefatura, Administrativo, Recursos Humanos y Administrador del sistema.</li>
+  <li><b>Actor de apoyo:</b> TI/Ciberseguridad (acceso excepcional, autorizado y trazable).</li>
+  <li>La matriz de acceso también menciona un <b>Supervisor institucional</b> (reportes e indicadores de su ámbito).</li>
+  <li>Cada perfil tiene acciones principales definidas (consultar, cargar, validar, aprobar/rechazar, registrar observaciones, etc.).</li>
+</ul>
+
+<h3>Bloque 2 — Documentos, validación y aprobación</h3>
+<ul>
+  <li><b>Matriz de acceso documental por perfil:</b> qué puede consultar cada uno y qué restricciones tiene.</li>
+  <li><b>Alcance por categoría documental:</b> contratos y anexos, certificados laborales, solicitudes de permisos, licencias médicas, antecedentes personales sensibles, historial de modificaciones y reportes institucionales.</li>
+  <li><b>Reglas generales:</b> el acceso se determina por perfil + dependencia + tipo de documento + función autorizada. El administrativo no tiene acceso transversal por defecto. El administrador del sistema no obtiene acceso automático al contenido sensible. Los cambios de cargo o dependencia gatillan revisión de permisos.</li>
+</ul>
+
+<h3>Bloque 3 — RF12: modificación de información y trazabilidad</h3>
+<ul>
+  <li>Flujo de modificación con aprobación según el tipo de información.</li>
+  <li><b>Cambios simples</b> (teléfono, correo): se aplican inmediatamente si el campo está habilitado, con trazabilidad.</li>
+  <li><b>Datos personales oficiales</b> (nombre, RUT): requieren validación documental por RR.HH.</li>
+  <li><b>Contratos, anexos y documentos laborales:</b> la nueva versión queda <b>pendiente de revisión</b>.</li>
+  <li><b>Documentos cargados por administrativo:</b> no reemplazan al oficial hasta su validación.</li>
+  <li><b>Flujo:</b> solicitud &rarr; evaluación (directo o con revisión) &rarr; aprobación (publica, actualiza y conserva versión anterior) o rechazo (mantiene versión vigente, registra motivo, notifica y permite reenviar).</li>
+  <li><b>Auditoría mínima:</b> usuario responsable, fecha y hora, datos afectados, estado de la solicitud, resultado de la revisión y observaciones. El historial no puede ser alterado por usuarios ordinarios.</li>
+</ul>
+
+<div class="callout">
+<b>Idea clave del RF12:</b> no basta con “editar”. Hay que distinguir entre <b>edición directa</b> y <b>edición con aprobación</b>, y mientras una modificación está pendiente, la información anterior sigue vigente. Eso exige estados, versiones y auditoría, que la app actual no tiene.
+</div>
+
+<!-- ================= 3 ================= -->
+<div class="pagebreak"></div>
+<h1>3. Qué es la app actual (Lemac DataLab / Carta de Ánimo)</h1>
+
+<p><b>Lemac DataLab</b> es una aplicación Android de autorregistro. La persona elige uno de cuatro ámbitos de bienestar, completa un formulario breve, guarda el registro y luego puede verlo en un historial, consultar un resumen, activar un recordatorio diario y cambiar su alias o foto.</p>
+
+<table>
+<tr><th style="width:26%;">Aspecto</th><th>Estado real en el código</th></tr>
+<tr><td>Nombre visible / paquete</td><td>Lemac DataLab / <code>com.example.limpio_moviles</code></td></tr>
+<tr><td>Lenguaje y UI</td><td>Kotlin 2.0.21 + Jetpack Compose (Material 3)</td></tr>
+<tr><td>Ámbitos</td><td>Neurodesarrollo, Habilidades DBT, Estado de ánimo, Adicciones</td></tr>
+<tr><td>Persistencia</td><td>Room (<code>lemac_datalab.db</code>) + SharedPreferences (<code>perfil_lemac</code>) + archivo <code>perfil.png</code></td></tr>
+<tr><td>Backend</td><td>Ninguno real: <code>FakeLemacApi</code> simula 700 ms y devuelve éxito</td></tr>
+<tr><td>Autenticación</td><td>No existe. Solo un alias o seudónimo</td></tr>
+<tr><td>Roles y permisos</td><td>No existen. Un único usuario implícito</td></tr>
+<tr><td>Documentos</td><td>No gestiona documentos ni archivos adjuntos</td></tr>
+<tr><td>Notificaciones</td><td>Recordatorio diario genérico a las 20:00 con WorkManager</td></tr>
+<tr><td>Exportación</td><td>CSV local vía SAF (selector de documentos del sistema)</td></tr>
+<tr><td>Privacidad</td><td>Sin permiso <code>INTERNET</code>, sin permiso <code>CAMERA</code>, sin permisos de almacenamiento</td></tr>
+<tr><td>Pruebas</td><td>19 pruebas unitarias JUnit 4 (validador, resumen y CSV)</td></tr>
+</table>
+
+<h3>Relación con Carta de Ánimo</h3>
+<p>La web <b>cartadeanimo.cl</b> es una herramienta gratuita de <b>Terapéuticamente</b>, desarrollada por <b>Lemac Datalab</b>. Permite a pacientes registrar cómo se sienten cada día y a profesionales revisar la evolución y añadir períodos clínicos. El ámbito “Estado de ánimo” de tu app es el que más se parece a esa idea.</p>
+<p>Sin embargo, la app actual <b>no es todavía</b> la Carta de Ánimo completa: no tiene cuentas, no distingue paciente de profesional, no tiene backend ni la línea de tiempo clínica que muestra la web. Es un MVP académico del concepto de autorregistro.</p>
+
+<div class="callout">
+<b>Conclusión de esta sección:</b> la app es un producto de <b>bienestar/ánimo</b>. El documento <code>Respuestas_MVP</code> describe un producto de <b>gestión documental de RR.HH.</b> Son dominios distintos. Esa es la raíz de la brecha.
+</div>
+
+<!-- ================= 4 ================= -->
+<div class="pagebreak"></div>
+<h1>4. Veredicto: tienes o no tienes lo que necesita el trabajo</h1>
+
+<h2>4.1. Si el trabajo es <code>Respuestas_MVP</code> (gestión documental)</h2>
+<div class="warn">
+<b>No, no lo tienes.</b> La app no cubre los requisitos funcionales del documento. No hay usuarios, autenticación, perfiles, permisos, documentos, estados de aprobación, versionado, auditoría ni reportes de cumplimiento. La cobertura real es prácticamente <b>0%</b> de los requisitos específicos.
+</div>
+<p>Lo único que se acerca es la <b>infraestructura técnica</b>: persistencia local, capa de repositorio, ViewModel y pruebas. Eso te ahorra tiempo, pero no reemplaza el desarrollo del dominio documental.</p>
+
+<h2>4.2. Si el trabajo es Carta de Ánimo (bienestar)</h2>
+<div class="callout">
+<b>Parcialmente.</b> El dominio y la idea central (registrar el ánimo, privacidad, datos locales) están alineados. Pero faltan piezas que la web sí muestra: cuentas reales, roles paciente/profesional, backend, períodos clínicos, revisión profesional y la visualización de “carta” en el tiempo.
+</div>
+
+<h2>4.3. Discrepancia que debes aclarar antes de grabar</h2>
+<p>El documento <code>trabajo moviles.docx</code> dice que la información nueva viene de <b>Cartadeanimo.cl</b>, pero el archivo <code>Respuestas _MVP (2).docx</code> responde dudas de un <b>sistema documental de RR.HH.</b> No parecen ser el mismo producto. Antes de invertir horas, confirma con tu equipo o docente:</p>
+<ol>
+  <li>¿La entrega evaluada es la app de ánimo (Carta de Ánimo) o el sistema documental (Respuestas_MVP)?</li>
+  <li>Si son dos proyectos distintos, ¿cuál se graba primero y con qué alcance?</li>
+  <li>Si el documento de respuestas está mal adjuntado, pide la versión correcta.</li>
+</ol>
+
+<h3>Qué haría yo en tu lugar</h3>
+<table>
+<tr><th style="width:8%;">#</th><th>Acción</th><th>Por qué</th></tr>
+<tr><td>1</td><td>Aclarar con el docente/equipo cuál es el producto de la entrega</td><td>Evita construir lo incorrecto y perder tiempo antes del video</td></tr>
+<tr><td>2</td><td>Si es Carta de Ánimo: completar cuentas, roles y backend</td><td>Es la brecha principal frente a la web del cliente</td></tr>
+<tr><td>3</td><td>Si es gestión documental: crear un proyecto nuevo reutilizando la arquitectura</td><td>El dominio es tan distinto que forzarlo en la app actual sería más caro que empezar limpio</td></tr>
+<tr><td>4</td><td>Documentar la decisión (ADR) y el alcance del MVP</td><td>Trazabilidad para la defensa y para no repetir el análisis</td></tr>
+</table>
+
+<!-- ================= 5 ================= -->
+<div class="pagebreak"></div>
+<h1>5. Matriz de brechas requisito por requisito</h1>
+
+<p>La siguiente tabla compara cada requisito del documento con el código real. “Evidencia” indica qué existe hoy en la app; “Acción” es lo mínimo que habría que construir.</p>
+
+<table style="font-size:8.2pt;">
+<tr>
+  <th style="width:22%;">Requisito (Respuestas_MVP)</th>
+  <th style="width:8%;">¿Cumple?</th>
+  <th style="width:30%;">Evidencia en el código actual</th>
+  <th style="width:40%;">Acción recomendada</th>
+</tr>
+<tr><td>Creación y habilitación de usuarios por RR.HH.</td><td><b>No</b></td><td>No existe entidad <code>Usuario</code>; solo un alias en <code>SharedPreferences</code>.</td><td>Crear <code>Usuario</code>, <code>Rol</code> y pantallas de administración. Definir quién puede crear/desactivar.</td></tr>
+<tr><td>Acceso solo a funcionarios con contrato fijo/indefinido</td><td><b>No</b></td><td>No hay autenticación ni modelo de contrato.</td><td>Login + validación de estado contractual + baja automática al término.</td></tr>
+<tr><td>Perfiles: Funcionario, Jefatura, Administrativo, RR.HH., Administrador</td><td><b>No</b></td><td>Un único usuario implícito; no hay roles.</td><td>Enum de roles + matriz de permisos + navegación condicionada por rol.</td></tr>
+<tr><td>TI/Ciberseguridad y Supervisor institucional</td><td><b>No</b></td><td>No existen.</td><td>Roles de solo lectura/auditoría, con acceso excepcional y trazable.</td></tr>
+<tr><td>Matriz de acceso documental por perfil</td><td><b>No</b></td><td>No hay documentos ni permisos.</td><td>Motor de políticas: perfil + dependencia + tipo de documento + función autorizada.</td></tr>
+<tr><td>Jerarquía institucional (dependencia, centros, unidades)</td><td><b>No</b></td><td>No existe modelo organizacional.</td><td>Entidades <code>Dependencia</code>, <code>Centro</code>, <code>Unidad</code> y relación con usuarios.</td></tr>
+<tr><td>Carga, registro, clasificación y actualización de documentos</td><td><b>No</b></td><td>Solo se guardan registros de bienestar (<code>RegistroEntity</code>).</td><td>Entidad <code>Documento</code> + almacenamiento de archivos + categorías.</td></tr>
+<tr><td>Asociar documentos a funcionarios</td><td><b>No</b></td><td>No hay relación documento–funcionario.</td><td>Relación <code>Documento.usuarioId</code> y expediente por funcionario.</td></tr>
+<tr><td>Validación y aprobación de documentos</td><td><b>No</b></td><td>No hay flujo de revisión.</td><td>Estados y transiciones + bandeja de aprobación por rol.</td></tr>
+<tr><td>Estados: vigente, pendiente de revisión, aprobado, rechazado</td><td><b>No</b></td><td>Solo existe el booleano <code>sincronizado</code>.</td><td>Enum <code>EstadoDocumento</code> y reglas de transición.</td></tr>
+<tr><td>Versionado e historial de modificaciones</td><td><b>No</b></td><td>No hay versiones ni historial.</td><td>Tabla <code>VersionDocumento</code> inmutable + historial consultable.</td></tr>
+<tr><td>RF12: modificación con aprobación según tipo</td><td><b>No</b></td><td>Editar un registro lo sobrescribe; no hay aprobación.</td><td>Flujo solicitud &rarr; evaluación &rarr; aprobación/rechazo con reglas por tipo.</td></tr>
+<tr><td>Auditoría: usuario, fecha/hora, datos afectados, resultado, observaciones</td><td><b>No</b></td><td>No hay log de auditoría.</td><td>Tabla <code>Auditoria</code> append-only, consultable por perfiles autorizados.</td></tr>
+<tr><td>Rechazo: mantener versión anterior, motivo, notificar, permitir reenvío</td><td><b>No</b></td><td>No existe el concepto de rechazo.</td><td>Estado rechazado + motivo + notificación + nueva solicitud.</td></tr>
+<tr><td>Vencimientos y reportes de cumplimiento documental</td><td><b>No</b></td><td>No hay fechas de vencimiento ni reportes.</td><td>Campos de vigencia + WorkManager + reportes/CSV.</td></tr>
+<tr><td>Notificaciones de aprobación, rechazo u observaciones</td><td><b>Parcial</b></td><td>Solo recordatorio diario genérico (<code>RecordatorioWorker</code>).</td><td>Notificaciones por evento (cambio de estado, nueva solicitud).</td></tr>
+<tr><td>Persistencia local</td><td><b>Sí (técnica)</b></td><td>Room: <code>RegistroEntity</code>, <code>RegistroDao</code>, <code>LemacDatabase</code>.</td><td>Reutilizar el patrón con nuevas entidades.</td></tr>
+<tr><td>Exportación de datos</td><td><b>Sí (técnica)</b></td><td><code>RegistroCsvExporter</code> con BOM, CRLF y RFC 4180.</td><td>Adaptar a reportes de cumplimiento.</td></tr>
+<tr><td>Backend / API real</td><td><b>No</b></td><td><code>FakeLemacApi</code> solo simula 700 ms.</td><td>API REST/GraphQL + autenticación + sincronización real.</td></tr>
+<tr><td>Seguridad y cifrado</td><td><b>No</b></td><td>Room sin cifrar; sin login; <code>allowBackup="true"</code>.</td><td>Cifrado (SQLCipher o servidor), RBAC, consentimiento y auditoría.</td></tr>
+<tr><td>Pruebas de datos, repositorios y UI</td><td><b>Parcial</b></td><td>19 pruebas unitarias de lógica pura; sin pruebas de Room, repos, ViewModel ni instrumentadas.</td><td>Agregar pruebas de DAO, repositorio, ViewModel y UI.</td></tr>
+</table>
+
+<div class="callout">
+<b>Resumen de cobertura:</b> de los 21 puntos evaluados, <b>0</b> están implementados como requisito funcional del sistema documental, <b>2</b> existen solo como capacidad técnica reutilizable (Room y CSV), <b>2</b> son parciales (notificaciones y pruebas) y el resto está pendiente.
+</div>
+
+<!-- ================= 6 ================= -->
+<div class="pagebreak"></div>
+<h1>6. Lo que sí puedes reutilizar</h1>
+
+<p>No todo es malo: la app está bien construida para un MVP y varias decisiones se trasladan casi sin cambios a un proyecto documental o a la Carta de Ánimo completa.</p>
+
+<table>
+<tr><th style="width:26%;">Patrón</th><th>Dónde está</th><th>Cómo se reutiliza</th></tr>
+<tr><td>Separación por capas</td><td><code>model</code>, <code>data</code>, <code>viewmodel</code>, <code>ui</code></td><td>Misma estructura con nuevas entidades y pantallas.</td></tr>
+<tr><td>Repository</td><td><code>RegistroRepository</code>, <code>PerfilRepository</code></td><td>Crear <code>UsuarioRepository</code>, <code>DocumentoRepository</code>, <code>AuditoriaRepository</code>.</td></tr>
+<tr><td>Room</td><td><code>RegistroEntity</code>, <code>RegistroDao</code>, <code>LemacDatabase</code></td><td>Nuevas tablas/migraciones; mismo patrón de <code>Flow</code> + <code>suspend</code>.</td></tr>
+<tr><td>DI manual</td><td><code>LemacApplication</code></td><td>Contenedor de dependencias sin frameworks.</td></tr>
+<tr><td>Estado de presentación</td><td><code>RegistroViewModel</code> + <code>StateFlow</code></td><td>Un ViewModel por flujo (documentos, aprobaciones, usuarios).</td></tr>
+<tr><td>Navegación</td><td><code>AppNavigation.kt</code></td><td>Rutas por rol y pantallas protegidas.</td></tr>
+<tr><td>WorkManager</td><td><code>RecordatorioScheduler</code>, <code>RecordatorioWorker</code></td><td>Vencimientos y recordatorios de revisión.</td></tr>
+<tr><td>Exportador puro</td><td><code>RegistroCsvExporter</code></td><td>Reportes de cumplimiento en CSV.</td></tr>
+<tr><td>Archivos y FileProvider</td><td><code>FotoStorage</code></td><td>Adjuntar documentos y compartir archivos de forma segura.</td></tr>
+<tr><td>Pruebas unitarias</td><td><code>app/src/test/...</code></td><td>Probar validadores y cálculos sin emulador.</td></tr>
+</table>
+
+<div class="ok">
+<b>Regla de oro:</b> reutiliza la <b>arquitectura</b>, no el <b>dominio</b>. Cambiar <code>RegistroEntity</code> por <code>DocumentoEntity</code> no es suficiente: hay que rediseñar reglas, estados, permisos y flujos.
+</div>
+
+<!-- ================= 7 ================= -->
+<div class="pagebreak"></div>
+<h1>7. Arquitectura por capas: el mapa completo</h1>
+
+<p>La app sigue una separación inspirada en <b>MVVM con repositorio</b>. La dependencia va en un solo sentido: la UI conoce al ViewModel, el ViewModel conoce a los repositorios y los repositorios conocen las fuentes de datos. Ninguna capa “salta” a otra.</p>
+
+<pre>
++-----------------------------------------------------------+
+|  UI (Jetpack Compose)                                     |
+|  Pantallas + componentes + tema + navegacion              |
++-----------------------------+-----------------------------+
+                              | eventos / estado
+                              v
++-----------------------------------------------------------+
+|  PRESENTACION (ViewModel)                                 |
+|  RegistroViewModel: uiState, perfil, registros, resumen   |
++-----------------------------+-----------------------------+
+                              | llama metodos
+                              v
++-----------------------------------------------------------+
+|  REPOSITORIOS                                             |
+|  RegistroRepository          PerfilRepository             |
++--------------+--------------------------+-----------------+
+               |                          |
+               v                          v
++----------------------------+  +--------------------------+
+|  FUENTES DE DATOS          |  |  SharedPreferences       |
+|  DAO -> Room (SQLite)      |  |  perfil_lemac            |
+|  LemacApi -> FakeLemacApi  |  +--------------------------+
+|  RegistroCsvExporter       |
+|  FotoStorage (filesDir)    |
++----------------------------+
+</pre>
+
+<h2>7.1. Responsabilidad de cada capa</h2>
+<table>
+<tr><th style="width:20%;">Capa</th><th style="width:30%;">Archivos</th><th>Qué hace</th><th style="width:22%;">Qué NO debe hacer</th></tr>
+<tr><td>Interfaz (UI)</td><td><code>ui/screens/*</code>, <code>ui/components/*</code>, <code>ui/theme/*</code></td><td>Mostrar estado, capturar eventos y navegar.</td><td>Acceder a Room o a SharedPreferences.</td></tr>
+<tr><td>Presentación</td><td><code>viewmodel/RegistroViewModel.kt</code></td><td>Mantener estado, validar, lanzar corrutinas y coordinar repositorios.</td><td>Escribir SQL ni construir pantallas.</td></tr>
+<tr><td>Repositorios</td><td><code>data/repository/*</code></td><td>Ofrecer operaciones de negocio y ocultar la fuente de datos.</td><td>Manejar estado de Compose.</td></tr>
+<tr><td>Datos</td><td><code>data/local/*</code>, <code>data/remote/*</code>, <code>util/*</code></td><td>Persistir, consultar, simular red, generar CSV y guardar archivos.</td><td>Decidir textos o navegación.</td></tr>
+</table>
+
+<h2>7.2. Inyección de dependencias manual</h2>
+<p>No se usa Hilt, Koin ni Dagger. <code>LemacApplication</code> actúa como contenedor:</p>
+<pre>
+class LemacApplication : Application() {
+    val database by lazy { LemacDatabase.getDatabase(this) }
+    val registroRepository by lazy {
+        RegistroRepository(database.registroDao(), FakeLemacApi())
+    }
+    val perfilRepository by lazy { PerfilRepository(this) }
+
+    override fun onCreate() {
+        super.onCreate()
+        NotificacionHelper.crearCanal(this)
+    }
+}
+</pre>
+<p>El <code>RegistroViewModelFactory</code> recibe esas dependencias y construye el ViewModel. Para un MVP es suficiente, se entiende y se explica bien en una defensa.</p>
+
+<!-- ================= 8 ================= -->
+<div class="pagebreak"></div>
+<h1>8. El flujo en orden: model, repository y demás</h1>
+
+<p>Esta es la parte que querías estudiar. Vamos de abajo hacia arriba, en el orden en que conviene entenderlo: primero el <b>model</b> (el vocabulario), después el <b>repository</b> (la puerta a los datos), después las <b>fuentes de datos</b>, luego el <b>ViewModel</b> (el coordinador) y al final la <b>UI</b>.</p>
+
+<h2>8.1. Model — el corazón y el vocabulario</h2>
+<p>El paquete <code>model/</code> no conoce Android, ni Room, ni Compose. Son clases Kotlin puras. Por eso se pueden probar sin emulador. Aquí se define <b>qué es un registro</b> y <b>qué reglas debe cumplir</b>.</p>
+
+<h3><code>Ambito.kt</code> — los cuatro mundos</h3>
+<pre>
+enum class Ambito(val etiqueta: String, val descripcion: String) {
+    NEURODESARROLLO("Neurodesarrollo", "Rutinas, tareas y autorregulacion"),
+    DBT("Habilidades DBT", "Mindfulness, tolerancia, regulacion e interpersonal"),
+    ANIMO("Estado de animo", "Check-in de emocion e intensidad"),
+    ADICCIONES("Adicciones", "Impulsos, desencadenantes y acciones protectoras");
+
+    companion object {
+        fun desdeNombre(nombre: String?): Ambito =
+            entries.firstOrNull { it.name == nombre } ?: NEURODESARROLLO
+    }
+}
+</pre>
+<p><b>Qué explica:</b> un enum con etiqueta y descripción. <code>desdeNombre</code> convierte el texto que viene de la navegación o de Room en un valor seguro; si no coincide, cae en un valor por defecto. Eso evita <i>crashs</i> por datos viejos.</p>
+
+<h3><code>Catalogos.kt</code> — las opciones dependen del ámbito</h3>
+<pre>
+object Catalogos {
+    fun tipos(ambito: Ambito): List&lt;String&gt; = when (ambito) {
+        Ambito.NEURODESARROLLO -> listOf("Rutina", "Tarea", "Sobrecarga", "Autorregulacion")
+        Ambito.DBT -> listOf("Mindfulness", "Tolerancia al malestar", ...)
+        Ambito.ANIMO -> listOf("Feliz", "Tranquilo", "Neutro", "Ansioso", "Triste", "Irritable")
+        Ambito.ADICCIONES -> listOf("Craving", "Impulso", "Recaida", "Objetivo cumplido")
+    }
+
+    fun rangoIntensidad(ambito: Ambito): IntRange =
+        if (ambito == Ambito.ADICCIONES) 0..10 else 1..5
+}
+</pre>
+<p><b>Qué explica:</b> el catálogo es una función del ámbito. No hay listas duplicadas en la UI: la fuente de verdad está en el modelo. La intensidad cambia de rango según el ámbito (0–10 en adicciones, 1–5 en el resto).</p>
+
+<h3><code>RegistroUiState.kt</code> — el estado del formulario</h3>
+<pre>
+data class RegistroUiState(
+    val ambito: Ambito = Ambito.NEURODESARROLLO,
+    val tipo: String = "",
+    val intensidad: Int = 3,
+    val contexto: String = "",
+    val estrategia: String = "",
+    val nota: String = "",
+    val estadoObjetivo: String = "",
+    val editandoId: Int? = null,
+    val errores: Map&lt;String, String&gt; = emptyMap(),
+    val guardadoExitoso: Boolean = false,
+    val cargando: Boolean = false,
+    val mensaje: String? = null
+)
+</pre>
+<p><b>Qué explica:</b> un <i>data class</i> inmutable que representa todo lo que la pantalla necesita saber. <code>errores</code> es un mapa campo &rarr; mensaje. <code>editandoId</code> distingue crear de editar. No contiene lógica: solo datos.</p>
+
+<h3><code>RegistroValidator.kt</code> — las reglas, sin UI</h3>
+<pre>
+object RegistroValidator {
+    fun validar(uiState: RegistroUiState): Map&lt;String, String&gt; = buildMap {
+        if (uiState.tipo.isBlank()) put("tipo", "Selecciona un tipo")
+
+        val rango = Catalogos.rangoIntensidad(uiState.ambito)
+        if (uiState.intensidad !in rango)
+            put("intensidad", "La intensidad debe estar entre ${rango.first} y ${rango.last}")
+
+        if (uiState.ambito == Ambito.ADICCIONES && uiState.contexto.isBlank())
+            put("contexto", "Indica el desencadenante")
+
+        if (uiState.ambito == Ambito.DBT && uiState.estrategia.isBlank())
+            put("estrategia", "Indica la habilidad practicada")
+
+        if (uiState.ambito == Ambito.NEURODESARROLLO && uiState.estrategia.isBlank())
+            put("estrategia", "Indica la estrategia utilizada")
+
+        if (uiState.nota.length > 200)
+            put("nota", "La nota no puede superar 200 caracteres")
+    }
+}
+</pre>
+<p><b>Qué explica:</b> una función pura que recibe estado y devuelve errores. No muestra diálogos ni conoce Android. Por eso tiene 9 pruebas unitarias y es fácil de razonar.</p>
+
+<h3><code>ResumenAmbito.kt</code> y <code>ResumenCalculator.kt</code> — cálculos puros</h3>
+<pre>
+data class ResumenAmbito(
+    val ambito: Ambito,
+    val cantidad: Int,
+    val promedioIntensidad: Double,
+    val ultimaFecha: Long?
+)
+
+object ResumenCalculator {
+    fun calcular(registros: List&lt;RegistroEntity&gt;): List&lt;ResumenAmbito&gt; =
+        Ambito.entries.map { ambito ->
+            val delAmbito = registros.filter { it.ambito == ambito.name }
+            ResumenAmbito(
+                ambito = ambito,
+                cantidad = delAmbito.size,
+                promedioIntensidad = if (delAmbito.isEmpty()) 0.0
+                    else delAmbito.sumOf { it.intensidad }.toDouble() / delAmbito.size,
+                ultimaFecha = delAmbito.maxOfOrNull { it.fechaHora }
+            )
+        }
+}
+</pre>
+<p><b>Qué explica:</b> el resumen se calcula en el modelo, no en la pantalla. La UI solo dibuja el resultado. Esto permite probar los promedios sin emulador.</p>
+
+<h3><code>RegistroEntity.kt</code> — el modelo persistido</h3>
+<pre>
+@Entity(tableName = "registros")
+data class RegistroEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val usuarioAlias: String,
+    val ambito: String,
+    val tipo: String,
+    val intensidad: Int,
+    val contexto: String = "",
+    val estrategia: String = "",
+    val nota: String = "",
+    val estadoObjetivo: String = "",
+    val fechaHora: Long,
+    val sincronizado: Boolean = false
+)
+</pre>
+<p><b>Qué explica:</b> aunque vive en <code>data/local</code>, es el modelo que se guarda. Cada fila de la tabla <code>registros</code> es un autorregistro. <code>id = 0</code> significa “nuevo” (Room lo autoincrementa). <code>sincronizado</code> marca si ya se envió (en este MVP, al backend falso).</p>
+
+<div class="callout">
+<b>Idea para memorizar:</b> el modelo es el <b>vocabulario</b> de la app. Si no sabes qué es un “ámbito”, un “registro” o un “estado”, no puedes entender el resto. Por eso se empieza aquí.
+</div>
+
+<h2>8.2. Repository — la puerta de los datos</h2>
+<p>El repositorio es una clase que <b>esconde de dónde vienen los datos</b>. El ViewModel no sabe si los datos están en Room, en memoria o en una API; solo llama al repositorio. Eso permite cambiar la fuente sin tocar la UI.</p>
+
+<h3><code>RegistroRepository.kt</code></h3>
+<pre>
+class RegistroRepository(
+    private val dao: RegistroDao,
+    private val api: LemacApi = FakeLemacApi()
+) {
+    val registros: Flow&lt;List&lt;RegistroEntity&gt;&gt; = dao.observarTodos()
+
+    fun observarPorAmbito(ambito: Ambito): Flow&lt;List&lt;RegistroEntity&gt;&gt; =
+        dao.observarPorAmbito(ambito.name)
+
+    suspend fun guardar(registro: RegistroEntity): Boolean =
+        if (registro.id == 0) dao.insertar(registro) != -1L
+        else dao.actualizar(registro) &gt; 0
+
+    suspend fun eliminar(registro: RegistroEntity) = dao.eliminar(registro)
+    suspend fun obtener(id: Int) = dao.obtenerPorId(id)
+    suspend fun obtenerTodos() = dao.obtenerTodos()
+    suspend fun eliminarTodos() = dao.eliminarTodos()
+
+    suspend fun sincronizar(): Int {
+        val pendientes = dao.obtenerPendientes()
+        if (pendientes.isEmpty()) return 0
+        api.sincronizar(pendientes).getOrThrow()
+        dao.marcarSincronizados(pendientes.map { it.id })
+        return pendientes.size
+    }
+
+    suspend fun cargarDemo(alias: String): Boolean { /* inserta 4 registros si esta vacio */ }
+}
+</pre>
+
+<p><b>Qué explica, método por método:</b></p>
+<table>
+<tr><th style="width:26%;">Método</th><th>Qué hace y por qué</th></tr>
+<tr><td><code>registros</code></td><td>Expone un <code>Flow</code> del DAO. Cada cambio en la base emite una nueva lista; la UI se actualiza sola.</td></tr>
+<tr><td><code>observarPorAmbito</code></td><td>Filtra por ámbito sin que el ViewModel escriba SQL.</td></tr>
+<tr><td><code>guardar</code></td><td>Decide insertar o actualizar según <code>id</code>. Devuelve <code>Boolean</code> para que el ViewModel sepa si funcionó.</td></tr>
+<tr><td><code>eliminar</code></td><td>Borra una fila.</td></tr>
+<tr><td><code>obtener</code>/<code>obtenerTodos</code></td><td>Lecturas puntuales para editar o exportar.</td></tr>
+<tr><td><code>sincronizar</code></td><td>Toma pendientes, llama a la API y los marca como sincronizados.</td></tr>
+<tr><td><code>cargarDemo</code></td><td>Inserta datos de ejemplo solo si la tabla está vacía (evita duplicados).</td></tr>
+</table>
+
+<h3><code>PerfilRepository.kt</code></h3>
+<pre>
+class PerfilRepository(context: Context) {
+    private val preferencias = context.applicationContext
+        .getSharedPreferences("perfil_lemac", Context.MODE_PRIVATE)
+
+    fun cargarAlias(): String = preferencias.getString("alias", "") ?: ""
+    fun guardarAlias(alias: String) { preferencias.edit().putString("alias", alias).apply() }
+
+    fun cargarFotoPath(): String? = preferencias.getString("foto_path", null)
+    fun guardarFotoPath(path: String?) { /* put o remove */ }
+
+    fun cargarRecordatorio(): Boolean = preferencias.getBoolean("recordatorio_activo", false)
+    fun guardarRecordatorio(activo: Boolean) { /* putBoolean */ }
+}
+</pre>
+<p><b>Qué explica:</b> el perfil no es una entidad Room porque son pocos datos simples. Se guarda en <code>SharedPreferences</code>. El repositorio envuelve esas claves para que el ViewModel no maneje strings sueltos.</p>
+
+<div class="callout">
+<b>Regla:</b> el repositorio es el único que conoce la fuente de datos. Si mañana cambias Room por una API, cambias el repositorio, no la UI.
+</div>
+
+<h2>8.3. Fuentes de datos — Room, SharedPreferences, API falsa, CSV y archivos</h2>
+
+<h3>Room: <code>RegistroDao.kt</code></h3>
+<pre>
+@Dao
+interface RegistroDao {
+    @Query("SELECT * FROM registros ORDER BY fechaHora DESC, id DESC")
+    fun observarTodos(): Flow&lt;List&lt;RegistroEntity&gt;&gt;
+
+    @Query("SELECT * FROM registros WHERE ambito = :ambito ORDER BY fechaHora DESC")
+    fun observarPorAmbito(ambito: String): Flow&lt;List&lt;RegistroEntity&gt;&gt;
+
+    @Query("SELECT * FROM registros WHERE id = :id")
+    suspend fun obtenerPorId(id: Int): RegistroEntity?
+
+    @Insert suspend fun insertar(registro: RegistroEntity): Long
+    @Update suspend fun actualizar(registro: RegistroEntity): Int
+    @Delete suspend fun eliminar(registro: RegistroEntity)
+
+    @Query("UPDATE registros SET sincronizado = 1 WHERE id IN (:ids)")
+    suspend fun marcarSincronizados(ids: List&lt;Int&gt;)
+
+    @Transaction
+    suspend fun insertarDemoSiVacio(registros: List&lt;RegistroEntity&gt;): Boolean {
+        if (contar() &gt; 0) return false
+        registros.forEach { insertar(it) }
+        return true
+    }
+}
+</pre>
+<p><b>Qué explica:</b> el DAO mezcla dos estilos. Las consultas que la UI observa devuelven <code>Flow</code>; las operaciones puntuales son <code>suspend</code>. <code>@Transaction</code> garantiza que “contar y luego insertar” sea atómico.</p>
+
+<h3>Room: <code>LemacDatabase.kt</code></h3>
+<pre>
+@Database(entities = [RegistroEntity::class], version = 1, exportSchema = false)
+abstract class LemacDatabase : RoomDatabase() {
+    abstract fun registroDao(): RegistroDao
+
+    companion object {
+        @Volatile private var INSTANCE: LemacDatabase? = null
+
+        fun getDatabase(context: Context): LemacDatabase =
+            INSTANCE ?: synchronized(this) {
+                Room.databaseBuilder(context.applicationContext,
+                    LemacDatabase::class.java, "lemac_datalab.db")
+                    .fallbackToDestructiveMigration()
+                    .build().also { INSTANCE = it }
+            }
+    }
+}
+</pre>
+<p><b>Qué explica:</b> el patrón singleton con <code>@Volatile</code> y <code>synchronized</code> evita crear dos bases. <code>fallbackToDestructiveMigration</code> borra y recrea si cambia el esquema: cómodo para un MVP, peligroso en producción.</p>
+
+<h3>API falsa: <code>LemacApi.kt</code></h3>
+<pre>
+interface LemacApi {
+    suspend fun sincronizar(registros: List&lt;RegistroEntity&gt;): Result&lt;Unit&gt;
+}
+
+class FakeLemacApi : LemacApi {
+    override suspend fun sincronizar(registros: List&lt;RegistroEntity&gt;): Result&lt;Unit&gt; {
+        delay(700)
+        return Result.success(Unit)
+    }
+}
+</pre>
+<p><b>Qué explica:</b> el contrato existe, pero no hay red. <code>delay(700)</code> simula latencia para que la UI muestre el estado de carga. El manifiesto no declara <code>INTERNET</code>, así que la app no puede subir datos aunque quisiera.</p>
+
+<h3>CSV: <code>RegistroCsvExporter.kt</code></h3>
+<pre>
+object RegistroCsvExporter {
+    private const val BOM = "\uFEFF"
+    private const val SALTO_LINEA = "\r\n"
+    private const val CABECERA = "id,alias,ambito,tipo,intensidad,contexto," +
+        "estrategia,nota,objetivo,fecha_hora_iso,fecha_hora_millis,sincronizado"
+
+    fun generar(registros: List&lt;RegistroEntity&gt;): String { /* fila por registro */ }
+    fun nombreArchivo(millis: Long = System.currentTimeMillis()): String =
+        "lemac_datalab_" + /* yyyyMMdd_HHmmss */ ".csv"
+}
+</pre>
+<p><b>Qué explica:</b> es una clase pura: recibe una lista y devuelve texto. No conoce Android ni el sistema de archivos. Por eso se prueba con JUnit. Usa BOM UTF-8, CRLF y escapado RFC 4180 para que Excel no rompa acentos ni comas.</p>
+
+<h3>Archivos: <code>FotoStorage.kt</code></h3>
+<p>Guarda la foto de perfil como <code>perfil.png</code> en <code>filesDir</code>. Usa un archivo temporal y luego lo renombra para evitar corrupción. Lee la orientación EXIF y reduce la imagen para no llenar la memoria.</p>
+
+<h2>8.4. ViewModel — el coordinador</h2>
+<p>El ViewModel es el intermediario entre la UI y los repositorios. Mantiene el estado, lanza corrutinas y decide qué mensaje mostrar. Sobrevive a los cambios de configuración (por ejemplo, rotar la pantalla).</p>
+
+<h3>Estado</h3>
+<pre>
+class RegistroViewModel(
+    application: Application,
+    private val registroRepository: RegistroRepository,
+    private val perfilRepository: PerfilRepository
+) : AndroidViewModel(application) {
+
+    var uiState by mutableStateOf(RegistroUiState())
+        private set
+
+    var perfil by mutableStateOf(PerfilUiState())
+        private set
+
+    var fotoPerfil by mutableStateOf&lt;Bitmap?&gt;(null)
+        private set
+
+    val registros: StateFlow&lt;List&lt;RegistroEntity&gt;&gt; =
+        registroRepository.registros.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    val resumen: StateFlow&lt;List&lt;ResumenAmbito&gt;&gt; =
+        registroRepository.registros
+            .map { ResumenCalculator.calcular(it) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000),
+                ResumenCalculator.calcular(emptyList()))
+}
+</pre>
+
+<p><b>Qué explica:</b> hay dos mecanismos de estado a propósito:</p>
+<table>
+<tr><th style="width:24%;">Mecanismo</th><th>Para qué se usa</th></tr>
+<tr><td><code>mutableStateOf</code></td><td>Estado del formulario y del perfil: cambios simples que la UI lee directamente con Compose.</td></tr>
+<tr><td><code>StateFlow</code> + <code>stateIn</code></td><td>Listas que vienen de Room y deben reaccionar a cambios de la base. <code>WhileSubscribed(5000)</code> deja de observar si la UI no está visible.</td></tr>
+</table>
+
+<h3>Guardar: el método más importante</h3>
+<pre>
+fun guardar() {
+    val errores = RegistroValidator.validar(uiState)
+    if (errores.isNotEmpty()) {
+        uiState = uiState.copy(errores = errores)
+        return
+    }
+
+    val formulario = uiState
+    uiState = uiState.copy(cargando = true, guardadoExitoso = false, errores = emptyMap())
+
+    viewModelScope.launch {
+        val existente = formulario.editandoId?.let { id ->
+            runCatching { registroRepository.obtener(id) }.getOrNull()
+        }
+        val registro = RegistroEntity(
+            id = formulario.editandoId ?: 0,
+            usuarioAlias = perfil.alias.ifBlank { "Usuario de prueba" },
+            ambito = formulario.ambito.name,
+            tipo = formulario.tipo.trim(),
+            intensidad = formulario.intensidad,
+            contexto = formulario.contexto.trim(),
+            estrategia = formulario.estrategia.trim(),
+            nota = formulario.nota.trim(),
+            estadoObjetivo = formulario.estadoObjetivo.trim(),
+            fechaHora = existente?.fechaHora ?: System.currentTimeMillis(),
+            sincronizado = false
+        )
+        val guardado = registroRepository.guardar(registro)
+        uiState = uiState.copy(
+            cargando = false,
+            guardadoExitoso = guardado,
+            mensaje = if (guardado) "Registro guardado" else "No se pudo guardar"
+        )
+    }
+}
+</pre>
+<p><b>Qué explica:</b> valida primero, sin tocar la base. Si hay errores, no hace nada más. Si todo está bien, construye la entidad, llama al repositorio dentro de <code>viewModelScope</code> y actualiza el estado. La UI reacciona al nuevo estado.</p>
+
+<h2>8.5. Application, Activity y Factory</h2>
+<table>
+<tr><th style="width:26%;">Archivo</th><th>Responsabilidad</th></tr>
+<tr><td><code>LemacApplication.kt</code></td><td>Contenedor de dependencias y creación del canal de notificaciones.</td></tr>
+<tr><td><code>MainActivity.kt</code></td><td>Única Activity. Aplica el tema y monta <code>LemacApp()</code>.</td></tr>
+<tr><td><code>RegistroViewModelFactory</code></td><td>Construye el ViewModel con la Application y los repositorios.</td></tr>
+</table>
+
+<h2>8.6. UI y navegación — la punta del iceberg</h2>
+<p><code>AppNavigation.kt</code> define las rutas y el <code>NavHost</code>. El destino inicial depende del perfil: si el alias está vacío, va a <code>onboarding</code>; si no, a <code>home</code>.</p>
+<pre>
+object Rutas {
+    const val ONBOARDING = "onboarding"
+    const val HOME = "home"
+    const val HISTORIAL = "historial"
+    const val RESUMEN = "resumen"
+    const val AJUSTES = "ajustes"
+    const val REGISTRO_PATRON = "registro/{ambito}?id={id}"
+
+    fun registro(ambito: Ambito, id: Int? = null) =
+        "registro/${ambito.name}?id=${id ?: -1}"
+}
+</pre>
+<p>Las pantallas no acceden a Room. Reciben el ViewModel, leen el estado y le envían eventos. Los componentes reutilizables (tarjetas, botones, selectores) tampoco conocen la base de datos.</p>
+
+<table>
+<tr><th style="width:30%;">Pantalla</th><th>Qué hace</th></tr>
+<tr><td><code>OnboardingScreen</code></td><td>Alias, aviso de privacidad, foto opcional y botón para comenzar.</td></tr>
+<tr><td><code>HomeScreen</code></td><td>Saludo, foto, accesos rápidos, tarjetas de ámbito y carga de datos demo.</td></tr>
+<tr><td><code>RegistroScreen</code></td><td>Formulario: chips de tipo, intensidad, campos, validación y guardado.</td></tr>
+<tr><td><code>HistorialScreen</code></td><td>Lista, filtro por ámbito, editar, eliminar con diálogo.</td></tr>
+<tr><td><code>ResumenScreen</code></td><td>Totales, promedios y actividad por ámbito; botón de exportar CSV.</td></tr>
+<tr><td><code>AjustesScreen</code></td><td>Alias, foto, recordatorio, exportación, sincronización, datos demo y borrado.</td></tr>
+</table>
+
+<!-- ================= 9 ================= -->
+<div class="pagebreak"></div>
+<h1>9. Un registro paso a paso, de la pantalla a la base de datos</h1>
+
+<p>Este es el recorrido completo de “guardar un registro nuevo”. Sirve para explicar la arquitectura en una defensa sin memorizar código.</p>
+
+<table>
+<tr><th style="width:6%;">#</th><th style="width:30%;">Paso</th><th>Qué ocurre y en qué archivo</th></tr>
+<tr><td>1</td><td>El usuario toca una tarjeta de ámbito</td><td><code>HomeScreen</code> llama <code>onAmbito(ambito)</code>. <code>AppNavigation</code> navega a <code>Rutas.registro(ambito)</code>.</td></tr>
+<tr><td>2</td><td>Se abre el formulario</td><td><code>RegistroScreen</code> recibe <code>ambito</code> e <code>id = null</code>. En <code>LaunchedEffect</code> llama <code>viewModel.prepararFormulario(ambito, null)</code>.</td></tr>
+<tr><td>3</td><td>El usuario completa</td><td>Cada campo llama <code>actualizarTipo</code>, <code>actualizarIntensidad</code>, etc. Todos actualizan <code>uiState</code> con <code>copy()</code>.</td></tr>
+<tr><td>4</td><td>Toca “Guardar”</td><td>La pantalla llama <code>viewModel.guardar()</code>.</td></tr>
+<tr><td>5</td><td>Validación</td><td><code>RegistroValidator.validar(uiState)</code> devuelve un mapa de errores. Si hay errores, se muestran y el flujo termina.</td></tr>
+<tr><td>6</td><td>Construcción de la entidad</td><td>El ViewModel arma <code>RegistroEntity</code> con el alias del perfil, el ámbito, los campos recortados, <code>fechaHora</code> y <code>sincronizado = false</code>.</td></tr>
+<tr><td>7</td><td>Repositorio</td><td><code>registroRepository.guardar(registro)</code> decide: si <code>id == 0</code>, <code>dao.insertar</code>; si no, <code>dao.actualizar</code>.</td></tr>
+<tr><td>8</td><td>Room</td><td>El DAO ejecuta el SQL contra <code>lemac_datalab.db</code>. Room devuelve el id o la cantidad de filas afectadas.</td></tr>
+<tr><td>9</td><td>Nuevo estado</td><td>El ViewModel actualiza <code>uiState</code> con <code>guardadoExitoso = true</code> y un mensaje.</td></tr>
+<tr><td>10</td><td>La lista se entera sola</td><td>El <code>Flow</code> de <code>registros</code> emite la nueva lista. <code>resumen</code> se recalcula. La UI se recompone.</td></tr>
+<tr><td>11</td><td>Confirmación</td><td><code>LaunchedEffect(guardadoExitoso)</code> muestra el mensaje o vuelve atrás.</td></tr>
+</table>
+
+<div class="callout">
+<b>Para explicar en 20 segundos:</b> “La pantalla no guarda nada. Le avisa al ViewModel. El ViewModel valida con el modelo, arma la entidad y le pide al repositorio que la guarde. El repositorio usa el DAO de Room. Cuando Room escribe, el <code>Flow</code> avisa y la lista se actualiza sola.”
+</div>
+
+<h3>Editar un registro</h3>
+<p>El flujo es casi el mismo, con dos diferencias: la navegación incluye <code>?id=5</code>, <code>prepararFormulario(ambito, 5)</code> carga el registro y llena el estado; al guardar, <code>id = 5</code> hace que el repositorio actualice en vez de insertar. La <code>fechaHora</code> original se conserva y <code>sincronizado</code> vuelve a <code>false</code> para indicar que hay cambios pendientes.</p>
+
+<!-- ================= 10 ================= -->
+<div class="pagebreak"></div>
+<h1>10. Otros flujos: sincronizar, exportar CSV y recordatorio</h1>
+
+<h2>10.1. Sincronizar con la API simulada</h2>
+<pre>
+fun sincronizar() {
+    viewModelScope.launch {
+        uiState = uiState.copy(cargando = true)
+        runCatching { registroRepository.sincronizar() }
+            .onSuccess { cantidad -&gt;
+                uiState = uiState.copy(cargando = false,
+                    mensaje = if (cantidad &gt; 0) "Sincronizados $cantidad registros"
+                              else "No hay registros pendientes")
+            }
+            .onFailure { uiState = uiState.copy(cargando = false,
+                mensaje = "No se pudo sincronizar") }
+    }
+}
+</pre>
+<p><b>Recorrido:</b> ViewModel &rarr; repositorio &rarr; <code>dao.obtenerPendientes()</code> &rarr; <code>api.sincronizar(pendientes)</code> (espera 700 ms) &rarr; <code>dao.marcarSincronizados(ids)</code>. No hay red real.</p>
+
+<h2>10.2. Exportar a CSV</h2>
+<ol>
+  <li>El usuario pulsa “Exportar datos (CSV)” en Ajustes o Resumen.</li>
+  <li><code>BotonExportarCsv</code> lanza <code>ActivityResultContracts.CreateDocument("text/csv")</code> (SAF).</li>
+  <li>El sistema abre el selector de documentos; el usuario elige dónde guardar.</li>
+  <li><code>viewModel.exportarCsv(uri)</code> lee todos los registros con <code>registroRepository.obtenerTodos()</code>.</li>
+  <li><code>RegistroCsvExporter.generar(lista)</code> produce el texto.</li>
+  <li><code>contentResolver.openOutputStream(uri)</code> escribe el archivo en <code>Dispatchers.IO</code>.</li>
+  <li>Se muestra “Datos exportados (N registros)”.</li>
+</ol>
+<p>No se pide permiso de almacenamiento porque SAF otorga acceso temporal al archivo elegido.</p>
+
+<h2>10.3. Recordatorio diario</h2>
+<ol>
+  <li>El usuario activa el recordatorio en Ajustes.</li>
+  <li><code>PerfilRepository.guardarRecordatorio(true)</code> lo persiste.</li>
+  <li><code>RecordatorioScheduler.programar(context)</code> crea un <code>PeriodicWorkRequest</code> de 1 día con retraso inicial hasta las 20:00.</li>
+  <li>WorkManager ejecuta <code>RecordatorioWorker.doWork()</code>.</li>
+  <li><code>NotificacionHelper.mostrar(context)</code> publica una notificación genérica si hay permiso <code>POST_NOTIFICATIONS</code>.</li>
+</ol>
+<p><b>Limitación:</b> la notificación no distingue eventos (aprobación, rechazo, vencimiento). Para el sistema documental habría que crear notificaciones por evento.</p>
+
+<h2>10.4. Foto de perfil</h2>
+<p><code>SelectorFotoPerfil</code> usa <code>TakePicturePreview</code>, que no requiere permiso <code>CAMERA</code>. El bitmap se pasa a <code>viewModel.actualizarFoto(bitmap)</code>, que guarda en <code>Dispatchers.IO</code> con <code>FotoStorage.guardar</code> y persiste la ruta en SharedPreferences.</p>
+
+<!-- ================= 11 ================= -->
+<div class="pagebreak"></div>
+<h1>11. Pruebas, calidad y limitaciones</h1>
+
+<h2>11.1. Pruebas existentes</h2>
+<table>
+<tr><th style="width:34%;">Archivo</th><th style="width:10%;">Pruebas</th><th>Qué cubre</th></tr>
+<tr><td><code>RegistroValidatorTest</code></td><td>9</td><td>Tipo obligatorio, rangos de intensidad, campos por ámbito y límite de 200 caracteres.</td></tr>
+<tr><td><code>ResumenCalculatorTest</code></td><td>4</td><td>Lista vacía, promedios, última fecha y ámbito sin datos.</td></tr>
+<tr><td><code>RegistroCsvExporterTest</code></td><td>6</td><td>BOM y cabecera, fila completa, escapado RFC 4180, lista vacía, nombre de archivo y CRLF.</td></tr>
+<tr><td><b>Total</b></td><td><b>19</b></td><td>JUnit 4, ejecutables con <code>./gradlew :app:testDebugUnitTest</code>.</td></tr>
+</table>
+
+<h2>11.2. Qué no está probado</h2>
+<ul>
+  <li>Room (DAO y base de datos).</li>
+  <li>Repositorios.</li>
+  <li>ViewModel y corrutinas.</li>
+  <li>WorkManager y notificaciones.</li>
+  <li>Interfaz (no hay pruebas instrumentadas ni <code>androidTest</code>).</li>
+</ul>
+
+<h2>11.3. Limitaciones reales del MVP</h2>
+<ul>
+  <li>No hay backend real ni autenticación.</li>
+  <li>La base Room no está cifrada.</li>
+  <li><code>fallbackToDestructiveMigration</code> puede borrar datos al cambiar el esquema.</li>
+  <li>El CSV es texto plano e incluye alias y notas.</li>
+  <li>No es un instrumento de diagnóstico ni reemplaza atención profesional.</li>
+  <li>No hay cuentas ni separación paciente/profesional (para Carta de Ánimo).</li>
+  <li>No hay documentos, roles, permisos ni auditoría (para el sistema documental).</li>
+</ul>
+
+<div class="warn">
+<b>Para producción</b> harían falta: autenticación, autorización por roles, cifrado en reposo y en tránsito, consentimiento informado, auditoría, gestión de sesiones, y cumplimiento normativo de datos de salud. Nada de eso está en el MVP.
+</div>
+
+<!-- ================= 12 ================= -->
+<div class="pagebreak"></div>
+<h1>12. Cómo crear tu propio proyecto con esta misma idea</h1>
+
+<p>Tu objetivo es “crear uno mismo, pero diferente a mi manera”. La buena noticia es que la <b>forma</b> de organizar el código se repite. Lo que cambia es el <b>dominio</b>. Esta es la receta, en el mismo orden que estudiamos.</p>
+
+<h2>12.1. Receta general (7 pasos)</h2>
+<table>
+<tr><th style="width:6%;">#</th><th style="width:28%;">Paso</th><th>Qué haces</th></tr>
+<tr><td>1</td><td>Define el dominio</td><td>Escribe las entidades, enums y reglas en <code>model/</code>. Sin Android. Pregúntate: ¿qué sustantivos y estados existen?</td></tr>
+<tr><td>2</td><td>Define los contratos</td><td>Interfaces de DAO, API y repositorios. Piensa en qué operaciones necesita la app, no en cómo se implementan.</td></tr>
+<tr><td>3</td><td>Implementa las fuentes</td><td>Room (Entity/DAO/Database), API real o fake, archivos. Aquí sí usas Android.</td></tr>
+<tr><td>4</td><td>Implementa el repositorio</td><td>Une las fuentes y aplica reglas de negocio. El ViewModel solo ve el repositorio.</td></tr>
+<tr><td>5</td><td>Implementa el ViewModel</td><td>Estado inmutable + eventos + corrutinas. Un ViewModel por flujo grande.</td></tr>
+<tr><td>6</td><td>Implementa la UI</td><td>Compose: pantallas que leen estado y emiten eventos. Componentes reutilizables.</td></tr>
+<tr><td>7</td><td>Conecta y prueba</td><td>Application como contenedor, Factory, navegación, pruebas unitarias de la lógica pura.</td></tr>
+</table>
+
+<h2>12.2. Ejemplo aplicado al sistema documental</h2>
+<p>Si decides construir el sistema de <code>Respuestas_MVP</code>, este sería un punto de partida razonable. No es código final: es el mapa de entidades y capas.</p>
+
+<h3>Modelo propuesto</h3>
+<table>
+<tr><th style="width:24%;">Entidad / enum</th><th>Campos o valores clave</th></tr>
+<tr><td><code>Usuario</code></td><td>id, rut, nombre, correo, dependenciaId, rol, estado (activo/inactivo), tipoContrato.</td></tr>
+<tr><td><code>Rol</code></td><td>FUNCIONARIO, JEFATURA, ADMINISTRATIVO, RRHH, ADMIN_SISTEMA, TI_CIBERSEGURIDAD, SUPERVISOR.</td></tr>
+<tr><td><code>Permiso</code></td><td>rol, tipoDocumento, accion (ver, cargar, validar, aprobar, rechazar, auditar), ámbito.</td></tr>
+<tr><td><code>Dependencia</code> / <code>Centro</code> / <code>Unidad</code></td><td>Jerarquía institucional para limitar el acceso.</td></tr>
+<tr><td><code>Documento</code></td><td>id, usuarioId, categoria, titulo, archivo, estado, versionActual, fechaVencimiento.</td></tr>
+<tr><td><code>VersionDocumento</code></td><td>documentoId, numeroVersion, archivo, autorId, fecha, comentario.</td></tr>
+<tr><td><code>EstadoDocumento</code></td><td>VIGENTE, PENDIENTE_REVISION, APROBADO, RECHAZADO, ARCHIVADO.</td></tr>
+<tr><td><code>SolicitudModificacion</code></td><td>documentoId, solicitanteId, tipoCambio, datosPropuestos, estado, revisorId, motivoRechazo.</td></tr>
+<tr><td><code>Auditoria</code></td><td>usuarioId, fechaHora, entidad, entidadId, accion, datosAntes, datosDespues, resultado, observaciones.</td></tr>
+</table>
+
+<h3>Reglas que no pueden faltar</h3>
+<ul>
+  <li>Un cambio simple se aplica directo; un dato oficial o documento validado pasa a <code>PENDIENTE_REVISION</code>.</li>
+  <li>Mientras está pendiente, la versión vigente sigue siendo la anterior.</li>
+  <li>Aprobar publica la nueva versión y conserva la anterior en el historial.</li>
+  <li>Rechazar mantiene la versión anterior, registra motivo y notifica.</li>
+  <li>Toda acción escribe en <code>Auditoria</code>; el historial es append-only.</li>
+  <li>El acceso se calcula por rol + dependencia + tipo de documento + función.</li>
+  <li>El administrador del sistema no ve contenido sensible por defecto.</li>
+</ul>
+
+<h3>Estructura de paquetes sugerida</h3>
+<pre>
+com.example.gestiondocumental/
+├── model/
+│   ├── Usuario.kt, Rol.kt, Permiso.kt
+│   ├── Documento.kt, EstadoDocumento.kt, VersionDocumento.kt
+│   ├── SolicitudModificacion.kt, Auditoria.kt
+│   └── Validadores.kt
+├── data/
+│   ├── local/      (Entidades Room, DAOs, Database)
+│   ├── remote/     (ApiService, DTOs, AuthInterceptor)
+│   └── repository/ (UsuarioRepository, DocumentoRepository,
+│                    PermisoRepository, AuditoriaRepository)
+├── viewmodel/
+│   ├── SesionViewModel.kt, DocumentosViewModel.kt
+│   └── AprobacionesViewModel.kt
+├── navigation/AppNavigation.kt
+├── ui/
+│   ├── screens/    (Login, Home por rol, Documentos, Detalle,
+│   │                BandejaAprobacion, Auditoria, Usuarios)
+│   └── components/
+└── util/
+</pre>
+
+<h2>12.3. Qué cambia frente a Lemac DataLab</h2>
+<table>
+<tr><th style="width:28%;">Lemac DataLab</th><th>Sistema documental</th></tr>
+<tr><td>Un usuario implícito (alias)</td><td>Muchos usuarios con login y roles</td></tr>
+<tr><td>Datos locales y fake API</td><td>Backend real + sincronización</td></tr>
+<tr><td>Registro de bienestar</td><td>Documentos, versiones y solicitudes</td></tr>
+<tr><td>Sin estados de negocio</td><td>Máquina de estados (vigente, pendiente, aprobado, rechazado)</td></tr>
+<tr><td>Sin auditoría</td><td>Auditoría obligatoria append-only</td></tr>
+<tr><td>Recordatorio genérico</td><td>Notificaciones por evento y vencimientos</td></tr>
+<tr><td>Privacidad local</td><td>RBAC, cifrado y trazabilidad</td></tr>
+</table>
+
+<div class="ok">
+<b>Consejo:</b> no empieces por las pantallas. Empieza por el <b>modelo</b> y por las <b>reglas de estado</b>. Si el modelo está bien, el resto (repositorio, ViewModel, UI) se ordena casi solo. Es exactamente lo que hace bien Lemac DataLab y lo que deberías replicar.
+</div>
+
+<!-- ================= 13 ================= -->
+<div class="pagebreak"></div>
+<h1>13. Glosario y anexo</h1>
+
+<h2>13.1. Glosario mínimo</h2>
+<table>
+<tr><th style="width:22%;">Término</th><th>Qué significa</th></tr>
+<tr><td>MVVM</td><td>Model–View–ViewModel: separa datos, interfaz y estado de presentación.</td></tr>
+<tr><td>Repository</td><td>Clase que oculta la fuente de datos y ofrece operaciones de negocio.</td></tr>
+<tr><td>Entity</td><td>Clase que representa una tabla de la base de datos.</td></tr>
+<tr><td>DAO</td><td>Data Access Object: interfaz con las consultas a la base.</td></tr>
+<tr><td>Flow</td><td>Flujo de datos de Kotlin que emite valores a lo largo del tiempo.</td></tr>
+<tr><td>StateFlow</td><td>Flow con estado actual, ideal para la UI.</td></tr>
+<tr><td>ViewModel</td><td>Componente que mantiene el estado y sobrevive a cambios de configuración.</td></tr>
+<tr><td>Compose</td><td>Kit de UI declarativa de Android.</td></tr>
+<tr><td>DI</td><td>Inyección de dependencias: pasar las piezas que una clase necesita.</td></tr>
+<tr><td>Room</td><td>Capa de persistencia sobre SQLite.</td></tr>
+<tr><td>WorkManager</td><td>Programador de tareas en segundo plano.</td></tr>
+<tr><td>SAF</td><td>Storage Access Framework: selector de documentos del sistema.</td></tr>
+<tr><td>FileProvider</td><td>Mecanismo seguro para compartir archivos entre apps.</td></tr>
+<tr><td>KSP</td><td>Procesador de símbolos de Kotlin usado por Room.</td></tr>
+<tr><td>RBAC</td><td>Control de acceso basado en roles.</td></tr>
+<tr><td>ADR</td><td>Architecture Decision Record: registro de una decisión técnica.</td></tr>
+</table>
+
+<h2>13.2. Archivos clave del proyecto</h2>
+<table>
+<tr><th style="width:44%;">Ruta</th><th>Para qué sirve</th></tr>
+<tr><td><code>app/src/main/java/.../model/</code></td><td>Entidades, enums, estados, validadores y cálculos puros.</td></tr>
+<tr><td><code>app/src/main/java/.../data/local/</code></td><td>Room: entidad, DAO, base y exportador CSV.</td></tr>
+<tr><td><code>app/src/main/java/.../data/remote/</code></td><td>Contrato de API y simulación.</td></tr>
+<tr><td><code>app/src/main/java/.../data/repository/</code></td><td>Repositorios de registros y perfil.</td></tr>
+<tr><td><code>app/src/main/java/.../viewmodel/</code></td><td>Estado y lógica de presentación.</td></tr>
+<tr><td><code>app/src/main/java/.../navigation/</code></td><td>Rutas y NavHost.</td></tr>
+<tr><td><code>app/src/main/java/.../ui/screens/</code></td><td>Seis pantallas Compose.</td></tr>
+<tr><td><code>app/src/main/java/.../ui/components/</code></td><td>Componentes reutilizables.</td></tr>
+<tr><td><code>app/src/main/java/.../util/</code></td><td>Foto, notificaciones y recordatorios.</td></tr>
+<tr><td><code>app/src/test/java/...</code></td><td>19 pruebas unitarias.</td></tr>
+<tr><td><code>docs/GUIA_ESTUDIO.md</code></td><td>Guía extendida de estudio (1267 líneas).</td></tr>
+<tr><td><code>docs/DISERTACION.md</code></td><td>Guion de exposición y demo.</td></tr>
+</table>
+
+<h2>13.3. Comandos útiles</h2>
+<pre>
+# Compilar el APK de debug
+./gradlew :app:assembleDebug
+
+# Instalar en emulador o dispositivo
+./gradlew :app:installDebug
+
+# Ejecutar las 19 pruebas unitarias
+./gradlew :app:testDebugUnitTest
+
+# Ver el reporte HTML de pruebas
+# app/build/reports/tests/testDebugUnitTest/index.html
+</pre>
+
+<h2>13.4. Nota sobre el estado del repositorio</h2>
+<p>Al momento de la revisión, el repositorio local tiene dos archivos modificados sin confirmar: <code>ui/components/BotonExportarCsv.kt</code> (se quitó un comentario) y <code>util/NotificacionHelper.kt</code> (se agregó <code>@SuppressLint("MissingPermission")</code>). Son cambios menores y no afectan el análisis. El último commit es <code>f7120c5</code> (“Estabilización de arquitectura Compose, Room y ViewModels”).</p>
+
+<div class="callout">
+<b>Cierre.</b> La app actual no es el sistema documental que describe <code>Respuestas_MVP</code>. Pero la arquitectura que construiste es un buen punto de partida para tu próximo proyecto. Estudia el orden <b>model &rarr; repository &rarr; datos &rarr; ViewModel &rarr; UI</b>, y replica ese esqueleto con tu propio dominio.
+</div>
+
+</body>
+</html>
