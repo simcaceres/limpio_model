@@ -16,14 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.limpio_moviles.viewmodel.RegistroViewModel
 
-/**
- * Botón para exportar los registros locales a un archivo CSV.
- *
- * Abre el selector de documentos del sistema para elegir dónde guardar el
- * archivo. Si el usuario cancela, se muestra un mensaje discreto. Mientras el
- * ViewModel está cargando (por ejemplo, sincronizando o exportando) el botón
- * queda deshabilitado para evitar acciones duplicadas.
- */
+
 @Composable
 fun BotonExportarCsv(
     viewModel: RegistroViewModel,

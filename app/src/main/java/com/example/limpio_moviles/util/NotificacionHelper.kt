@@ -1,6 +1,7 @@
 package com.example.limpio_moviles.util
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -31,6 +32,7 @@ object NotificacionHelper {
         manager?.createNotificationChannel(canal)
     }
 
+    @SuppressLint("MissingPermission")
     fun mostrar(context: Context) {
         if (!puedeNotificar(context)) return
 
