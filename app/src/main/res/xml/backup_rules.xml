@@ -1,29 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   Reglas de respaldo completo (full-backup-content) para API <= 30.
+    Reglas de respaldo completo (full-backup-content) para API <= 30 de la
+    app unificada (Bienestar Lemac DataLab + Gestión Documental RR.HH.).
 
-   Se respalda de forma explícita:
-     - La base de datos Room (dominio "database"). El usuario exige que la
-       base de datos SÍ se respalde, por eso se incluye y nunca se excluye.
-     - Las SharedPreferences (dominio "sharedpref"), donde se guardan el
-       alias/seudónimo y la ruta de la foto. No se almacena el nombre real.
+    Se respalda de forma explícita:
+      - Las bases de datos Room (dominio "database"): la del módulo de
+        bienestar (lemaac/limpio) SÍ se respalda íntegra.
+      - Las SharedPreferences (dominio "sharedpref"), donde se guardan el
+        alias/seudónimo y la ruta de la foto. No se almacena el nombre real.
 
-   Se excluye:
-     - La foto de perfil (files/perfil.png) para no respaldar datos
-       biométricos/imagen personal.
+    Se excluye:
+      - La base de datos de Gestión Documental (gestion_documental.db y sus
+        archivos -wal/-shm/-journal), porque contiene datos laborales
+        simulados que no deben salir del dispositivo.
+      - Los documentos del módulo de gestión (files/documentos/).
+      - La foto de perfil (files/perfil.png) para no respaldar datos
+        biométricos/imagen personal.
 
-   La plataforma siempre excluye la caché de forma automática, por eso no se
-   declara. Al usar <include>, la lista de respaldo queda limitada a Room +
-   SharedPreferences (allowlist).
-
-   Ver https://developer.android.com/guide/topics/data/autobackup
+    La plataforma siempre excluye la caché de forma automática, por eso no se
+    declara. Al usar <include>, la lista de respaldo queda limitada a Room +
+    SharedPreferences (allowlist).
 -->
 <full-backup-content>
-    <!-- Base de datos Room: SIEMPRE se respalda. No excluir. -->
+    <!-- Base de datos Room (bienestar): SIEMPRE se respalda. No excluir. -->
     <include domain="database" path="." />
 
     <!-- Preferencias: solo alias (seudónimo) y ruta de la foto. -->
-    <include domain="sharedpref" path="." />
+    <include domain="sharedpref" path="perfil_lemac.xml" />
 
-    <!-- Foto de perfil: NO se respalda. -->
+    <!-- Base de datos de Gestión Documental: NO se respalda. -->
+    <exclude domain="database" path="gestion_documental.db" />
+    <exclude domain="database" path="gestion_documental.db-wal" />
+    <exclude domain="database" path="gestion_documental.db-shm" />
+    <exclude domain="database" path="gestion_documental.db-journal" />
+
+    <!-- Documentos de gestión y foto de perfil: NO se respaldan. -->
+    <exclude domain="file" path="documentos/" />
     <exclude domain="file" path="perfil.png" />
 </full-backup-content>

@@ -1,35 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   Reglas de extracción de datos para API 31+.
+    Reglas de extracción de datos para API 31+ de la app unificada
+    (Bienestar Lemac DataLab + Gestión Documental RR.HH.).
 
-   Se aplican exactamente las mismas reglas tanto en <cloud-backup> como en
-   <device-transfer>:
-     - Se incluye la base de datos Room (domain "database") y las
-       SharedPreferences (domain "sharedpref": alias/seudónimo y ruta de foto).
-       El usuario exige que la base de datos SÍ se respalde.
-     - Se excluye la foto de perfil (files/perfil.png).
+    Se aplican exactamente las mismas reglas tanto en <cloud-backup> como en
+    <device-transfer>:
+      - Se incluye la base de datos Room del módulo de bienestar (domain
+        "database") y las SharedPreferences de perfil (domain "sharedpref",
+        archivo perfil_lemac.xml: alias/seudónimo y ruta de foto). El
+        usuario exige que la base de datos SÍ se respalde.
+      - Se excluye la base de datos de Gestión Documental
+        (gestion_documental.db y sus archivos -wal/-shm/-journal), los
+        documentos del módulo de gestión (files/documentos/) y la foto de
+        perfil (files/perfil.png).
 
-   La plataforma siempre excluye la caché de forma automática, por eso no se
-   declara. Al usar <include>, la lista de respaldo queda limitada a Room +
-   SharedPreferences (allowlist).
-
-   Ver https://developer.android.com/about/versions/12/backup-restore#xml-changes
+    La plataforma siempre excluye la caché de forma automática, por eso no se
+    declara. Al usar <include>, la lista de respaldo queda limitada a Room +
+    SharedPreferences (allowlist).
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- Base de datos Room: SIEMPRE se respalda. No excluir. -->
+        <!-- Base de datos Room (bienestar): SIEMPRE se respalda. No excluir. -->
         <include domain="database" path="." />
 
         <!-- Preferencias: solo alias (seudónimo) y ruta de la foto. -->
-        <include domain="sharedpref" path="." />
+        <include domain="sharedpref" path="perfil_lemac.xml" />
 
-        <!-- Foto de perfil: NO se respalda. -->
+        <!-- Base de datos de Gestión Documental: NO se respalda. -->
+        <exclude domain="database" path="gestion_documental.db" />
+        <exclude domain="database" path="gestion_documental.db-wal" />
+        <exclude domain="database" path="gestion_documental.db-shm" />
+        <exclude domain="database" path="gestion_documental.db-journal" />
+
+        <!-- Documentos de gestión y foto de perfil: NO se respaldan. -->
+        <exclude domain="file" path="documentos/" />
         <exclude domain="file" path="perfil.png" />
     </cloud-backup>
 
     <device-transfer>
         <!-- Mismas reglas que en cloud-backup. -->
         <include domain="database" path="." />
-        <include domain="sharedpref" path="." />
+        <include domain="sharedpref" path="perfil_lemac.xml" />
+        <exclude domain="database" path="gestion_documental.db" />
+        <exclude domain="database" path="gestion_documental.db-wal" />
+        <exclude domain="database" path="gestion_documental.db-shm" />
+        <exclude domain="database" path="gestion_documental.db-journal" />
+        <exclude domain="file" path="documentos/" />
         <exclude domain="file" path="perfil.png" />
     </device-transfer>
 </data-extraction-rules>

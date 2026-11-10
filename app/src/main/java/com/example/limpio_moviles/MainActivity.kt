@@ -3,7 +3,7 @@ package com.example.limpio_moviles
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.example.limpio_moviles.navigation.LemacApp
+import com.example.limpio_moviles.navigation.UnifiedApp
 import com.example.limpio_moviles.ui.theme.LemacTheme
 
 class MainActivity : ComponentActivity() {
@@ -12,7 +12,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             LemacTheme {
-                LemacApp()
+                UnifiedApp()
             }
         }
     }
