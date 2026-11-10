@@ -1,5 +1,6 @@
 package com.example.gestiondocumental.util
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -43,6 +44,7 @@ object NotificacionHelper {
     }
 
     /** Publica una notificación simple; no hace nada si falta el permiso. */
+    @SuppressLint("MissingPermission")
     fun notificar(context: Context, id: Int, titulo: String, texto: String) {
         if (!puedeNotificar(context)) return
         crearCanal(context)
