@@ -44,7 +44,7 @@ En el estado actual del codigo:
 
 - Los registros de bienestar se guardan en una base de datos Room local del dispositivo (`lemac_datalab.db`).
 - El alias, la ruta de la foto y el estado del recordatorio se guardan en `SharedPreferences` (`perfil_lemac.xml`).
-- La foto de perfil se guarda como un archivo PNG en el almacenamiento interno de la app.
+- La foto de perfil se guarda como un archivo PNG en el almacenamiento interno de la app. Su captura delega en la app de camara del sistema y tanto la decodificacion de la imagen como el guardado del archivo se ejecutan fuera del hilo principal, en `Dispatchers.IO`.
 - El modulo de gestion documental usa una segunda base Room local (`gestion_documental.db`) con usuarios, documentos y auditoria **ficticios**. Tampoco sale del dispositivo y, ademas, queda excluida del respaldo automatico.
 - La exportacion CSV es **local**: el archivo se genera en el dispositivo y se guarda donde el usuario elige con el selector de documentos del sistema (SAF). No hay subida a la nube ni permiso de almacenamiento.
 - No existe un backend real ni se envian datos a Internet. La sincronizacion de bienestar usa `FakeLemacApi`, que solo simula una espera de 700 ms, y la de gestion no existe: todo es local.
@@ -52,7 +52,7 @@ En el estado actual del codigo:
 - Las notificaciones tienen un texto generico, sin contenido sensible, tanto las de recordatorios de bienestar como las de vencimientos de gestion.
 - El CSV es **texto plano** e incluye el alias y las notas, asi que conviene tratarlo como informacion privada.
 
-Limites de privacidad que conviene conocer: el manifiesto mantiene `android:allowBackup="true"`, pero las reglas de backup estan acotadas y son **selectivas por modulo**. Se incluyen explicitamente la base de datos Room del modulo de bienestar (`database`, en la practica `lemac_datalab.db`) y las `SharedPreferences` de perfil (`sharedpref/perfil_lemac.xml`, con el alias o seudonimo y la ruta de la foto). Se excluyen explicitamente la base de datos del modulo de gestion documental (`gestion_documental.db` y sus archivos `-wal`, `-shm` y `-journal`), los documentos de gestion (`file/documentos/`) y la foto de perfil (`file/perfil.png`). La cache no se incluye porque la plataforma la excluye siempre de forma automatica y, al usar `<include>`, la lista de respaldo es una allowlist limitada a la base de bienestar y a `perfil_lemac.xml`; las reglas XML no declaran una exclusion de cache. Las mismas reglas se aplican en `backup_rules.xml` para API 30 o inferior y en `data_extraction_rules.xml` para `<cloud-backup>` y `<device-transfer>` en API 31 o superior. Ninguna de las dos bases de datos esta cifrada. Ademas, la app no declara el permiso `CAMERA`: la vista previa de camara usa `TakePicturePreview`, que no lo requiere, y `uses-feature android.hardware.camera required="false"` permite instalar la app en equipos sin camara. Para un producto real habria que revisar el cifrado, el consentimiento del respaldo de la base de bienestar y el borrado de datos.
+Limites de privacidad que conviene conocer: el manifiesto mantiene `android:allowBackup="true"`, pero las reglas de backup estan acotadas y son **selectivas por modulo**. Se incluyen explicitamente la base de datos Room del modulo de bienestar (`database`, en la practica `lemac_datalab.db`) y las `SharedPreferences` de perfil (`sharedpref/perfil_lemac.xml`, con el alias o seudonimo y la ruta de la foto). Se excluyen explicitamente la base de datos del modulo de gestion documental (`gestion_documental.db` y sus archivos `-wal`, `-shm` y `-journal`), los documentos de gestion (`file/documentos/`) y la foto de perfil (`file/perfil.png`). La cache no se incluye porque la plataforma la excluye siempre de forma automatica y, al usar `<include>`, la lista de respaldo es una allowlist limitada a la base de bienestar y a `perfil_lemac.xml`; las reglas XML no declaran una exclusion de cache. Las mismas reglas se aplican en `backup_rules.xml` para API 30 o inferior y en `data_extraction_rules.xml` para `<cloud-backup>` y `<device-transfer>` en API 31 o superior. Ninguna de las dos bases de datos esta cifrada. Ademas, la app no declara el permiso `CAMERA`: la foto de perfil la toma la app de camara del sistema (esta app solo recibe el resultado, sin necesidad de ese permiso) y `uses-feature android.hardware.camera required="false"` permite instalar la app en equipos sin camara. Para un producto real habria que revisar el cifrado, el consentimiento del respaldo de la base de bienestar y el borrado de datos.
 
 ## Tecnologias y versiones reales
 
@@ -181,6 +181,7 @@ El archivo se guarda **donde el usuario lo indique con el selector del sistema**
 - Saltos de linea: **CRLF** (`\r\n`), compatible con Excel.
 - Una fila por registro, ordenadas por `fechaHora DESC` (la mas reciente primero).
 - Escapado **RFC 4180**: si un campo contiene coma, comillas o salto de linea, se encierra entre comillas dobles y las comillas internas se duplican.
+- Neutralizacion de **formulas de hoja de calculo**: si un campo comienza con `=`, `+`, `-`, `@`, tabulador o retorno de carro, se le antepone un apostrofo para que Excel o Google Sheets no lo interpreten como formula.
 
 ### Columnas
 
@@ -268,7 +269,7 @@ Documentacion detallada:
 
 ## Como subir este proyecto a Git
 
-El repositorio local **ya esta creado**. Para ver el estado real y el ultimo commit, ejecutar `git status` y `git log --oneline -1`; no conviene asumir un estado fijo, porque el arbol cambia a medida que se trabaja. La rama principal es `main`; la unificacion de los dos modulos se desarrollo en la rama `integracion`.
+El repositorio local **ya esta creado**. Para ver el estado real y el ultimo commit, ejecutar `git status` y `git log --oneline -1`; no conviene asumir un estado fijo, porque el arbol cambia a medida que se trabaja. La rama principal es `main`; la unificacion de los dos modulos se desarrollo en la rama `integracion` y, ya fusionada a `main`, el trabajo posterior (ajustes y Hito 2) sigue en la rama `entrega_hito2`, que contiene el commit de integracion (`13ef480`) y el ajuste del `NotificacionHelper` de gestion (`690359f`).
 
 Si aun no existe un remoto configurado, falta crearlo y hacer el primer push. Reemplazar `USUARIO` y `REPOSITORIO` por los valores reales.
 

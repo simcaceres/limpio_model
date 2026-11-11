@@ -19,9 +19,11 @@ El proyecto es un MVP academico:
 
 La aplicacion tiene una sola `Activity` (`MainActivity`) y toda la interfaz se escribe con Jetpack Compose. La navegacion se resuelve con Navigation Compose dentro de un `NavHost`.
 
+> Contexto de la app unificada: el proyecto entrega dos trabajos academicos en un solo APK. Al abrir la app aparece un portal (`PortalScreen`, "Centro de aplicaciones") con las tarjetas **Bienestar — Lemac DataLab** y **Gestión Documental RR.HH.**, mas un aviso de datos ficticios. La navegacion raiz (`UnifiedApp.kt`) monta este grafo de bienestar (`LemacApp()`, paquete `com.example.limpio_moviles`) o el de gestion documental (`GestionTheme { GestionApp() }`, paquete `com.example.gestiondocumental`), cada uno con su base Room propia (`lemac_datalab.db` y `gestion_documental.db`). Esta guia estudia el modulo de bienestar; la fusion completa se documenta en [INTEGRACION.md](INTEGRACION.md).
+
 ## 2. Arquitectura por capas
 
-El proyecto sigue una separacion en capas inspirada en MVVM con un repositorio por fuente de datos. La dependencia va en un solo sentido: la interfaz conoce al ViewModel, el ViewModel conoce a los repositorios y los repositorios conocen las fuentes de datos.
+El proyecto sigue una separacion en capas inspirada en MVVM con un repositorio por fuente de datos. La dependencia va en un solo sentido: la interfaz conoce al ViewModel, el ViewModel conoce a los repositorios y los repositorios conocen las fuentes de datos. Por encima de estas capas, la navegacion raiz de la app unificada (`UnifiedApp.kt`) arranca en el portal y decide si se monta `LemacApp()` o el grafo de gestion documental; el diagrama y las capas que siguen describen el modulo de bienestar.
 
 ```mermaid
 flowchart LR
@@ -84,7 +86,7 @@ No se usa Hilt, Koin ni Dagger. `LemacApplication` actua como contenedor:
 - `perfilRepository` recibe el `Context`.
 - `RegistroViewModelFactory` construye el ViewModel con esas dependencias.
 
-Esto es suficiente para un MVP y permite explicar con claridad que dependencias necesita cada pieza.
+Desde la integracion de los dos modulos, el mismo contenedor expone ademas las dependencias de gestion documental (`gestionDatabase`, `sesionRepository`, `documentoRepository`, `usuarioRepository`, `auditoriaRepository`), tambien con `by lazy`. Esto es suficiente para un MVP y permite explicar con claridad que dependencias necesita cada pieza.
 
 ## 3. Arbol de paquetes y tabla de archivos
 
@@ -112,7 +114,8 @@ com.example.limpio_moviles/
 │   ├── ResumenAmbito.kt
 │   └── ResumenCalculator.kt
 ├── navigation/
-│   └── AppNavigation.kt
+│   ├── AppNavigation.kt
+│   └── UnifiedApp.kt
 ├── ui/
 │   ├── components/
 │   │   ├── BarraResumen.kt
@@ -126,6 +129,7 @@ com.example.limpio_moviles/
 │   │   ├── HistorialScreen.kt
 │   │   ├── HomeScreen.kt
 │   │   ├── OnboardingScreen.kt
+│   │   ├── PortalScreen.kt
 │   │   ├── RegistroScreen.kt
 │   │   └── ResumenScreen.kt
 │   ├── theme/
@@ -147,8 +151,8 @@ com.example.limpio_moviles/
 
 | Archivo | Responsabilidad | Ideas clave |
 |---|---|---|
-| `LemacApplication.kt` | Punto de entrada de la aplicacion | Crea la base de datos, los repositorios y el canal de notificaciones. Es el contenedor manual de dependencias. |
-| `MainActivity.kt` | Unica Activity | Aplica `LemacTheme` y monta `LemacApp()` con `setContent`. |
+| `LemacApplication.kt` | Contenedor dual de la app unificada | Crea las bases y los repositorios de los dos modulos, los dos canales de notificacion y siembra los datos demo de gestion en `Dispatchers.IO`. Es el contenedor manual de dependencias. |
+| `MainActivity.kt` | Unica Activity | Aplica `LemacTheme` y monta `UnifiedApp()` (navegacion raiz con portal) con `setContent`. |
 | `data/local/RegistroEntity.kt` | Entidad Room de la tabla `registros` | Define columnas, clave primaria autoincremental y valores por defecto. |
 | `data/local/RegistroDao.kt` | Interfaz de acceso a datos | Consultas `Flow` para observar, `suspend` para obtener (`obtenerPorId`, `obtenerTodos`, `obtenerPendientes`), insertar, actualizar, eliminar y marcar sincronizados. |
 | `data/local/LemacDatabase.kt` | Base de datos Room | Version 1, una entidad, singleton con `@Volatile` y `synchronized`. |
@@ -164,6 +168,7 @@ com.example.limpio_moviles/
 | `model/ResumenAmbito.kt` | Resultado del resumen por ambito | Cantidad, promedio de intensidad y ultima fecha. |
 | `model/ResumenCalculator.kt` | Calculo del resumen | Recorre los cuatro ambitos y calcula sobre la lista de registros. |
 | `navigation/AppNavigation.kt` | Rutas, `NavHost` y creacion del ViewModel | Define `Rutas`, decide el destino inicial y conecta pantallas con callbacks. |
+| `navigation/UnifiedApp.kt` | Navegacion raiz de la app unificada | `NavHost` que arranca en el portal y monta `LemacApp()` (bienestar) o `GestionTheme { GestionApp() }` (gestion). |
 | `viewmodel/RegistroViewModel.kt` | Estado y logica de presentacion | Mantiene formulario y perfil, expone `StateFlow`, valida, guarda, elimina, sincroniza, exporta CSV (`nombreArchivoCsv`, `exportarCsv`) y programa recordatorios. |
 | `ui/screens/OnboardingScreen.kt` | Primera pantalla | Alias, aviso de privacidad, foto opcional y boton para comenzar. |
 | `ui/screens/HomeScreen.kt` | Pantalla principal | Saludo, foto, accesos rapidos, tarjetas de ambito y carga de datos demo cuando no hay registros. |
@@ -171,11 +176,12 @@ com.example.limpio_moviles/
 | `ui/screens/HistorialScreen.kt` | Lista de registros | Filtro por ambito, tarjetas, editar, eliminar con dialogo y estado vacio. |
 | `ui/screens/ResumenScreen.kt` | Resumen estadistico | Total, promedio y actividad por ambito, mas accion principal de exportacion CSV. |
 | `ui/screens/AjustesScreen.kt` | Configuracion | Alias, foto, recordatorio, exportacion CSV, sincronizacion simulada, datos demo, borrado total y aviso de privacidad. |
+| `ui/screens/PortalScreen.kt` | Portal de la app unificada | Dos tarjetas (Bienestar — Lemac DataLab y Gestión Documental RR.HH.), aviso de datos ficticios y accesos con `contentDescription`; enruta a cada modulo sin mezclarlos. |
 | `ui/components/TarjetaAmbito.kt` | Tarjeta de ambito en Home | Icono, color, descripcion y ultimo registro; recibe un callback. |
 | `ui/components/BarraResumen.kt` | Barra de actividad | Calcula la fraccion respecto del maximo y anima el ancho. |
-| `ui/components/BotonExportarCsv.kt` | Boton de exportacion | Lanza `ActivityResultContracts.CreateDocument("text/csv")` (SAF), pasa el nombre sugerido y llama a `viewModel.exportarCsv(uri)`; se deshabilita mientras `cargando` es true. |
+| `ui/components/BotonExportarCsv.kt` | Boton de exportacion | Lanza `ActivityResultContracts.CreateDocument("text/csv")` (SAF), pasa el nombre sugerido y llama a `viewModel.exportarCsv(uri)`; se deshabilita mientras `cargando` es true o si no hay registros. |
 | `ui/components/SelectorIntensidad.kt` | Slider de intensidad | Recibe valor, rango y error; muestra extremos bajo y alto. |
-| `ui/components/SelectorFotoPerfil.kt` | Captura de foto | Lanza `TakePicturePreview` directamente, sin permiso de camara; comparte comportamiento entre pantallas. |
+| `ui/components/SelectorFotoPerfil.kt` | Captura de foto | Delega la captura en la app de camara del sistema con un contrato de Activity Result, sin permiso `CAMERA`; comparte comportamiento entre pantallas. |
 | `ui/components/ColoresAmbito.kt` | Identidad visual | Funciones `colorAmbito` e `iconoAmbito` con `when` exhaustivo. |
 | `ui/util/Formato.kt` | Formato de fecha | `dd/MM/yyyy HH:mm` con `Locale.getDefault()`. |
 | `util/FotoStorage.kt` | Archivo de foto | Guarda `perfil.png` en `filesDir` y lo carga con `BitmapFactory`. |
@@ -440,13 +446,12 @@ Se usa porque el ViewModel tiene parametros en el constructor y `viewModel()` no
 
 #### `LemacApplication`
 
-Es la clase declarada en `android:name` del manifiesto. En `onCreate()` crea el canal de notificaciones. Expone de forma perezosa:
+Es la clase declarada en `android:name` del manifiesto y, desde la integracion, es el **contenedor dual** de la app unificada. En `onCreate()` crea los **dos canales de notificacion** (el de recordatorios de bienestar y el propio del modulo de gestion documental) y lanza la siembra de datos demo de gestion (`Sembrador.sembrarSiVacio(gestionDatabase)`) en un `CoroutineScope(SupervisorJob() + Dispatchers.IO)`, sin bloquear el arranque. Expone de forma perezosa:
 
-- `database`
-- `registroRepository`
-- `perfilRepository`
+- De bienestar: `database`, `registroRepository`, `perfilRepository`.
+- De gestion documental: `gestionDatabase`, `sesionRepository`, `documentoRepository`, `usuarioRepository`, `auditoriaRepository`.
 
-Es el punto donde se ve la inyeccion manual de dependencias.
+Sigue siendo el punto donde se ve la inyeccion manual de dependencias; ahora para los dos modulos.
 
 #### `MainActivity`
 
@@ -454,11 +459,11 @@ Extiende `ComponentActivity`. En `onCreate` llama a `setContent` y monta:
 
 ```kotlin
 LemacTheme {
-    LemacApp()
+    UnifiedApp()
 }
 ```
 
-No hay fragments, ni multiples activities, ni XML de layout.
+`UnifiedApp()` es la navegacion raiz de la app unificada: un `NavHost` que arranca en el portal (`PortalScreen`, "Centro de aplicaciones") y monta `LemacApp()` para bienestar o `GestionTheme { GestionApp() }` para gestion documental. El grafo interno de bienestar (`LemacApp`) es el que estudia el resto de esta guia. No hay fragments, ni multiples activities, ni XML de layout.
 
 #### `AppNavigation` y `Rutas`
 
@@ -583,7 +588,7 @@ Envuelve el flujo de exportacion en un boton reutilizable. Crea un launcher con 
 - Si el `uri` no es nulo, llama a `viewModel.exportarCsv(uri)`.
 - Si es nulo (el usuario cancela), llama a `viewModel.mostrarMensaje("Exportación cancelada")`.
 
-Recibe `primario` para usar `Button` o `OutlinedButton`, y `texto` para personalizar la etiqueta. Se deshabilita cuando `uiState.cargando` es true. Se usa en Ajustes (seccion Datos) y en Resumen (accion principal).
+Recibe `primario` para usar `Button` o `OutlinedButton`, `texto` para personalizar la etiqueta y `hayRegistros` para deshabilitarlo cuando no hay registros que exportar. Se deshabilita cuando `uiState.cargando` es true y, si el propio lanzamiento del selector falla, muestra "No se pudo abrir el selector de archivos". Se usa en Ajustes (seccion Datos) y en Resumen (accion principal).
 
 #### `SelectorIntensidad`
 
@@ -591,11 +596,9 @@ Combina un texto "Intensidad: N", un `Slider` y etiquetas de extremos. El `value
 
 #### `SelectorFotoPerfil`
 
-Usa un unico launcher:
+Usa un unico launcher con un contrato de Activity Result que delega la captura en la app de camara del sistema.
 
-- `TakePicturePreview`: devuelve un `Bitmap` de vista previa y no requiere permiso.
-
-No solicita `CAMERA`. Al pulsar el boton, `launch(null)` abre directamente la app de camara del dispositivo. Si no hay app de camara, si el lanzamiento falla o si la captura devuelve `null` (por ejemplo, al cancelar), llama a `onCamaraNoDisponible`. Si devuelve un `Bitmap`, llama a `onFotoCapturada`. La imagen se muestra en un circulo de 104 dp. No usa galeria ni permisos de almacenamiento.
+No solicita `CAMERA` (quien usa la camara es la aplicacion externa). Al pulsar el boton se abre la camara del dispositivo y el boton queda deshabilitado mientras dura la captura. Si no hay app de camara, si el lanzamiento falla o la captura se cancela, llama a `onCamaraNoDisponible`. Si termina bien, decodifica la imagen en `Dispatchers.IO` y entrega el `Bitmap` a `onFotoCapturada`. La imagen se muestra en un circulo de 104 dp. No usa galeria ni permisos de almacenamiento.
 
 #### `ColoresAmbito`
 
@@ -659,7 +662,11 @@ Extiende `Worker`. En `doWork()` llama a `NotificacionHelper.mostrar(application
 
 ```mermaid
 flowchart TD
-    Inicio(["Inicio de LemacApp"]) --> Decision{"Alias vacio?"}
+    Portal["Portal: Centro de aplicaciones (UnifiedApp)"]
+    Portal -- "Tarjeta Bienestar" --> Inicio(["Inicio de LemacApp"])
+    Portal -- "Tarjeta Gestión Documental" --> Gestion["Grafo de gestion documental (otro modulo)"]
+
+    Inicio --> Decision{"Alias vacio?"}
     Decision -- "Si" --> Onboarding["onboarding"]
     Decision -- "No" --> Home["home"]
 
@@ -786,7 +793,7 @@ Hay una sola tabla y no hay relaciones foraneas. `id = 0` se usa en memoria para
 
 ### 6.1 Onboarding
 
-1. `MainActivity` monta `LemacApp()` dentro de `LemacTheme`.
+1. `MainActivity` monta `UnifiedApp()` dentro de `LemacTheme`; desde el portal se entra al grafo de bienestar, donde `LemacApp()` toma el control.
 2. `LemacApp` crea el ViewModel. En su `init`, el ViewModel lee el alias de `PerfilRepository`.
 3. Si el alias esta vacio, el destino inicial es `onboarding`.
 4. `OnboardingScreen` mantiene alias, checkbox y error con `rememberSaveable`.
@@ -862,7 +869,7 @@ Hay una sola tabla y no hay relaciones foraneas. `id = 0` se usa en memoria para
 
 ### 6.7 Sincronizar con la API simulada
 
-1. El usuario pulsa "Sincronizar" en Resumen o Ajustes.
+1. El usuario pulsa "Sincronizar" en Ajustes (seccion Datos); en Resumen la accion principal es la exportacion CSV.
 2. `viewModel.sincronizar()` pone `cargando = true`.
 3. `RegistroRepository.sincronizar()` pide los registros con `sincronizado = 0`.
 4. Si no hay pendientes, devuelve `0` sin llamar a la API.
@@ -887,17 +894,17 @@ Aclaracion importante: la sincronizacion es **simulada**. Los datos no salen del
 
 ### 6.9 Foto de perfil
 
-1. `SelectorFotoPerfil` crea un launcher con `TakePicturePreview`; no solicita ningun permiso.
-2. Al pulsar el boton, `launch(null)` abre directamente la app de camara.
-3. Si no hay app de camara, si el lanzamiento falla o si la captura devuelve `null` (cancelacion), se llama a `onCamaraNoDisponible`.
+1. `SelectorFotoPerfil` crea un launcher con un contrato de Activity Result que delega la captura en la app de camara del sistema; no solicita ningun permiso.
+2. Al pulsar el boton se abre la camara del sistema. Mientras la captura esta en curso, el boton queda deshabilitado para evitar capturas simultaneas.
+3. Si no hay app de camara, el lanzamiento falla o la captura se cancela, se llama a `onCamaraNoDisponible`.
 4. En Onboarding y Ajustes, ese callback muestra "No se capturo la foto".
-5. Si la captura devuelve un `Bitmap`, se llama a `onFotoCapturada`, que en ambas pantallas es `viewModel.actualizarFoto(it)`.
+5. Si la captura termina bien, el componente decodifica la imagen resultante fuera del hilo principal (`withContext(Dispatchers.IO)`) y entrega el `Bitmap` a `onFotoCapturada`, que en ambas pantallas es `viewModel.actualizarFoto(it)`.
 6. El ViewModel actualiza `fotoPerfil` en el hilo principal para que Compose la muestre.
-7. Lanza una corrutina y guarda el PNG en `filesDir/perfil.png` con `FotoStorage.guardar` dentro de `withContext(Dispatchers.IO)`.
+7. Lanza una corrutina y guarda el PNG en `filesDir/perfil.png` con `FotoStorage.guardar` dentro de `withContext(Dispatchers.IO)`; si el guardado falla, muestra "No se pudo guardar la foto".
 8. De vuelta en el hilo principal, actualiza `perfil.fotoPath` y guarda la ruta en `SharedPreferences`.
 9. En el siguiente arranque, el `init` del ViewModel lee la ruta y carga el `Bitmap` con `FotoStorage.cargar` dentro de `withContext(Dispatchers.IO)`; luego asigna `fotoPerfil` en el hilo principal.
 
-No hay permiso de camara porque `TakePicturePreview` no lo requiere. Tampoco hay permiso de almacenamiento: la imagen se guarda en el directorio interno de la app y la camara devuelve una vista previa en memoria.
+No hay permiso de camara: la foto la toma la app de camara del sistema, no esta app, y `uses-feature android.hardware.camera` se declara como opcional. Tampoco hay permiso de almacenamiento: la imagen final se guarda en el directorio interno de la app. Todo el trabajo con archivos (decodificar y guardar) se hace en `Dispatchers.IO` para no bloquear el hilo principal.
 
 ### 6.10 Cargar y borrar datos demo
 
@@ -927,7 +934,7 @@ Borrar:
 5. `BotonExportarCsv` llama a `viewModel.exportarCsv(uri)`.
 6. `exportarCsv` pone `cargando = true` y lanza una corrutina en `viewModelScope`.
 7. `RegistroRepository.obtenerTodos()` llama a `RegistroDao.obtenerTodos()`, que ejecuta `SELECT * FROM registros ORDER BY fechaHora DESC`.
-8. Si la lista esta vacia, publica "No hay registros para exportar" y termina.
+8. Si la lista esta vacia, publica "No hay registros para exportar" y termina. En la practica el boton ya llega deshabilitado cuando no hay registros (`hayRegistros`), asi que este mensaje es una defensa del ViewModel para el caso de que la base quede vacia entre el render y la exportacion.
 9. `RegistroCsvExporter.generar(lista)` construye el texto CSV.
 10. La escritura se hace con `withContext(Dispatchers.IO)`: `contentResolver.openOutputStream(uri)?.use { salida -> salida.write(contenido.toByteArray(Charsets.UTF_8)) }`.
 11. Si la escritura devuelve un stream valido, publica "Datos exportados (N registros)"; si falla o el stream es nulo, "No se pudo exportar".
@@ -939,6 +946,7 @@ Detalles del formato que conviene poder explicar:
 - **CRLF (`\r\n`)**: se usa como salto de linea, compatible con Excel y con el estandar CSV.
 - **Cabecera exacta**: `id,alias,ambito,tipo,intensidad,contexto,estrategia,nota,objetivo,fecha_hora_iso,fecha_hora_millis,sincronizado`.
 - **Escapado RFC 4180**: si un campo contiene coma, comillas dobles, `\n` o `\r`, se encierra entre comillas dobles y cada comilla interna se duplica (`"` -> `""`).
+- **Neutralizacion de formulas**: si un campo comienza con `=`, `+`, `-`, `@`, tabulador o retorno de carro, se le antepone un apostrofo (`'`) para que Excel o Google Sheets no lo interpreten como formula.
 - **Fechas**: `fecha_hora_iso` usa `Instant.ofEpochMilli(fechaHora).toString()`; `fecha_hora_millis` conserva el valor numerico original.
 - **Una fila por registro**, en el mismo orden que devuelve el DAO (mas reciente primero).
 - **Texto plano**: el CSV no esta cifrado e incluye alias y notas; conviene guardarlo en un lugar privado.
@@ -1081,7 +1089,7 @@ La contrapartida es que `uiState` es unico para toda la app. Por eso `RegistroSc
 
 Detalles:
 
-- La app **no declara `CAMERA`**. La vista previa de camara usa `TakePicturePreview`, que no requiere ese permiso; el boton abre la camara directamente y, si no esta disponible o se cancela, muestra "No se capturo la foto".
+- La app **no declara `CAMERA`**. La foto de perfil se captura delegando en la app de camara del sistema, que no exige ese permiso a esta app; si la camara no esta disponible o la captura se cancela, se muestra "No se capturo la foto" y la app sigue funcionando.
 - El manifiesto declara `android.hardware.camera` con `required="false"`, por lo que la app puede instalarse en dispositivos sin camara.
 - No se pide permiso de almacenamiento: la foto se guarda en `filesDir`.
 - No se declara `INTERNET`; la sincronizacion es local y simulada.
@@ -1090,7 +1098,7 @@ Detalles:
 
 ## 10. Pruebas existentes
 
-Hay 19 pruebas unitarias con JUnit 4, ubicadas en `app/src/test/java/com/example/limpio_moviles/` (9 del validador, 4 del resumen y 6 del generador CSV):
+La app unificada tiene **69 pruebas unitarias** con JUnit 4: 26 del modulo de bienestar, en `app/src/test/java/com/example/limpio_moviles/` (9 del validador, 4 del resumen, 8 del generador CSV y 5 del repositorio con DAO falsificado), y 43 del modulo de gestion documental, en `app/src/test/java/com/example/gestiondocumental/` (4 de validadores, 7 de permisos, 9 de carga de permisos, 6 del flujo de modificacion, 9 de reportes y 8 de tipos MIME). Esta seccion detalla las del modulo de bienestar; el desglose completo de gestion esta en el README y en [INTEGRACION.md](INTEGRACION.md).
 
 ### `RegistroValidatorTest` (9 pruebas)
 
@@ -1111,24 +1119,34 @@ Hay 19 pruebas unitarias con JUnit 4, ubicadas en `app/src/test/java/com/example
 3. Un ambito sin registros queda en cero aunque otros tengan datos.
 4. `ultimaFecha` es el maximo de las fechas del ambito.
 
-### `RegistroCsvExporterTest` (6 pruebas)
+### `RegistroCsvExporterTest` (8 pruebas)
 
 1. La salida empieza con el BOM UTF-8 y la cabecera exacta aparece justo despues.
 2. Un registro completo genera la fila con todos los campos en el orden esperado.
 3. Un campo con coma, comillas dobles y salto de linea se escapa con comillas y comillas internas dobladas (RFC 4180).
 4. Una lista vacia produce solo BOM, cabecera y CRLF.
 5. `nombreArchivo(millis)` cumple el patron `lemac_datalab_yyyyMMdd_HHmmss.csv`.
-6. Las filas usan CRLF y no quedan `\n` sueltos.
+6. Un campo que empieza como formula de hoja de calculo (`=`, `+`, `-`, `@`) se neutraliza con un apostrofo.
+7. Un retorno de carro aislado se escapa entre comillas.
+8. Las filas usan CRLF y no quedan `\n` sueltos.
+
+### `RegistroRepositoryTest` (5 pruebas, con un DAO falsificado)
+
+1. Guardar un registro nuevo (id 0) inserta y devuelve true.
+2. Guardar un registro existente actualiza y devuelve true.
+3. Guardar devuelve false si el registro a editar ya no existe.
+4. `cargarDemo` inserta cuatro registros cuando la base esta vacia.
+5. `cargarDemo` no duplica datos si ya hay registros.
 
 ### Que no esta probado
 
-- Room y el DAO.
-- Los repositorios.
+- Room y el DAO real (el repositorio de bienestar se prueba con un DAO falsificado).
 - El ViewModel.
 - La escritura real del archivo y el selector SAF (la generacion del texto si esta probada).
 - La interfaz Compose.
 - WorkManager y las notificaciones.
 - La captura de foto.
+- El portal y las pantallas del modulo de gestion documental (de gestion si estan probados sus modelos: validadores, permisos, flujo de modificacion, reportes y tipos MIME).
 
 No hay carpeta `app/src/androidTest`, por lo que no existen pruebas instrumentadas ni pruebas end-to-end.
 
@@ -1155,7 +1173,7 @@ Conviene decirlas con claridad en la disertacion, porque demuestran criterio:
 11. **La exportacion CSV es texto plano y no esta cifrada.** Incluye alias y notas, y se guarda donde el usuario elija; conviene tratarla como informacion privada. Tampoco hay borrado selectivo por ambito: solo borrado total.
 12. **No hay accesibilidad avanzada ni pruebas con TalkBack.** Hay algunas descripciones semanticas, pero no una auditoria.
 13. **El nombre del paquete sigue siendo `com.example.limpio_moviles`.** Para publicar en una tienda habria que cambiarlo.
-14. **La foto es una vista previa de baja resolucion.** `TakePicturePreview` no guarda la foto original en alta calidad.
+14. **La foto de perfil es opcional y depende de la camara del sistema.** Si el dispositivo no tiene camara o la captura se cancela, el perfil queda sin foto o conserva la anterior; no hay forma de elegir una imagen desde la galeria.
 15. **No hay bloqueo de capturas de pantalla.** La notificacion es generica, pero la app no usa `FLAG_SECURE`.
 
 ## 12. Preguntas frecuentes de defensa
@@ -1264,4 +1282,4 @@ Si hubiera que resumir el proyecto en una frase por capa:
 - **Navegacion:** una Activity, un `NavHost`, rutas con ambito e id.
 - **Recordatorios:** WorkManager periodico, worker y notificacion generica.
 - **Privacidad:** datos locales, sin red real, con advertencias y limitaciones documentadas.
-- **Pruebas:** 13 pruebas unitarias del validador y del calculador de resumen.
+- **Pruebas:** 69 pruebas unitarias en la app unificada (26 de bienestar: validador, resumen, generador CSV y repositorio con DAO falsificado; 43 de gestion documental).

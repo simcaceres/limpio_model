@@ -2,9 +2,9 @@
 
 Este documento explica como y por que se fusionaron dos aplicaciones Android —el autorregistro de bienestar **Lemac DataLab** y el sistema **Gestión Documental RR.HH.**— en una sola app, en la rama `integracion` del proyecto `limpio_model`. Es la referencia de la decision tomada, del inventario de lo integrado, de la politica de respaldo, del estado de build y pruebas, y de la deuda tecnica conocida.
 
-- Fecha del informe: 10 de noviembre de 2026.
-- Rama: `integracion` (rama principal: `main`).
-- Estado: integracion compilada y probada (build y pruebas verificados). **El commit final de la integracion esta pendiente** al momento de escribir este documento; ver la seccion de trazabilidad.
+- Fecha del informe: 10 de noviembre de 2026; actualizado el 11 de noviembre de 2026 para registrar el commit final.
+- Rama de la integracion: `integracion` (rama principal: `main`; el trabajo posterior sigue en `entrega_hito2`).
+- Estado: integracion compilada, probada y **commiteada**. El commit final es `13ef480` ("feat: integracion de portal unificado (Gestion Documental RRHH + Lemac DataLab Bienestar)"), seguido del ajuste `690359f` ("fix: suprimir advertencia de permisos en NotificacionHelper"). Ver la seccion de trazabilidad.
 
 ## 1. Objetivo e instruccion del supervisor
 
@@ -243,8 +243,8 @@ Tareas del flujo (todas en el PRD anterior):
 | `3cd795ae` | Compilar APK unico y corregir errores | completada |
 | `16105a7f` | Copiar y ejecutar pruebas unitarias de ambos modulos | completada |
 | `0c671e67` | Endurecer backup y limpiar tema redundante | completada |
-| `df47d52f` | Documentar la fusion y actualizar README (este informe) | en curso |
-| `51797d87` | Commit final con trazabilidad | pendiente |
+| `df47d52f` | Documentar la fusion y actualizar README (este informe) | completada |
+| `51797d87` | Commit final con trazabilidad | completada (commit `13ef480`) |
 
 Decisiones lemoria:
 
@@ -257,7 +257,7 @@ Decisiones lemoria:
 | `fe3cf217` | Afinar reglas backup y eliminar redundancia de tema en app unificada | vigente |
 | `d7c47dc1` | Separar Carta de Animo (bienestar) del sistema documental de RRHH | reemplazada por `06db8960` |
 
-Estado de Git al escribir este informe: rama `integracion`; ultimo commit `769e20d` ("chore: checkpoint pre-integracion de modelos documentales"); cambios de la integracion pendientes de commit (tarea `51797d87`). **Cuando se haga el commit final, actualizar esta seccion con su hash y registrar el commit en Lemoria.**
+Estado de Git tras la integracion (actualizado el 11 de noviembre de 2026): el commit final ya existe. En la rama `integracion`, el commit `13ef480` ("feat: integracion de portal unificado (Gestion Documental RRHH + Lemac DataLab Bienestar)") contiene toda la integracion sobre el checkpoint `769e20d` ("chore: checkpoint pre-integracion de modelos documentales"). Ese commit ya esta en `main` y en la rama de trabajo actual `entrega_hito2`, que agrega ademas el ajuste `690359f` ("fix: suprimir advertencia de permisos en NotificacionHelper", que agrega `@SuppressLint("MissingPermission")` al `NotificacionHelper` de gestion despues de verificar el permiso con `puedeNotificar`). El arbol de trabajo esta limpio.
 
 ## 10. Proximos pasos
 

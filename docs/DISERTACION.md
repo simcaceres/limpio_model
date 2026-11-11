@@ -1,23 +1,23 @@
-# Guion de disertacion: Lemac DataLab
+# Guion de disertacion: Lemac DataLab + Gestion Documental
 
-Este documento propone una exposicion de 10 a 15 minutos sobre el proyecto Android `limpio_moviles`. Incluye bloques con tiempos, un guion sugerido, el orden de la demo en vivo, puntos tecnicos para mencionar, preguntas posibles del profesor y una lista de verificacion previa.
+Este documento propone una exposicion de 10 a 15 minutos sobre el proyecto Android `limpio_moviles`, la app unificada que entrega los dos trabajos academicos en un solo APK. Incluye bloques con tiempos, un guion sugerido, el orden de la demo en vivo, puntos tecnicos para mencionar, preguntas posibles del profesor y una lista de verificacion previa. El foco de la exposicion es el modulo de bienestar **Lemac DataLab**; el modulo de **Gestion Documental RR.HH.** se presenta desde el portal, con una demo corta de login y flujo documental.
 
 ## Datos de la presentacion
 
-- **Titulo:** Lemac DataLab: autorregistro privado en Android con Kotlin y Jetpack Compose.
+- **Titulo:** Lemac DataLab + Gestion Documental: dos modulos academicos en una sola app Android con Kotlin y Jetpack Compose.
 - **Duracion objetivo:** 13 minutos, con margen para 15.
-- **Idea central:** una app local, simple y honesta sobre sus limites, que demuestra un flujo completo de datos: formulario, validacion, Room, historial, resumen y recordatorio.
-- **Mensaje final:** el valor del proyecto no esta solo en la pantalla, sino en como se separan responsabilidades y se protege la privacidad desde las decisiones tecnicas.
+- **Idea central:** una app local, simple y honesta sobre sus limites, que demuestra un flujo completo de datos (formulario, validacion, Room, historial, resumen, recordatorio y exportacion CSV local) y que, detras del mismo portal, integra un segundo dominio: el flujo documental de RR.HH. con roles, aprobaciones y auditoria, sin mezclar los datos de ambos.
+- **Mensaje final:** el valor del proyecto no esta solo en la pantalla, sino en como se separan responsabilidades, se integran dos dominios sin mezclarlos y se protege la privacidad desde las decisiones tecnicas.
 
 ## Preparacion en cinco ideas
 
 Si se olvida todo lo demas, recordar estas cinco ideas:
 
 1. Es un MVP academico con datos ficticios o sinteticos; no es diagnostico ni tratamiento.
-2. La arquitectura es UI Compose, un ViewModel compartido, repositorios y fuentes de datos locales.
+2. La app es un **portal unificado** con dos modulos (bienestar y gestion documental), cada uno con su base Room propia; la arquitectura es UI Compose, un ViewModel compartido, repositorios y fuentes de datos locales.
 3. Room guarda los registros y emite `Flow`; el ViewModel lo convierte en `StateFlow` y la UI lo recolecta con `collectAsStateWithLifecycle`.
-4. La sincronizacion es simulada con `FakeLemacApi`; no hay backend ni permiso `INTERNET`.
-5. Hay 13 pruebas unitarias del validador y del calculador de resumen; no hay pruebas de UI ni instrumentadas.
+4. La sincronizacion es simulada con `FakeLemacApi`; no hay backend ni permiso `INTERNET`. La salida real de datos es la **exportacion CSV local**, con el selector de documentos del sistema (SAF).
+5. Hay 69 pruebas unitarias (26 de bienestar y 43 de gestion documental); no hay pruebas de UI ni instrumentadas.
 
 ## Guion por bloques
 
@@ -27,9 +27,9 @@ Objetivo: presentar el problema y el alcance en una frase.
 
 Guion sugerido:
 
-> "Lemac DataLab es una aplicacion Android de autorregistro para cuatro ambitos de bienestar: neurodesarrollo, habilidades DBT, estado de animo y adicciones. La persona elige un ambito, registra que paso, con que intensidad y que estrategia uso, y despues puede revisar su historial y un resumen. Es un MVP academico: usa datos ficticios o sinteticos, no es diagnostico ni tratamiento, y no tiene backend real."
+> "Entregamos los dos trabajos como una sola app. Al abrirla aparece un portal con dos modulos: Lemac DataLab, una aplicacion Android de autorregistro para cuatro ambitos de bienestar —neurodesarrollo, habilidades DBT, estado de animo y adicciones—, y Gestion Documental RR.HH., el flujo documental de una institucion de salud con roles, aprobaciones y auditoria. Hoy nos concentramos en el modulo de bienestar: la persona elige un ambito, registra que paso, con que intensidad y que estrategia uso, y despues puede revisar su historial, un resumen y exportar sus datos a CSV. Es un MVP academico: usa datos ficticios o sinteticos, no es diagnostico ni tratamiento, y no tiene backend real."
 
-Mencionar que la app se llama Lemac DataLab aunque el proyecto tecnico se llame `limpio_moviles`.
+Mencionar que el APK unico ya contiene ambos modulos (un solo modulo Gradle `:app`, una sola Activity y una sola clase Application) y que cada modulo conserva su base Room propia (`lemac_datalab.db` y `gestion_documental.db`), de modo que los datos de bienestar y los laborales simulados nunca se mezclan. La app visible se llama "Lemac DataLab + Gestion Documental" aunque el proyecto tecnico se llame `limpio_moviles`.
 
 ### Bloque 1. Problema, publico y privacidad (1:00 a 3:00)
 
@@ -53,10 +53,11 @@ Objetivo: explicar el recorrido de una accion sin entrar en cada linea.
 
 Puntos:
 
-- Una sola `Activity` (`MainActivity`) monta `LemacTheme` y `LemacApp()`.
-- `LemacApp()` crea un unico `RegistroViewModel` con una `Factory` y arma el `NavHost`.
+- Una sola `Activity` (`MainActivity`) monta `LemacTheme` y `UnifiedApp()`, la navegacion raiz que arranca en el **portal** con las dos tarjetas de modulo.
+- El portal enruta sin mezclar dominios: bienestar entra a `LemacApp()` y gestion documental a `GestionTheme { GestionApp() }`, cada uno con su grafo interno.
+- `LemacApp()` crea un unico `RegistroViewModel` con una `Factory` y arma el `NavHost` de bienestar.
 - Capas: pantallas Compose, ViewModel, repositorios, Room / `SharedPreferences` / `FakeLemacApi`.
-- `LemacApplication` actua como contenedor manual de dependencias.
+- `LemacApplication` actua como contenedor **dual**: bases y repositorios de los dos modulos, dos canales de notificacion y siembra de los datos demo de gestion en `Dispatchers.IO`.
 - Room guarda en la tabla `registros`; el DAO devuelve `Flow`; el ViewModel usa `stateIn` con `WhileSubscribed(5_000)`.
 - La UI recolecta con `collectAsStateWithLifecycle`.
 - El formulario usa `mutableStateOf` porque es estado de presentacion que cambia con cada tecla.
@@ -73,7 +74,7 @@ Objetivo: mostrar el flujo principal completo.
 
 Orden:
 
-1. Abrir la app con datos borrados para que aparezca Onboarding.
+1. Abrir la app con datos borrados para que aparezca Onboarding; el portal se ve un segundo antes de entrar a Bienestar — Lemac DataLab.
 2. Mostrar el aviso de privacidad, escribir un alias y marcar el checkbox.
 3. Explicar que la foto es opcional y que si no hay camara o se cancela la captura, la app sigue.
 4. Entrar a Home.
@@ -105,7 +106,8 @@ Orden:
 5. Eliminar un registro y mostrar el dialogo de confirmacion.
 6. Abrir Resumen.
 7. Mostrar el total, las barras por ambito y el promedio.
-8. Pulsar "Sincronizar" y explicar que es una simulacion de 700 ms.
+8. Ir a Ajustes y pulsar "Sincronizar", explicando que es una simulacion de 700 ms (la sincronizacion vive en Ajustes; en Resumen la accion principal es la exportacion CSV).
+9. Pulsar "Exportar datos (CSV)": recorrer el selector de documentos del sistema, confirmar el nombre sugerido y mostrar el mensaje "Datos exportados (N registros)". El detalle paso a paso esta en la seccion "Demo de exportacion CSV".
 
 Que decir:
 
@@ -113,6 +115,7 @@ Que decir:
 - "El resumen recorre los cuatro ambitos y calcula cantidad, promedio simple y ultima fecha."
 - "La barra compara la cantidad del ambito contra el ambito con mas registros, no contra la intensidad."
 - "Sincronizar no envia datos: `FakeLemacApi` solo simula la operacion."
+- "La exportacion si es real: escribe un CSV en el dispositivo, donde el usuario elija, y no pide permisos de almacenamiento porque usa SAF."
 
 ### Bloque 5. Recordatorio, foto y privacidad (11:00 a 13:00)
 
@@ -133,7 +136,7 @@ Que decir:
 - "El canal de notificaciones se crea en `LemacApplication.onCreate`."
 - "El worker solo llama a `NotificacionHelper.mostrar`; el texto no tiene datos del registro."
 - "La foto no necesita permiso de almacenamiento porque queda en el directorio interno de la app."
-- "La app no pide permiso de camara: `TakePicturePreview` no lo requiere. Solo declara la caracteristica de hardware como opcional."
+- "La app no pide permiso de camara: la foto la toma la app de camara del sistema y esta app solo recibe el resultado. La caracteristica de hardware se declara como opcional y el trabajo con archivos va a `Dispatchers.IO`."
 
 ### Bloque 6. Limites, pruebas y cierre (13:00 a 15:00)
 
@@ -141,17 +144,18 @@ Objetivo: demostrar criterio y cerrar con una idea clara.
 
 Puntos:
 
-- La app no tiene backend real, autenticacion, cifrado ni migraciones de Room.
+- La app no tiene backend real, autenticacion en bienestar, cifrado ni migraciones de Room.
 - La sincronizacion solo marca una bandera local.
-- Hay 13 pruebas unitarias: 9 del validador y 4 del resumen.
+- Hay 69 pruebas unitarias: 26 de bienestar (validador, resumen, generador CSV y repositorio con DAO falsificado) y 43 de gestion documental (validadores, permisos, flujo de modificacion, reportes y tipos MIME).
 - No hay pruebas instrumentadas ni de interfaz.
-- El ViewModel es unico y compartido; para una app mas grande convendria separar por pantalla.
+- El ViewModel de bienestar es unico y compartido; para una app mas grande convendria separar por pantalla.
 - `fallbackToDestructiveMigration` es aceptable en el MVP, no en produccion.
-- `allowBackup="true"` se mantiene, pero el backup esta acotado: incluye Room y las preferencias, excluye explicitamente la foto y no incluye la cache (la plataforma la excluye automaticamente y la lista de `<include>` es una allowlist). Sigue faltando cifrado.
+- `allowBackup="true"` se mantiene, pero el backup esta acotado: incluye la base y las preferencias de bienestar, excluye explicitamente la base y los documentos de gestion y la foto de perfil, y no incluye la cache (la plataforma la excluye automaticamente y la lista de `<include>` es una allowlist). Sigue faltando cifrado.
+- La exportacion CSV es texto plano e incluye el alias y las notas: hay que tratarla como informacion privada.
 
 Cierre sugerido:
 
-> "El proyecto demuestra un flujo completo y verificable: el usuario registra, la validacion protege la calidad del dato, Room lo persiste, el Flow actualiza la interfaz y el resumen agrega la informacion. Las limitaciones estan documentadas a proposito: reconocerlas es parte del diseno. Lo que falta para produccion es backend real, cifrado, migraciones y pruebas de integracion."
+> "El proyecto demuestra un flujo completo y verificable: el usuario registra, la validacion protege la calidad del dato, Room lo persiste, el Flow actualiza la interfaz y el resumen agrega la informacion. Los datos solo salen del dispositivo cuando el usuario decide exportarlos: un CSV local, sin nube y sin permisos extra. Las limitaciones estan documentadas a proposito: reconocerlas es parte del diseno. Lo que falta para produccion es backend real, cifrado, migraciones y pruebas de integracion."
 
 ## Version corta de 10 minutos
 
@@ -167,7 +171,7 @@ Si el tiempo se reduce, recortar asi:
 | Recordatorio y foto | 1 min |
 | Limites y cierre | 1 min |
 
-En la version corta, no demostrar la edicion ni el borrado; alcanza con mencionarlos y mostrar el historial.
+En la version corta, no demostrar la edicion ni el borrado; alcanza con mencionarlos y mostrar el historial. La exportacion CSV se puede solo mencionar ("los datos salen del dispositivo unicamente cuando el usuario exporta su CSV"); si sobra un minuto, es la demo mas clara del compromiso de privacidad.
 
 ## Demo en vivo paso a paso
 
@@ -179,7 +183,19 @@ Tener el emulador abierto, la app instalada y los datos borrados si se quiere mo
 adb shell pm clear com.example.limpio_moviles
 ```
 
-Si se prefiere no mostrar el borrado de datos, se puede entrar directamente a Home con un alias ya guardado.
+Si se prefiere no mostrar el borrado de datos, se puede entrar directamente a Home con un alias ya guardado. Con los datos borrados, la app abre en el portal y Onboarding aparece despues de entrar a la tarjeta de Bienestar (ver Paso 0).
+
+### Paso 0. Portal de la app unificada
+
+Que hacer:
+
+- Abrir la app: aparece el portal "Centro de aplicaciones" con las dos tarjetas y el aviso de datos ficticios.
+- Entrar a la tarjeta "Bienestar — Lemac DataLab".
+
+Que decir:
+
+- "Los dos trabajos se entregan como una sola app: un APK unico, una sola Activity y una sola Application, con dos bases Room separadas para no mezclar los dominios."
+- "El modulo de Gestion Documental RR.HH. se muestra aparte, con usuarios demo."
 
 ### Paso 1. Onboarding
 
@@ -253,13 +269,14 @@ Que decir:
 - "El borrado pide confirmacion porque no se puede deshacer."
 - "La lista se actualiza sola por el Flow de Room."
 
-### Paso 5. Resumen y sincronizacion
+### Paso 5. Resumen, sincronizacion y exportacion CSV
 
 Que hacer:
 
 - Abrir Resumen.
 - Mostrar el total y las barras.
-- Pulsar "Sincronizar".
+- Pulsar "Exportar datos (CSV)" y recorrer el selector de documentos del sistema: elegir carpeta, confirmar el nombre sugerido y mostrar el mensaje "Datos exportados (N registros)". El detalle completo esta en la seccion "Demo de exportacion CSV".
+- Ir a Ajustes y pulsar "Sincronizar".
 - Senalar el cambio de texto mientras espera y el mensaje final.
 
 Que decir:
@@ -267,6 +284,7 @@ Que decir:
 - "El promedio es simple: suma de intensidades dividida entre la cantidad."
 - "La barra usa la cantidad de registros, no la intensidad."
 - "La sincronizacion espera 700 ms y marca los pendientes; no hay red."
+- "La exportacion si es real: escribe un archivo CSV en el dispositivo, donde el usuario elija, y no pide permisos de almacenamiento porque usa SAF."
 
 ### Paso 6. Ajustes, recordatorio y foto
 
@@ -299,6 +317,51 @@ Que decir:
 
 Si se quiere mostrar el borrado total, hacerlo al final y decir que solo borra registros, no el alias ni la foto.
 
+## Demo de exportacion CSV
+
+Esta seccion detalla como demostrar la exportacion de datos en la disertacion. Es la unica via real por la que los datos salen de la app, por eso conviene mostrarla completa y explicar sus limites. Toma menos de un minuto y no requiere preparacion de red ni permisos.
+
+### Antes de la demo
+
+- Tener al menos dos o tres registros guardados en el modulo de bienestar (sirven los "datos de ejemplo" de Home o los creados en los pasos anteriores).
+- Tener claro donde se va a guardar el archivo (por ejemplo, la carpeta `Descargas` del emulador), para poder mostrarlo despues si se quiere.
+- No hace falta nada mas: la app no pide permisos de almacenamiento ni conexion.
+
+### Pasos
+
+1. Entrar al modulo de bienestar desde el portal y abrir **Resumen** (el boton principal) o **Ajustes**, seccion **Datos**.
+2. Pulsar **Exportar datos (CSV)**.
+3. El sistema abre el **selector de documentos (SAF)**. No es un permiso: el usuario elige la carpeta y confirma el nombre; la app solo recibe un `Uri` para escribir.
+4. Confirmar el nombre sugerido, con la forma `lemac_datalab_yyyyMMdd_HHmmss.csv` (por ejemplo, `lemac_datalab_20261111_203000.csv`), por ejemplo en `Descargas`.
+5. La app escribe el archivo y muestra el mensaje `Datos exportados (N registros)`.
+6. Opcional: abrir el CSV desde el administrador de archivos del emulador con un visor de texto, para mostrar la cabecera y que los acentos se ven bien gracias al BOM UTF-8.
+
+### Que decir mientras se exporta
+
+- "El boton lanza `ActivityResultContracts.CreateDocument("text/csv")`: el sistema crea el documento y entrega un `Uri`; por eso no hay permisos de almacenamiento."
+- "El archivo empieza con BOM UTF-8 y usa CRLF, para que Excel reconozca la codificacion y muestre bien los acentos."
+- "El texto CSV lo genera `RegistroCsvExporter`, un objeto puro sin dependencias de Android; por eso se prueba con JUnit sin emulador (8 pruebas)."
+- "Los campos se escapan segun RFC 4180 y un campo que empieza como formula (`=`, `+`, `-`, `@`) se neutraliza con un apostrofo para que la hoja de calculo no lo ejecute."
+- "La escritura va en `Dispatchers.IO` con `contentResolver.openOutputStream`; el hilo principal no se bloquea."
+- "Una fila por registro, ordenadas de la mas reciente a la mas antigua, con 12 columnas: id, alias, ambito, tipo, intensidad, contexto, estrategia, nota, objetivo y dos fechas mas la bandera de sincronizado."
+
+### Mensajes posibles y casos de borde
+
+| Situacion | Mensaje |
+|---|---|
+| Exportacion exitosa | `Datos exportados (N registros)` |
+| No hay registros (el boton ya llega deshabilitado; mensaje defensivo) | `No hay registros para exportar` |
+| Escritura fallida | `No se pudo exportar` |
+| Usuario cancela el selector | `Exportación cancelada` |
+| Falla el lanzamiento del selector | `No se pudo abrir el selector de archivos` |
+
+### Privacidad y limites que conviene decir
+
+- El CSV es **texto plano** e incluye el alias y las notas: conviene tratarlo como informacion privada y guardar el archivo en un lugar seguro.
+- La exportacion no borra nada ni reemplaza a la sincronizacion (que sigue simulada con `FakeLemacApi`).
+- No hay cifrado ni exportacion parcial por ambito: siempre se exportan todos los registros guardados en el dispositivo.
+- No se sube nada a la nube: el archivo queda donde el usuario lo decida, y la app no declara `INTERNET`.
+
 ## Puntos tecnicos que conviene mencionar
 
 1. **Una sola Activity y navegacion declarativa.** `MainActivity` solo monta Compose; `NavHost` resuelve las rutas.
@@ -312,13 +375,15 @@ Si se quiere mostrar el borrado total, hacerlo al final y decir que solo borra r
 9. **Room con Flow.** Las consultas reactivas evitan refrescos manuales.
 10. **Validacion fuera de la UI.** `RegistroValidator` es testeable y reutilizable.
 11. **Calculo puro.** `ResumenCalculator` no depende de Android y se prueba con JUnit.
-12. **Permisos en contexto.** Las notificaciones se piden cuando se necesitan, no al iniciar. La camara no requiere permiso porque se usa `TakePicturePreview`.
+12. **Permisos en contexto.** Las notificaciones se piden cuando se necesitan, no al iniciar. La foto de perfil no requiere permiso `CAMERA` porque la captura delega en la app de camara del sistema; la decodificacion y el guardado van a `Dispatchers.IO`.
 13. **WorkManager para trabajo diferible.** Sobrevive a reinicios y no requiere la app abierta.
 14. **Privacidad por diseno y por omision.** Sin `INTERNET`, datos locales, notificaciones genericas y advertencias visibles.
 15. **Honestidad sobre limites.** No hay cifrado, migraciones ni pruebas de UI; decirlo suma criterio.
 16. **Catalogo de versiones.** `gradle/libs.versions.toml` centraliza versiones y evita numeros dispersos.
 17. **KSP.** Room genera codigo en compilacion; KSP es el procesador recomendado para Kotlin.
-18. **Pruebas unitarias.** 13 pruebas rapidas que no necesitan emulador.
+18. **Pruebas unitarias.** 69 pruebas rapidas que no necesitan emulador: 26 de bienestar y 43 de gestion documental.
+19. **Exportacion CSV con SAF.** `CreateDocument("text/csv")` evita permisos de almacenamiento; BOM UTF-8 y CRLF para Excel; escapado RFC 4180 y neutralizacion de formulas; el generador (`RegistroCsvExporter`) es puro y testeable con JUnit.
+20. **Portal unificado sin mezclar dominios.** Un APK, dos paquetes (`com.example.limpio_moviles` y `com.example.gestiondocumental`), dos bases Room; `LemacApplication` como contenedor dual con dos canales de notificacion y siembra de datos demo de gestion en `Dispatchers.IO`.
 
 ## Posibles preguntas del profesor y respuestas sugeridas
 
@@ -384,7 +449,7 @@ No. Se programa con retraso inicial hasta las 20:00, pero WorkManager puede retr
 
 ### 16. Que se prueba y que no
 
-Se prueban con JUnit el validador y el calculador de resumen: 13 casos. No hay pruebas de Room, repositorios, ViewModel, UI ni WorkManager. Es una deuda tecnica reconocida.
+Se prueban con JUnit 69 casos: del modulo de bienestar, el validador (9), el calculador de resumen (4), el generador CSV (8) y el repositorio con un DAO falsificado (5); del modulo de gestion documental, validadores, permisos, flujo de modificacion, reportes y tipos MIME (43). No hay pruebas de Room real, ViewModel, UI ni WorkManager. Es una deuda tecnica reconocida.
 
 ### 17. Por que no se uso Hilt
 
@@ -408,7 +473,7 @@ Porque es un MVP con version 1 y se prioriza no bloquear el arranque ante un cam
 
 ### 22. Que mejoraria primero
 
-Antes de agregar funciones: migraciones de Room, pruebas de repositorio y ViewModel, cifrado o almacenamiento seguro, y completar la politica de backup (hoy acotada a Room y preferencias, y sin cifrado). Despues: backend real, exportacion de datos y configuracion de la hora del recordatorio.
+Antes de agregar funciones: migraciones de Room, pruebas de repositorio y ViewModel, cifrado o almacenamiento seguro, y completar la politica de backup (hoy acotada a Room y preferencias, y sin cifrado). Despues: backend real, exportacion parcial por ambito (hoy se exportan todos los registros de una vez) y configuracion de la hora del recordatorio.
 
 ### 23. Por que el ViewModel es compartido
 
@@ -418,15 +483,32 @@ Porque simplifica el MVP: el formulario, el perfil y los mensajes estan disponib
 
 La validacion devuelve errores por campo y la UI los muestra. Las operaciones de repositorio se envuelven en `runCatching`; si fallan, se publica un mensaje y no se actualiza la bandera de exito. No hay reintentos automaticos ni cola de sincronizacion.
 
+### 25. Por que la exportacion usa SAF y no un permiso de almacenamiento
+
+Porque `CreateDocument` le pide al sistema crear el documento y devolver un `Uri`: el usuario elige la carpeta y el nombre, y la app solo escribe en ese documento. No necesita `WRITE_EXTERNAL_STORAGE` (permiso obsoleto ademas) y respeta el principio de minimo privilegio. La escritura se hace con `contentResolver.openOutputStream` en `Dispatchers.IO`.
+
+### 26. Que contiene el CSV y como se protege
+
+Una fila por registro con 12 columnas: id, alias, ambito, tipo, intensidad, contexto, estrategia, nota, objetivo, fecha ISO 8601, fecha en milisegundos y bandera de sincronizado. Es texto plano con BOM UTF-8, saltos CRLF y escapado RFC 4180, y neutraliza campos que empiezan como formula. No esta cifrado e incluye el alias y las notas, asi que la app avisa que hay que tratarlo como informacion privada.
+
+### 27. Por que dos bases Room y no una sola
+
+Porque los dominios son distintos: bienestar es privado y funciona con alias, sin cuentas; gestion documental es un flujo laboral con roles y auditoria. Bases separadas evitan mezclar datos y permiten excluir del respaldo la base y los documentos de gestion. El costo es infraestructura de persistencia duplicada, documentado como deuda tecnica en INTEGRACION.md.
+
+### 28. Como se integraron los dos trabajos
+
+Con un portal: un unico modulo Gradle `:app`, una sola Activity y una sola Application que actua como contenedor dual. El paquete de gestion se copio dentro de `:app` conservando su nombre original (`com.example.gestiondocumental`), la navegacion raiz (`UnifiedApp`) arranca en el portal y cada modulo se monta con su tema y su grafo interno. El detalle completo esta en docs/INTEGRACION.md.
+
 ## Checklist previo a la presentacion
 
 ### La noche anterior
 
 - [ ] Ejecutar `./gradlew :app:assembleDebug` y confirmar que compila.
-- [ ] Ejecutar `./gradlew :app:testDebugUnitTest` y confirmar las 13 pruebas.
+- [ ] Ejecutar `./gradlew :app:testDebugUnitTest` y confirmar las 69 pruebas.
 - [ ] Abrir el reporte de pruebas y verificar que no hay fallos.
 - [ ] Revisar que el emulador tenga Android 13 (API 33) o superior.
-- [ ] Probar la app de punta a punta una vez.
+- [ ] Probar la app de punta a punta una vez, incluido el portal con las dos tarjetas.
+- [ ] Probar una vez la exportacion CSV y verificar donde queda el archivo.
 - [ ] Confirmar que `docs/GUIA_ESTUDIO.md` y `docs/DISERTACION.md` estan actualizados.
 - [ ] Verificar que el repositorio local este limpio y hacer el push cuando el repositorio remoto ya exista.
 
@@ -488,6 +570,7 @@ Si se quiere una demostracion real de la notificacion, habria que preparar un me
 ### Frases de cierre por si falta tiempo
 
 - "La app demuestra el ciclo completo: captura, validacion, persistencia, observacion reactiva y agregacion."
+- "Los datos solo salen del dispositivo cuando el usuario decide exportarlos: un CSV local, sin nube y sin permisos extra."
 - "Las decisiones tecnicas estan al servicio de la privacidad y de la claridad, no de la cantidad de funciones."
 - "Las limitaciones estan documentadas: no hay backend real, cifrado ni pruebas de UI; el siguiente paso seria cerrar esas brechas."
 - "Gracias. Quedo atento a preguntas."
