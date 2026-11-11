@@ -102,7 +102,7 @@ Orden:
 1. Abrir Historial.
 2. Cambiar el filtro entre "Todos" y un ambito.
 3. Editar un registro y guardar.
-4. Explicar que la edicion actualiza la fecha y vuelve a marcar el registro como no sincronizado.
+4. Explicar que la edicion conserva la fecha original del registro y vuelve a marcarlo como no sincronizado, para que se reenvie en la sincronizacion simulada.
 5. Eliminar un registro y mostrar el dialogo de confirmacion.
 6. Abrir Resumen.
 7. Mostrar el total, las barras por ambito y el promedio.
@@ -112,6 +112,7 @@ Orden:
 Que decir:
 
 - "El filtro es estado local de la pantalla, no se guarda en la base."
+- "Editar reutiliza el mismo formulario con `editandoId`; conserva la fecha original del registro, no lo mueve al tope del historial, y lo vuelve a encolar para sincronizar."
 - "El resumen recorre los cuatro ambitos y calcula cantidad, promedio simple y ultima fecha."
 - "La barra compara la cantidad del ambito contra el ambito con mas registros, no contra la intensidad."
 - "Sincronizar no envia datos: `FakeLemacApi` solo simula la operacion."
@@ -127,7 +128,7 @@ Orden:
 2. Activar el recordatorio diario y mostrar el dialogo de permiso de notificaciones.
 3. Explicar que WorkManager programa un trabajo unico cada 24 horas con retraso hasta las 20:00.
 4. Aclarar que no es una alarma exacta y que puede retrasarse por el sistema.
-5. Mostrar el cambio de foto y explicar que se guarda en `filesDir/perfil.png`.
+5. Mostrar el cambio de foto y explicar que se guarda en `filesDir/perfil.png` ya orientada: la rotacion EXIF se corrige antes de mostrar y de guardar, por eso la foto ya no sale rotada.
 6. Leer el bloque de privacidad.
 7. No borrar todos los registros en vivo salvo que sea el final de la demo.
 
@@ -136,7 +137,7 @@ Que decir:
 - "El canal de notificaciones se crea en `LemacApplication.onCreate`."
 - "El worker solo llama a `NotificacionHelper.mostrar`; el texto no tiene datos del registro."
 - "La foto no necesita permiso de almacenamiento porque queda en el directorio interno de la app."
-- "La app no pide permiso de camara: la foto la toma la app de camara del sistema y esta app solo recibe el resultado. La caracteristica de hardware se declara como opcional y el trabajo con archivos va a `Dispatchers.IO`."
+- "La app no pide permiso de camara: lanza la camara del sistema con `ACTION_IMAGE_CAPTURE` y `EXTRA_OUTPUT` hacia un archivo temporal propio compartido con `FileProvider`, y esta app solo recibe el resultado. La caracteristica de hardware se declara como opcional, la orientacion EXIF se corrige antes de mostrar, la decodificacion usa `inSampleSize` (maximo 1024 px por lado) y el trabajo con archivos va a `Dispatchers.IO`."
 
 ### Bloque 6. Limites, pruebas y cierre (13:00 a 15:00)
 
@@ -265,7 +266,7 @@ Que hacer:
 Que decir:
 
 - "El filtro es local y no modifica la base."
-- "Editar reutiliza el mismo formulario con `editandoId`."
+- "Editar reutiliza el mismo formulario con `editandoId`: conserva la fecha original del registro y lo vuelve a encolar para la sincronizacion simulada."
 - "El borrado pide confirmacion porque no se puede deshacer."
 - "La lista se actualiza sola por el Flow de Room."
 
@@ -301,7 +302,7 @@ Que decir:
 
 - "El permiso de notificaciones se pide solo al activar el recordatorio."
 - "WorkManager programa un trabajo periodico unico; no es una alarma exacta."
-- "La foto se guarda en el almacenamiento interno y la ruta en preferencias."
+- "La foto se guarda en el almacenamiento interno (PNG atomico, ya orientada segun EXIF) y la ruta en preferencias; el temporal de captura vive en la cache y se borra tras el uso."
 - "El aviso de privacidad se repite en Ajustes para que no dependa del onboarding."
 
 ### Paso 7. Cierre de la demo
@@ -375,7 +376,7 @@ Esta seccion detalla como demostrar la exportacion de datos en la disertacion. E
 9. **Room con Flow.** Las consultas reactivas evitan refrescos manuales.
 10. **Validacion fuera de la UI.** `RegistroValidator` es testeable y reutilizable.
 11. **Calculo puro.** `ResumenCalculator` no depende de Android y se prueba con JUnit.
-12. **Permisos en contexto.** Las notificaciones se piden cuando se necesitan, no al iniciar. La foto de perfil no requiere permiso `CAMERA` porque la captura delega en la app de camara del sistema; la decodificacion y el guardado van a `Dispatchers.IO`.
+12. **Permisos en contexto.** Las notificaciones se piden cuando se necesitan, no al iniciar. La foto de perfil no requiere permiso `CAMERA` porque la captura delega en la app de camara del sistema (`ACTION_IMAGE_CAPTURE` + `EXTRA_OUTPUT` hacia un temporal propio compartido con `FileProvider`, mediante un contrato custom mas defensivo que el estandar); la orientacion EXIF se corrige antes de mostrar y guardar, y la decodificacion y el guardado van a `Dispatchers.IO`.
 13. **WorkManager para trabajo diferible.** Sobrevive a reinicios y no requiere la app abierta.
 14. **Privacidad por diseno y por omision.** Sin `INTERNET`, datos locales, notificaciones genericas y advertencias visibles.
 15. **Honestidad sobre limites.** No hay cifrado, migraciones ni pruebas de UI; decirlo suma criterio.
@@ -384,6 +385,7 @@ Esta seccion detalla como demostrar la exportacion de datos en la disertacion. E
 18. **Pruebas unitarias.** 69 pruebas rapidas que no necesitan emulador: 26 de bienestar y 43 de gestion documental.
 19. **Exportacion CSV con SAF.** `CreateDocument("text/csv")` evita permisos de almacenamiento; BOM UTF-8 y CRLF para Excel; escapado RFC 4180 y neutralizacion de formulas; el generador (`RegistroCsvExporter`) es puro y testeable con JUnit.
 20. **Portal unificado sin mezclar dominios.** Un APK, dos paquetes (`com.example.limpio_moviles` y `com.example.gestiondocumental`), dos bases Room; `LemacApplication` como contenedor dual con dos canales de notificacion y siembra de datos demo de gestion en `Dispatchers.IO`.
+21. **Semantica de edicion explicita.** Al editar se conserva la `fechaHora` original y se fuerza `sincronizado = false`, de modo que el registro editado vuelve a la cola de sincronizacion simulada; el repositorio usa insert/update explicitos (sin upsert `REPLACE`, no resucita registros borrados) y `cargarDemo` es un `@Transaction` atomico que avisa cuando ya habia datos.
 
 ## Posibles preguntas del profesor y respuestas sugeridas
 
@@ -499,6 +501,14 @@ Porque los dominios son distintos: bienestar es privado y funciona con alias, si
 
 Con un portal: un unico modulo Gradle `:app`, una sola Activity y una sola Application que actua como contenedor dual. El paquete de gestion se copio dentro de `:app` conservando su nombre original (`com.example.gestiondocumental`), la navegacion raiz (`UnifiedApp`) arranca en el portal y cada modulo se monta con su tema y su grafo interno. El detalle completo esta en docs/INTEGRACION.md.
 
+### 29. Por que la app no pide permiso de camara
+
+Porque no usa la camara directamente: `SelectorFotoPerfil` lanza la app de camara del sistema (o de terceros) con un Intent `ACTION_IMAGE_CAPTURE` y `EXTRA_OUTPUT` apuntando a un archivo temporal de esta app, compartido mediante un `FileProvider` propio (`com.example.limpio_moviles.fileprovider`). Quien accede al hardware es la aplicacion de camara, con sus propios permisos; esta app solo recibe el resultado por la Activity Result API. El contrato es custom (`TomarFotoConUri`), equivalente al estandar `ActivityResultContracts.TakePicture` de androidx.activity 1.8.0 pero mas defensivo: agrega `ClipData` y flags de lectura y escritura para que las apps de camara OEM de terceros con permiso persistan el grant temporal sobre el archivo. El manifiesto, por su parte, solo declara `uses-feature android.hardware.camera required="false"`, para poder instalarse en equipos sin camara; el manifest fusionado no contiene ningun `uses-permission` de `CAMERA`.
+
+### 30. Que pasa con la fecha cuando se edita un registro
+
+La fecha original se conserva. Al editar, `guardar()` relee el registro existente y construye la entidad con su `fechaHora` original (`existente?.fechaHora ?: ahora`); la hora actual solo se usa al crear. Lo que si cambia siempre es la bandera: `sincronizado = false`, de modo que el registro editado vuelve a la cola de pendientes y se reenvia en la sincronizacion simulada. Como el historial ordena por `fechaHora DESC` y la ultima fecha del resumen es el maximo de `fechaHora`, editar no reordena la lista ni altera el resumen. Y si el registro ya no existe al momento de guardar (por ejemplo, se borro en otra pantalla), se avisa con "No se encontró el registro que intentas editar" en lugar de crear uno nuevo.
+
 ## Checklist previo a la presentacion
 
 ### La noche anterior
@@ -509,8 +519,12 @@ Con un portal: un unico modulo Gradle `:app`, una sola Activity y una sola Appli
 - [ ] Revisar que el emulador tenga Android 13 (API 33) o superior.
 - [ ] Probar la app de punta a punta una vez, incluido el portal con las dos tarjetas.
 - [ ] Probar una vez la exportacion CSV y verificar donde queda el archivo.
+- [ ] Probar la foto de perfil en el emulador: capturar, confirmar que no sale rotada (la orientacion EXIF se corrige antes de mostrar) y que no aparece dialogo de permiso de camara.
+- [ ] Editar un registro y confirmar que la fecha mostrada no cambia y que el registro vuelve a quedar pendiente de sincronizar.
 - [ ] Confirmar que `docs/GUIA_ESTUDIO.md` y `docs/DISERTACION.md` estan actualizados.
 - [ ] Verificar que el repositorio local este limpio y hacer el push cuando el repositorio remoto ya exista.
+
+Referencia de la verificacion del 11 de noviembre de 2026 (ajustes de camara y semantica de edicion): `compileDebugKotlin` correcto, 69/69 pruebas (26 de bienestar + 43 de gestion documental), `assembleDebug` correcto con APK de ~64.9 MB, y manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
 
 ### El dia de la presentacion
 
@@ -523,7 +537,7 @@ Con un portal: un unico modulo Gradle `:app`, una sola Activity y una sola Appli
 - [ ] Silenciar notificaciones personales del equipo.
 - [ ] Tener el guion abierto en otra ventana o en papel.
 - [ ] Tener a mano los comandos de compilacion e instalacion.
-- [ ] Confirmar que el emulador tiene camara configurada si se va a mostrar la foto; si no, decir que es opcional.
+- [ ] Confirmar que el emulador tiene camara configurada si se va a mostrar la foto; si no, decir que es opcional. Si se captura en vivo, verificar que la foto no salga rotada y que el sistema no pida permiso de camara a esta app.
 - [ ] Confirmar el permiso de notificaciones: se puede mostrar el dialogo o preaprobarlo.
 - [ ] Tener una version de respaldo del APK: `app/build/outputs/apk/debug/app-debug.apk`.
 

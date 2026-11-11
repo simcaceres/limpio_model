@@ -158,7 +158,7 @@ com.example.limpio_moviles/
 | `data/local/LemacDatabase.kt` | Base de datos Room | Version 1, una entidad, singleton con `@Volatile` y `synchronized`. |
 | `data/local/RegistroCsvExporter.kt` | Generador de CSV puro | Recibe `List<RegistroEntity>` y produce texto UTF-8 con BOM, cabecera exacta, CRLF, escapado RFC 4180 y `nombreArchivo()`. No conoce Android ni el sistema de archivos. |
 | `data/remote/LemacApi.kt` | Contrato de sincronizacion y simulacion | `LemacApi` define `sincronizar`; `FakeLemacApi` espera 700 ms y devuelve exito. |
-| `data/repository/RegistroRepository.kt` | Repositorio de registros | Expone `Flow`, decide insertar o actualizar, obtiene todos (`obtenerTodos`), elimina, sincroniza y carga datos demo. |
+| `data/repository/RegistroRepository.kt` | Repositorio de registros | Expone `Flow`, decide insertar o actualizar de forma explicita (sin upsert `REPLACE`), obtiene todos (`obtenerTodos`), elimina, sincroniza y carga datos demo de forma atomica. |
 | `data/repository/PerfilRepository.kt` | Persistencia del perfil | Guarda alias, ruta de foto y estado del recordatorio en `SharedPreferences`. |
 | `model/Ambito.kt` | Enumeracion de los cuatro ambitos | Cada valor tiene `etiqueta` y `descripcion`; `desdeNombre` convierte texto a enum con valor por defecto. |
 | `model/Catalogos.kt` | Catalogos dependientes del ambito | Tipos disponibles, rango de intensidad, etiquetas de contexto y estrategia. |
@@ -181,10 +181,10 @@ com.example.limpio_moviles/
 | `ui/components/BarraResumen.kt` | Barra de actividad | Calcula la fraccion respecto del maximo y anima el ancho. |
 | `ui/components/BotonExportarCsv.kt` | Boton de exportacion | Lanza `ActivityResultContracts.CreateDocument("text/csv")` (SAF), pasa el nombre sugerido y llama a `viewModel.exportarCsv(uri)`; se deshabilita mientras `cargando` es true o si no hay registros. |
 | `ui/components/SelectorIntensidad.kt` | Slider de intensidad | Recibe valor, rango y error; muestra extremos bajo y alto. |
-| `ui/components/SelectorFotoPerfil.kt` | Captura de foto | Delega la captura en la app de camara del sistema con un contrato de Activity Result, sin permiso `CAMERA`; comparte comportamiento entre pantallas. |
+| `ui/components/SelectorFotoPerfil.kt` | Captura de foto | Contrato custom `TomarFotoConUri` (`ACTION_IMAGE_CAPTURE` + `EXTRA_OUTPUT` + `FileProvider` + `ClipData`), sin permiso `CAMERA`; decodifica con EXIF en `Dispatchers.IO`; comparte comportamiento entre pantallas. |
 | `ui/components/ColoresAmbito.kt` | Identidad visual | Funciones `colorAmbito` e `iconoAmbito` con `when` exhaustivo. |
 | `ui/util/Formato.kt` | Formato de fecha | `dd/MM/yyyy HH:mm` con `Locale.getDefault()`. |
-| `util/FotoStorage.kt` | Archivo de foto | Guarda `perfil.png` en `filesDir` y lo carga con `BitmapFactory`. |
+| `util/FotoStorage.kt` | Archivo de foto | Temporal en `cacheDir/fotos` con limpieza de 24 h, `FileProvider` para compartirlo, decodificacion en dos pasos con `inSampleSize` (max. 1024 px por lado), correccion de orientacion EXIF y guardado atomico de `perfil.png` en `filesDir`. |
 | `util/NotificacionHelper.kt` | Notificaciones | Crea el canal, verifica permiso y publica una notificacion generica. |
 | `util/RecordatorioScheduler.kt` | Programacion diaria | Usa WorkManager con trabajo periodico unico y retraso inicial hasta las 20:00. |
 | `util/RecordatorioWorker.kt` | Ejecucion del recordatorio | `doWork` llama a `NotificacionHelper.mostrar` y devuelve exito. |
@@ -375,13 +375,13 @@ Es la fachada de los registros. Recibe `RegistroDao` y `LemacApi` (por defecto `
 
 - `registros`: expone el `Flow` del DAO.
 - `observarPorAmbito(ambito)`: delega la consulta filtrada. La UI actual no la usa, pero queda disponible.
-- `guardar(registro)`: si `id == 0` inserta; si no, actualiza.
+- `guardar(registro)`: si `id == 0` inserta; si no, actualiza. Son operaciones explicitas (`insert`/`update`), no un upsert con `OnConflictStrategy.REPLACE`: un update que afecta cero filas devuelve `false` y nunca resucita un registro borrado.
 - `eliminar(registro)`: borra la entidad.
 - `obtener(id)`: busca por id.
 - `obtenerTodos()`: devuelve todos los registros ordenados por fecha descendente; es la fuente de la exportacion CSV.
 - `eliminarTodos()`: borra toda la tabla.
 - `sincronizar()`: obtiene pendientes; si no hay, devuelve `0`; si hay, llama a la API, marca los ids como sincronizados y devuelve la cantidad.
-- `cargarDemo(alias)`: si la base ya tiene registros, no hace nada; si esta vacia, inserta cuatro registros de ejemplo.
+- `cargarDemo(alias)`: delega en `dao.insertarDemoSiVacio`, un metodo `@Transaction` (atomico: verificar e insertar ocurren sin ventana para una carrera). Si la base esta vacia inserta cuatro registros de ejemplo y devuelve `true`; si ya hay registros devuelve `false` sin insertar nada.
 
 El repositorio es el lugar donde vive la decision "insertar o actualizar" y la coordinacion entre Room y la API.
 
@@ -425,16 +425,21 @@ Metodos importantes:
 - `prepararFormulario(ambito, id)`: deja el formulario listo; si hay id, carga el registro.
 - `cambiarAmbito(ambito)`: reinicia tipo, ajusta intensidad al primer valor del rango y limpia errores.
 - `actualizarTipo/Intensidad/Contexto/Estrategia/Nota/EstadoObjetivo`: actualizan un campo y eliminan el error correspondiente.
-- `guardar()`: valida, construye la entidad y llama al repositorio.
+- `guardar()`: valida, construye la entidad (conservando la `fechaHora` original si se edita) y llama al repositorio.
 - `eliminar(registro)`: borra y publica un mensaje.
 - `sincronizar()`: llama al repositorio y publica cuantos registros proceso.
 - `nombreArchivoCsv()`: devuelve `RegistroCsvExporter.nombreArchivo()`, por ejemplo `lemac_datalab_20261104_233000.csv`.
 - `exportarCsv(uri)`: lee todos los registros, genera el CSV con `RegistroCsvExporter.generar`, escribe en el `uri` con `contentResolver.openOutputStream` dentro de `Dispatchers.IO` y publica un mensaje de exito, lista vacia o fallo.
-- `cargarDemo()`: inserta datos de ejemplo si la base esta vacia.
+- `cargarDemo()`: inserta datos de ejemplo solo si la base esta vacia; si ya hay registros, avisa que no se duplicaron.
 - `borrarTodos()`: elimina todos los registros.
 - `limpiarMensaje()`, `limpiarFormulario()`, `mostrarMensaje()`: utilidades de estado.
 
-Detalle importante de `guardar()`: siempre construye la entidad con `fechaHora = System.currentTimeMillis()` y `sincronizado = false`. Por eso, al editar un registro, la fecha se actualiza y el registro vuelve a quedar pendiente de sincronizacion.
+Detalle importante de `guardar()`: la fecha y la bandera de sincronizacion tienen una semantica distinta segun el caso.
+
+- **Al crear** (`editandoId == null`): la entidad se construye con `fechaHora = System.currentTimeMillis()`.
+- **Al editar** (`editandoId != null`): antes de construir la entidad se relee el registro con `obtener(editandoId)` y se conserva su `fechaHora` original (`existente?.fechaHora ?: ahora`). Por eso editar no reordena el historial (el DAO ordena por `fechaHora DESC`) ni altera la ultima fecha del resumen (`ResumenCalculator.ultimaFecha` es el maximo de `fechaHora`).
+- **En ambos casos** la entidad se guarda con `sincronizado = false`: un registro editado vuelve a la cola de pendientes y se reenvia en la sincronizacion simulada.
+- **Si el registro a editar ya no existe** (por ejemplo, se borro en otra pantalla antes de guardar), `guardar()` no crea nada: muestra el mensaje "No se encontró el registro que intentas editar" y termina ahi.
 
 #### `RegistroViewModelFactory`
 
@@ -596,9 +601,27 @@ Combina un texto "Intensidad: N", un `Slider` y etiquetas de extremos. El `value
 
 #### `SelectorFotoPerfil`
 
-Usa un unico launcher con un contrato de Activity Result que delega la captura en la app de camara del sistema.
+Usa un unico launcher con un contrato de Activity Result **propio**, `TomarFotoConUri`, definido en el mismo archivo como `ActivityResultContract<Uri, Boolean>`:
 
-No solicita `CAMERA` (quien usa la camara es la aplicacion externa). Al pulsar el boton se abre la camara del dispositivo y el boton queda deshabilitado mientras dura la captura. Si no hay app de camara, si el lanzamiento falla o la captura se cancela, llama a `onCamaraNoDisponible`. Si termina bien, decodifica la imagen en `Dispatchers.IO` y entrega el `Bitmap` a `onFotoCapturada`. La imagen se muestra en un circulo de 104 dp. No usa galeria ni permisos de almacenamiento.
+- `createIntent(context, uri)` arma un `Intent(MediaStore.ACTION_IMAGE_CAPTURE)` con `MediaStore.EXTRA_OUTPUT` apuntando al archivo temporal, agrega `ClipData.newRawUri("foto_perfil", uri)` y los flags `FLAG_GRANT_READ_URI_PERMISSION | FLAG_GRANT_WRITE_URI_PERMISSION`.
+- `parseResult(resultCode, intent)` devuelve `resultCode == Activity.RESULT_OK`.
+
+Es funcionalmente equivalente al contrato estandar `ActivityResultContracts.TakePicture` (androidx.activity 1.8.0), pero mas defensivo: enviar el `Uri` tambien en el `ClipData` y marcar explicitamente los flags de lectura y escritura hace que el grant temporal hacia la app de camara sea confiable incluso con apps de camara OEM o de terceros, que no siempre honran el `EXTRA_OUTPUT` por si solo.
+
+No solicita `CAMERA` (quien usa la camara es la aplicacion externa, con sus propios permisos; esta app solo recibe el resultado). El manifiesto declara `uses-feature android.hardware.camera` con `required="false"`, de modo que la app se puede instalar en equipos sin camara.
+
+Los tres estados de captura (`capturaUri` y `capturaArchivo` como texto, y `capturando`) viven en `rememberSaveable`: sobreviven a la rotacion de pantalla y al process death, y el resultado pendiente se re-entrega al recrear la Activity, siguiendo el patron oficial de la Activity Result API.
+
+Secuencia exacta al pulsar el boton (deshabilitado mientras `capturando` es true):
+
+1. Se crea el archivo temporal con `FotoStorage.crearArchivoTemporal` y su `Uri` con `FotoStorage.uriParaArchivo` (`FileProvider`); ambos valores se guardan en los `rememberSaveable` antes de lanzar.
+2. Se marca `capturando = true` y se lanza la camara del sistema.
+3. Si el lanzamiento falla (por ejemplo, no hay app de camara), se limpia el estado, se borra el temporal y se llama a `onCamaraNoDisponible`.
+4. En el callback: si el resultado no es `RESULT_OK` (el usuario cancelo), se borra el temporal y se llama a `onCamaraNoDisponible`.
+5. Si fue exitoso, se decodifica con `FotoStorage.cargarDesdeUri` dentro de `withContext(Dispatchers.IO)`; el temporal se borra **siempre** en el `finally`, incluso si la decodificacion falla.
+6. Si hay bitmap, se entrega a `onFotoCapturada`; si no, a `onCamaraNoDisponible`.
+
+La imagen se muestra en un circulo de 104 dp. No usa galeria ni permisos de almacenamiento.
 
 #### `ColoresAmbito`
 
@@ -617,7 +640,15 @@ Si se agrega un ambito nuevo, el `when` deja de compilar hasta que se complete. 
 
 #### `FotoStorage`
 
-Guarda la foto como `perfil.png` en `context.filesDir` con compresion PNG al 100 por ciento y devuelve la ruta absoluta. Para cargar, verifica que la ruta no sea nula ni vacia y que el archivo exista; si no, devuelve `null`. No usa almacenamiento externo.
+Es el objeto que gestiona los archivos de la foto de perfil. Sus constantes definen el contrato: `perfil.png` en `filesDir`, temporales en `cacheDir/fotos/captura_*.jpg`, lado maximo de 1024 px y limpieza de temporales con mas de 24 horas.
+
+- `crearArchivoTemporal(context)`: crea la carpeta `cacheDir/fotos` si hace falta, elimina los temporales con mas de 24 horas (`limpiarTemporalesAntiguos`) y devuelve un `File.createTempFile` dentro de ella. La cache esta excluida del respaldo automatico, asi que un temporal olvidado nunca sale del dispositivo.
+- `uriParaArchivo(context, archivo)`: devuelve el `Uri` de `FileProvider.getUriForFile` con la authority `${context.packageName}.fileprovider`, es decir `com.example.limpio_moviles.fileprovider`. El provider esta registrado en `AndroidManifest.xml` (`exported="false"`, `grantUriPermissions="true"`) y apunta a `@xml/file_paths`, cuyo `<cache-path path="fotos/" />` cubre exactamente la ruta real del temporal; el mismo XML incluye el `files-path` de documentos de gestion.
+- `cargarDesdeUri(context, uri)`: decodifica en dos pasos — primero `inJustDecodeBounds = true` para medir la imagen sin cargarla en memoria y calcular `inSampleSize` (`calcularMuestra`: potencia de 2 mientras el lado supere 1024 px), y recien entonces decodifica el bitmap reducido. Despues lee la orientacion EXIF (`leerOrientacion`) y la aplica (`aplicarOrientacion`) con las 8 variantes (`ROTATE_90/180/270`, `FLIP_HORIZONTAL/VERTICAL`, `TRANSPOSE`, `TRANSVERSE`), de modo que la rotacion de camara queda resuelta **antes** de mostrar o guardar. Si algo falla, devuelve `null`.
+- `cargar(path)`: misma decodificacion en dos pasos para el archivo ya guardado, pero sin EXIF: el `perfil.png` se guardo ya orientado, asi que no hace falta corregirlo de nuevo.
+- `guardar(context, bitmap)`: persiste el bitmap YA orientado como PNG al 100% en `filesDir/perfil.png` con escritura atomica: primero escribe en `perfil.png.tmp` y luego hace `renameTo` (con `copyTo` de respaldo si el rename falla); si la compresion no prospera, lanza error. Devuelve la ruta absoluta.
+
+Todo el I/O pesado (decodificar y guardar) se invoca desde `Dispatchers.IO`: en el composable para `cargarDesdeUri` y en `RegistroViewModel.actualizarFoto` para `guardar`. No usa almacenamiento externo.
 
 #### `NotificacionHelper`
 
@@ -709,22 +740,31 @@ sequenceDiagram
         VM-->>S: uiState.errores actualizado
         S-->>U: Muestra errores bajo cada campo
     else Sin errores
-        VM->>VM: Construye RegistroEntity
-        VM->>R: guardar(registro)
-        alt id == 0
-            R->>D: insertar(registro)
-        else id != 0
-            R->>D: actualizar(registro)
+        alt Se edita y el registro ya no existe
+            VM->>R: obtener(editandoId)
+            R-->>VM: null
+            VM-->>S: mensaje "No se encontró el registro que intentas editar"
+            S-->>U: Muestra el mensaje; no se crea nada
+        else Crear o edicion valida
+            VM->>R: obtener(editandoId) solo si edita
+            R-->>VM: existente
+            VM->>VM: Construye RegistroEntity<br/>(fechaHora original al editar; sincronizado = false)
+            VM->>R: guardar(registro)
+            alt id == 0
+                R->>D: insertar(registro)
+            else id != 0
+                R->>D: actualizar(registro)
+            end
+            D->>DB: Operacion SQL
+            DB-->>D: Resultado
+            R-->>VM: Exito
+            VM-->>S: guardadoExitoso = true y mensaje
+            S-->>U: Confirmacion, espera 900 ms y vuelve atras
+            DB-->>D: Notifica el cambio de tabla
+            D-->>R: Flow emite la lista actualizada
+            R-->>VM: Flow emite la lista actualizada
+            VM-->>S: registros y resumen recalculados
         end
-        D->>DB: Operacion SQL
-        DB-->>D: Resultado
-        R-->>VM: Exito
-        VM-->>S: guardadoExitoso = true y mensaje
-        S-->>U: Confirmacion, espera 900 ms y vuelve atras
-        DB-->>D: Notifica el cambio de tabla
-        D-->>R: Flow emite la lista actualizada
-        R-->>VM: Flow emite la lista actualizada
-        VM-->>S: registros y resumen recalculados
     end
 ```
 
@@ -829,11 +869,12 @@ Hay una sola tabla y no hay relaciones foraneas. `id = 0` se usa en memoria para
 4. El ViewModel pone `cargando = true` y lanza una corrutina en `viewModelScope`.
 5. `RegistroRepository.obtener(id)` consulta `dao.obtenerPorId(id)`.
 6. Si encuentra el registro, copia todos sus campos a `RegistroUiState` y guarda `editandoId = id`.
-7. Si no lo encuentra (por ejemplo, fue eliminado), deja un formulario vacio con el ambito recibido. En ese caso, guardar crearia un registro nuevo.
-8. El usuario modifica y guarda.
-9. `registroRepository.guardar` ve `id != 0` y ejecuta `dao.actualizar`.
-10. La entidad se guarda con la fecha actual y `sincronizado = false`; es decir, la edicion cambia la fecha y vuelve a marcar el registro como pendiente.
-11. Se muestra "Registro actualizado" y se vuelve a Historial.
+7. Si no lo encuentra (por ejemplo, fue eliminado en otra pantalla), deja un formulario vacio con el ambito recibido.
+8. El usuario modifica y pulsa guardar. `guardar()` relee el registro con `obtener(editandoId)` antes de construir la entidad.
+9. Si al releerlo ya no existe, no se crea nada nuevo: se muestra "No se encontró el registro que intentas editar" y el flujo termina ahi.
+10. Si existe, `registroRepository.guardar` ve `id != 0` y ejecuta `dao.actualizar`.
+11. La entidad se guarda **conservando la `fechaHora` original** del registro y con `sincronizado = false`: la edicion no reordena el historial (el DAO ordena por `fechaHora DESC`) ni cambia la ultima fecha del resumen, y el registro editado vuelve a la cola de pendientes para reenviarse en la sincronizacion simulada.
+12. Se muestra "Registro actualizado" y se vuelve a Historial.
 
 ### 6.4 Eliminar un registro
 
@@ -894,17 +935,19 @@ Aclaracion importante: la sincronizacion es **simulada**. Los datos no salen del
 
 ### 6.9 Foto de perfil
 
-1. `SelectorFotoPerfil` crea un launcher con un contrato de Activity Result que delega la captura en la app de camara del sistema; no solicita ningun permiso.
-2. Al pulsar el boton se abre la camara del sistema. Mientras la captura esta en curso, el boton queda deshabilitado para evitar capturas simultaneas.
-3. Si no hay app de camara, el lanzamiento falla o la captura se cancela, se llama a `onCamaraNoDisponible`.
-4. En Onboarding y Ajustes, ese callback muestra "No se capturo la foto".
-5. Si la captura termina bien, el componente decodifica la imagen resultante fuera del hilo principal (`withContext(Dispatchers.IO)`) y entrega el `Bitmap` a `onFotoCapturada`, que en ambas pantallas es `viewModel.actualizarFoto(it)`.
-6. El ViewModel actualiza `fotoPerfil` en el hilo principal para que Compose la muestre.
-7. Lanza una corrutina y guarda el PNG en `filesDir/perfil.png` con `FotoStorage.guardar` dentro de `withContext(Dispatchers.IO)`; si el guardado falla, muestra "No se pudo guardar la foto".
-8. De vuelta en el hilo principal, actualiza `perfil.fotoPath` y guarda la ruta en `SharedPreferences`.
-9. En el siguiente arranque, el `init` del ViewModel lee la ruta y carga el `Bitmap` con `FotoStorage.cargar` dentro de `withContext(Dispatchers.IO)`; luego asigna `fotoPerfil` en el hilo principal.
+1. `SelectorFotoPerfil` crea un launcher con el contrato propio `TomarFotoConUri` (`ActivityResultContract<Uri, Boolean>`): lanza `Intent(MediaStore.ACTION_IMAGE_CAPTURE)` con `EXTRA_OUTPUT` hacia el archivo temporal, mas `ClipData.newRawUri("foto_perfil", uri)` y `FLAG_GRANT_READ_URI_PERMISSION | FLAG_GRANT_WRITE_URI_PERMISSION`. Es equivalente al estandar `ActivityResultContracts.TakePicture` (androidx.activity 1.8.0), pero mas defensivo ante apps de camara OEM de terceros: el `ClipData` junto con los flags garantiza que la app con permiso persista el grant temporal sobre el archivo.
+2. Los estados `capturaUri`, `capturaArchivo` y `capturando` viven en `rememberSaveable`: sobreviven a la rotacion de pantalla y al process death, y el resultado pendiente se re-entrega al recrear la Activity (patron oficial de la Activity Result API).
+3. Al pulsar el boton se abre la camara del sistema. Mientras la captura esta en curso, el boton queda deshabilitado para evitar capturas simultaneas. La app no pide permiso `CAMERA` porque quien toma la foto es la aplicacion externa.
+4. El temporal se crea con `FotoStorage.crearArchivoTemporal` en `cacheDir/fotos/captura_*.jpg` (limpiando los de mas de 24 horas) y se comparte con la camara mediante un `Uri` de `FileProvider` (`com.example.limpio_moviles.fileprovider`), registrado en el manifiesto y acotado por `@xml/file_paths` a esa misma carpeta.
+5. Si no hay app de camara, el lanzamiento falla o la captura se cancela (resultado distinto de `RESULT_OK`), se borra el temporal y se llama a `onCamaraNoDisponible`; en Onboarding y Ajustes ese callback muestra "No se capturo la foto".
+6. Si la captura termina bien, el componente decodifica con `FotoStorage.cargarDesdeUri` fuera del hilo principal (`withContext(Dispatchers.IO)`): mide con `inJustDecodeBounds`, aplica `inSampleSize` hasta un lado maximo de 1024 px y corrige la orientacion EXIF (las 8 variantes) **antes** de entregar el bitmap. El temporal se borra siempre en el `finally`, incluso si la decodificacion falla.
+7. El bitmap ya orientado se entrega a `onFotoCapturada`, que en ambas pantallas es `viewModel.actualizarFoto(it)`.
+8. El ViewModel actualiza `fotoPerfil` en el hilo principal para que Compose la muestre.
+9. Lanza una corrutina y guarda el PNG en `filesDir/perfil.png` con `FotoStorage.guardar` dentro de `withContext(Dispatchers.IO)`; el guardado es atomico (escribe en `perfil.png.tmp` y renombra); si el guardado falla, muestra "No se pudo guardar la foto".
+10. De vuelta en el hilo principal, actualiza `perfil.fotoPath` y guarda la ruta en `SharedPreferences`.
+11. En el siguiente arranque, el `init` del ViewModel lee la ruta y carga el `Bitmap` con `FotoStorage.cargar` dentro de `withContext(Dispatchers.IO)`; luego asigna `fotoPerfil` en el hilo principal.
 
-No hay permiso de camara: la foto la toma la app de camara del sistema, no esta app, y `uses-feature android.hardware.camera` se declara como opcional. Tampoco hay permiso de almacenamiento: la imagen final se guarda en el directorio interno de la app. Todo el trabajo con archivos (decodificar y guardar) se hace en `Dispatchers.IO` para no bloquear el hilo principal.
+No hay permiso de camara: la foto la toma la app de camara del sistema, no esta app, y `uses-feature android.hardware.camera` se declara como opcional. Tampoco hay permiso de almacenamiento: el temporal vive en la cache interna y la imagen final en `filesDir`. La rotacion de camara queda resuelta de punta a punta: el EXIF se corrige antes de mostrar y de guardar, por eso la foto ya no sale rotada. Todo el trabajo con archivos (decodificar y guardar) se hace en `Dispatchers.IO` para no bloquear el hilo principal.
 
 ### 6.10 Cargar y borrar datos demo
 
@@ -912,10 +955,10 @@ Cargar:
 
 1. El boton aparece en Home cuando no hay registros, y tambien en Ajustes.
 2. `viewModel.cargarDemo()` lanza la corrutina y usa el alias actual o `"Usuario de prueba"`.
-3. `RegistroRepository.cargarDemo(alias)` consulta la primera emision de `observarTodos()`.
-4. Si ya hay al menos un registro, retorna sin insertar nada.
-5. Si la base esta vacia, inserta cuatro registros, uno por ambito, con fechas de hace 1, 2, 3 y 4 dias y `sincronizado = false`.
-6. El ViewModel muestra "Datos de demostracion cargados". Si la base no estaba vacia, el mensaje se muestra igual aunque no se haya insertado nada; es una limitacion conocida del MVP.
+3. `RegistroRepository.cargarDemo(alias)` delega en `dao.insertarDemoSiVacio`, anotado con `@Transaction`: verificar si hay datos e insertar ocurren de forma atomica, sin ventana para una carrera.
+4. Si ya hay al menos un registro, el DAO no inserta nada y devuelve `false`.
+5. Si la base esta vacia, inserta cuatro registros, uno por ambito, con fechas de hace 1, 2, 3 y 4 dias y `sincronizado = false`, y devuelve `true`.
+6. El ViewModel distingue ambos casos en el mensaje: "Datos de demostración cargados" cuando inserto, o "Ya hay registros; no se duplicaron los datos de ejemplo" cuando ya habia datos. Si la operacion falla, "No se pudieron cargar los datos de demostración".
 
 Borrar:
 
@@ -1089,7 +1132,7 @@ La contrapartida es que `uiState` es unico para toda la app. Por eso `RegistroSc
 
 Detalles:
 
-- La app **no declara `CAMERA`**. La foto de perfil se captura delegando en la app de camara del sistema, que no exige ese permiso a esta app; si la camara no esta disponible o la captura se cancela, se muestra "No se capturo la foto" y la app sigue funcionando.
+- La app **no declara `CAMERA`**. La foto de perfil se captura delegando en la app de camara del sistema mediante un Intent `ACTION_IMAGE_CAPTURE` con `EXTRA_OUTPUT` hacia un archivo temporal propio, compartido con un `FileProvider` (`com.example.limpio_moviles.fileprovider`, `exported="false"`, `grantUriPermissions="true"`): la app externa accede al hardware con sus propios permisos y esta app solo recibe el resultado. Si la camara no esta disponible o la captura se cancela, se muestra "No se capturo la foto" y la app sigue funcionando.
 - El manifiesto declara `android.hardware.camera` con `required="false"`, por lo que la app puede instalarse en dispositivos sin camara.
 - No se pide permiso de almacenamiento: la foto se guarda en `filesDir`.
 - No se declara `INTERNET`; la sincronizacion es local y simulada.
@@ -1133,19 +1176,19 @@ La app unificada tiene **69 pruebas unitarias** con JUnit 4: 26 del modulo de bi
 ### `RegistroRepositoryTest` (5 pruebas, con un DAO falsificado)
 
 1. Guardar un registro nuevo (id 0) inserta y devuelve true.
-2. Guardar un registro existente actualiza y devuelve true.
-3. Guardar devuelve false si el registro a editar ya no existe.
+2. Guardar un registro existente actualiza y devuelve true, conservando la `fechaHora` original (el test fija `1_000L` y la verifica despues del update).
+3. Guardar devuelve false si el registro a editar ya no existe (el update afecto cero filas y no se inserto nada).
 4. `cargarDemo` inserta cuatro registros cuando la base esta vacia.
 5. `cargarDemo` no duplica datos si ya hay registros.
 
 ### Que no esta probado
 
 - Room y el DAO real (el repositorio de bienestar se prueba con un DAO falsificado).
-- El ViewModel.
+- El ViewModel (deuda conocida: la semantica de edicion y los mensajes se cubren hoy a nivel de repositorio, pero falta al menos un test del ViewModel).
 - La escritura real del archivo y el selector SAF (la generacion del texto si esta probada).
 - La interfaz Compose.
 - WorkManager y las notificaciones.
-- La captura de foto.
+- La captura de foto (el contrato custom, el FileProvider y la correccion EXIF no tienen pruebas).
 - El portal y las pantallas del modulo de gestion documental (de gestion si estan probados sus modelos: validadores, permisos, flujo de modificacion, reportes y tipos MIME).
 
 No hay carpeta `app/src/androidTest`, por lo que no existen pruebas instrumentadas ni pruebas end-to-end.
@@ -1155,6 +1198,8 @@ Comando:
 ```bash
 ./gradlew :app:testDebugUnitTest
 ```
+
+Verificacion del 11 de noviembre de 2026 (ajustes del flujo de camara y de la semantica de edicion): `compileDebugKotlin` correcto, `testDebugUnitTest` con 69/69 aprobadas (26 de bienestar + 43 de gestion documental), `assembleDebug` correcto con APK de ~64.9 MB en `app/build/outputs/apk/debug/app-debug.apk`, y manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`.
 
 ## 11. Limitaciones reales del MVP
 
@@ -1167,8 +1212,8 @@ Conviene decirlas con claridad en la disertacion, porque demuestran criterio:
 5. **No hay pruebas instrumentadas ni de UI.**
 6. **El ViewModel es unico y compartido.** Para una app mas grande convendria separar ViewModels por pantalla o por flujo.
 7. **La sincronizacion no resuelve conflictos.** Solo marca pendientes como sincronizados.
-8. **Editar cambia la fecha original.** `guardar()` usa `System.currentTimeMillis()` tambien al actualizar.
-9. **Cargar datos demo no avisa si la base ya tenia datos.** El repositorio retorna sin insertar, pero el ViewModel muestra el mensaje de exito igual.
+8. **La edicion re-encola el registro para sincronizar.** Editar conserva la fecha original pero fuerza `sincronizado = false`, asi que el registro editado se reenvia completo en la siguiente sincronizacion simulada. Es intencional (el cambio debe llegar al "servidor"), pero una API real necesitaria manejo de conflictos o idempotencia.
+9. **La carga demo es todo o nada.** `insertarDemoSiVacio` inserta los cuatro ambitos juntos cuando la base esta vacia; no hay seleccion parcial de ambitos ni datos demo configurables.
 10. **El recordatorio es aproximado y fijo a las 20:00.** WorkManager no garantiza puntualidad exacta y no hay configuracion de hora.
 11. **La exportacion CSV es texto plano y no esta cifrada.** Incluye alias y notas, y se guarda donde el usuario elija; conviene tratarla como informacion privada. Tampoco hay borrado selectivo por ambito: solo borrado total.
 12. **No hay accesibilidad avanzada ni pruebas con TalkBack.** Hay algunas descripciones semanticas, pero no una auditoria.
@@ -1265,11 +1310,11 @@ La app funciona igual. No hay llamadas de red reales. La sincronizacion simulada
 
 ### Donde se guarda la foto
 
-En `context.filesDir/perfil.png`, dentro del almacenamiento interno de la aplicacion. La ruta se guarda en `SharedPreferences` con la clave `foto_path`.
+En `context.filesDir/perfil.png`, dentro del almacenamiento interno de la aplicacion. Se escribe de forma atomica (temporal + rename) y ya orientada segun EXIF. La ruta se guarda en `SharedPreferences` con la clave `foto_path`; el archivo temporal de captura vive en la cache y se borra tras el uso.
 
 ### Que pasa al editar un registro
 
-Se abre el mismo formulario con los datos cargados. Al guardar se actualiza la fila completa, se cambia `fechaHora` al momento actual y se marca `sincronizado = false`. Es decir, la edicion mueve el registro al tope del historial y lo deja pendiente de sincronizar.
+Se abre el mismo formulario con los datos cargados. Al guardar se actualiza la fila completa **conservando la `fechaHora` original** del registro y se marca `sincronizado = false`: el registro editado vuelve a la cola de pendientes y se reenvia en la sincronizacion simulada, pero no cambia de lugar en el historial (el DAO ordena por `fechaHora DESC`) ni altera la ultima fecha del resumen. Si el registro ya no existe al momento de guardar, se muestra "No se encontró el registro que intentas editar" y no se crea nada.
 
 ## 13. Resumen para memorizar
 

@@ -44,7 +44,7 @@ En el estado actual del codigo:
 
 - Los registros de bienestar se guardan en una base de datos Room local del dispositivo (`lemac_datalab.db`).
 - El alias, la ruta de la foto y el estado del recordatorio se guardan en `SharedPreferences` (`perfil_lemac.xml`).
-- La foto de perfil se guarda como un archivo PNG en el almacenamiento interno de la app. Su captura delega en la app de camara del sistema y tanto la decodificacion de la imagen como el guardado del archivo se ejecutan fuera del hilo principal, en `Dispatchers.IO`.
+- La foto de perfil se guarda como un archivo PNG en el almacenamiento interno de la app. Su captura delega en la app de camara del sistema (Intent `ACTION_IMAGE_CAPTURE` con `EXTRA_OUTPUT` hacia un archivo temporal propio compartido con un `FileProvider`; no se pide permiso `CAMERA`). La imagen se decodifica en dos pasos con `inSampleSize` (hasta 1024 px por lado), se corrige la orientacion EXIF antes de mostrarla o guardarla (por eso la foto ya no sale rotada) y tanto la decodificacion como el guardado se ejecutan fuera del hilo principal, en `Dispatchers.IO`. El detalle completo del flujo esta en la seccion [Foto de perfil y edicion de registros](#foto-de-perfil-y-edicion-de-registros).
 - El modulo de gestion documental usa una segunda base Room local (`gestion_documental.db`) con usuarios, documentos y auditoria **ficticios**. Tampoco sale del dispositivo y, ademas, queda excluida del respaldo automatico.
 - La exportacion CSV es **local**: el archivo se genera en el dispositivo y se guarda donde el usuario elige con el selector de documentos del sistema (SAF). No hay subida a la nube ni permiso de almacenamiento.
 - No existe un backend real ni se envian datos a Internet. La sincronizacion de bienestar usa `FakeLemacApi`, que solo simula una espera de 700 ms, y la de gestion no existe: todo es local.
@@ -145,7 +145,7 @@ El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con p
   6. Un campo que empieza como formula de hoja de calculo se neutraliza con un apostrofo.
   7. Un retorno de carro aislado se escapa entre comillas.
   8. Las filas usan saltos de linea CRLF, sin `\n` sueltos.
-- `app/src/test/java/com/example/limpio_moviles/data/repository/RegistroRepositoryTest.kt` contiene 5 pruebas del repositorio con un DAO falsificado (insertar, actualizar, registro inexistente al editar, carga demo con base vacia y carga demo sin duplicar).
+- `app/src/test/java/com/example/limpio_moviles/data/repository/RegistroRepositoryTest.kt` contiene 5 pruebas del repositorio con un DAO falsificado (insertar nuevo, actualizar conservando la `fechaHora` original, registro inexistente al editar, carga demo con base vacia y carga demo sin duplicar).
 
 **Modulo de gestion documental** (43 pruebas):
 
@@ -156,7 +156,7 @@ El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con p
 - `app/src/test/java/com/example/gestiondocumental/model/ReportesTest.kt`: 9 pruebas de reportes.
 - `app/src/test/java/com/example/gestiondocumental/util/ArchivosMimeTest.kt`: 8 pruebas de tipos MIME de archivos.
 
-En total son **69 pruebas unitarias** con JUnit 4 (26 de bienestar + 43 de gestion documental). La ejecucion de `./gradlew :app:testDebugUnitTest` tras la integracion termino con 69 aprobadas y 0 fallidas.
+En total son **69 pruebas unitarias** con JUnit 4 (26 de bienestar + 43 de gestion documental). La ejecucion de `./gradlew :app:testDebugUnitTest` tras la integracion termino con 69 aprobadas y 0 fallidas. Se verifico de nuevo el 11 de noviembre de 2026, tras los ajustes del flujo de camara y la semantica de edicion: `compileDebugKotlin` correcto, 69/69 aprobadas, `assembleDebug` correcto (APK de ~64.9 MB en `app/build/outputs/apk/debug/app-debug.apk`) y manifest fusionado sin `uses-permission` de `CAMERA`, con el `FileProvider` y su `file_paths`.
 
 - **No hay pruebas instrumentadas ni pruebas de interfaz** (`app/src/androidTest` no existe).
 - **No hay pruebas de Room real, ViewModels, navegacion ni WorkManager**; el repositorio de bienestar se prueba con un DAO falsificado y la pantalla del portal y las pantallas de gestion no tienen cobertura.
@@ -207,6 +207,28 @@ id,alias,ambito,tipo,intensidad,contexto,estrategia,nota,objetivo,fecha_hora_iso
 | `sincronizado` | `true` o `false` segun la bandera local |
 
 > El CSV es **texto plano**: incluye el alias y las notas. No esta cifrado. Guardarlo en un lugar privado y no compartirlo sin necesidad.
+
+## Foto de perfil y edicion de registros
+
+Dos flujos del modulo de bienestar tienen una semantica precisa que conviene conocer antes de leer el codigo. El detalle paso a paso, con diagramas, esta en [docs/GUIA_ESTUDIO.md](docs/GUIA_ESTUDIO.md).
+
+### Foto de perfil sin permiso de camara
+
+- La captura no usa el permiso `CAMERA`: quien toma la foto es la app de camara del sistema (o de terceros), que accede al hardware con sus propios permisos; esta app solo recibe el resultado por la Activity Result API. El manifiesto solo declara `uses-feature android.hardware.camera` con `required="false"`, para poder instalarse en equipos sin camara.
+- `SelectorFotoPerfil` usa un contrato custom, `TomarFotoConUri` (`ActivityResultContract<Uri, Boolean>`): lanza `Intent(MediaStore.ACTION_IMAGE_CAPTURE)` con `EXTRA_OUTPUT` hacia el archivo temporal, mas `ClipData.newRawUri("foto_perfil", uri)` y `FLAG_GRANT_READ_URI_PERMISSION | FLAG_GRANT_WRITE_URI_PERMISSION`. Es equivalente al estandar `ActivityResultContracts.TakePicture` (androidx.activity 1.8.0), pero mas defensivo: el `ClipData` con los flags garantiza que las apps de camara OEM de terceros con permiso persistan el grant temporal sobre el archivo.
+- El archivo temporal vive en `cacheDir/fotos/captura_*.jpg` y se comparte con la camara mediante un `FileProvider` con authority `com.example.limpio_moviles.fileprovider`, registrado en `AndroidManifest.xml` (`exported=false`, `grantUriPermissions=true`) y acotado por `@xml/file_paths`, cuyo `<cache-path path="fotos/" />` cubre exactamente la ruta real del temporal.
+- El temporal se borra siempre tras el uso (en `finally`), tambien si el usuario cancela la camara o falla la decodificacion; ademas, al crear uno nuevo se limpian los temporales con mas de 24 horas.
+- La decodificacion es en dos pasos: `inJustDecodeBounds` para medir sin cargar memoria y luego `inSampleSize` (potencia de 2 hasta un lado maximo de 1024 px). Antes de mostrar o guardar se corrige la orientacion EXIF con las 8 variantes (`ROTATE_90/180/270`, `FLIP_HORIZONTAL/VERTICAL`, `TRANSPOSE`, `TRANSVERSE`), asi la rotacion de camara queda resuelta de punta a punta.
+- El bitmap ya orientado se persiste como PNG en `filesDir/perfil.png` con escritura atomica (temporal + rename).
+- Los estados de captura (`capturaUri`, `capturaArchivo`, `capturando`) viven en `rememberSaveable`, por lo que sobreviven a la rotacion de pantalla y al process death, y el resultado pendiente se re-entrega al recrear la Activity. Todo el I/O pesado corre en `Dispatchers.IO`, tanto desde el composable como desde `RegistroViewModel.actualizarFoto`.
+
+### Semantica de edicion de registros
+
+- Al editar, `RegistroViewModel.guardar()` conserva la `fechaHora` original del registro (`existente?.fechaHora ?: ahora`) y fuerza `sincronizado = false`: el registro editado vuelve a la cola de pendientes y se reenvia en la sincronizacion simulada. Al crear, la fecha es la hora actual.
+- Como el historial ordena por `fechaHora DESC` en el DAO y la ultima fecha del resumen es el maximo de `fechaHora`, editar no reordena la lista ni altera el resumen.
+- Si el registro a editar ya no existe al momento de guardar, no se crea nada por accidente: se muestra "No se encontró el registro que intentas editar".
+- El repositorio usa insert/update explicitos segun `id == 0` (sin upsert con `REPLACE`), por lo que un update sobre una fila inexistente devuelve `false` y no resucita registros borrados.
+- `cargarDemo()` delega en `insertarDemoSiVacio` (`@Transaction`, atomico) y distingue los casos en el mensaje: "Datos de demostración cargados" o "Ya hay registros; no se duplicaron los datos de ejemplo".
 
 ## Estructura de carpetas resumida
 

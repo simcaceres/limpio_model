@@ -840,7 +840,7 @@ fun sincronizar() {
 <p><b>Limitación:</b> la notificación no distingue eventos (aprobación, rechazo, vencimiento). Para el sistema documental habría que crear notificaciones por evento.</p>
 
 <h2>10.4. Foto de perfil</h2>
-<p><code>SelectorFotoPerfil</code> usa <code>TakePicturePreview</code>, que no requiere permiso <code>CAMERA</code>. El bitmap se pasa a <code>viewModel.actualizarFoto(bitmap)</code>, que guarda en <code>Dispatchers.IO</code> con <code>FotoStorage.guardar</code> y persiste la ruta en SharedPreferences.</p>
+<p><code>SelectorFotoPerfil</code> usa un contrato propio (<code>TomarFotoConUri</code>) que lanza <code>ACTION_IMAGE_CAPTURE</code> con <code>EXTRA_OUTPUT</code> hacia un archivo temporal compartido con <code>FileProvider</code>, y por eso no requiere permiso <code>CAMERA</code>. El bitmap se decodifica en <code>Dispatchers.IO</code> corrigiendo la orientación EXIF y se pasa a <code>viewModel.actualizarFoto(bitmap)</code>, que guarda en <code>Dispatchers.IO</code> con <code>FotoStorage.guardar</code> y persiste la ruta en SharedPreferences.</p>
 
 <!-- ================= 11 ================= -->
 <div class="pagebreak"></div>
