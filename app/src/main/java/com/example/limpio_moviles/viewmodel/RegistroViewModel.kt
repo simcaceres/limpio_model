@@ -6,7 +6,6 @@ import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,8 +20,12 @@ import com.example.limpio_moviles.model.RegistroUiState
 import com.example.limpio_moviles.model.RegistroValidator
 import com.example.limpio_moviles.model.ResumenAmbito
 import com.example.limpio_moviles.model.ResumenCalculator
-import com.example.limpio_moviles.util.FotoStorage
-import com.example.limpio_moviles.util.RecordatorioScheduler
+import com.example.limpio_moviles.util.ExportadorArchivo
+import com.example.limpio_moviles.util.ExportadorArchivoAndroid
+import com.example.limpio_moviles.util.FotoPerfilStorage
+import com.example.limpio_moviles.util.FotoPerfilStorageAndroid
+import com.example.limpio_moviles.util.RecordatorioProgramador
+import com.example.limpio_moviles.util.RecordatorioProgramadorAndroid
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,10 +35,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class RegistroViewModel(
-    application: Application,
     private val registroRepository: RegistroRepository,
-    private val perfilRepository: PerfilRepository
-) : AndroidViewModel(application) {
+    private val perfilRepository: PerfilRepository,
+    private val fotoPerfilStorage: FotoPerfilStorage,
+    private val recordatorioProgramador: RecordatorioProgramador,
+    private val exportadorArchivo: ExportadorArchivo,
+    private val clock: () -> Long = System::currentTimeMillis
+) : ViewModel() {
 
     var uiState by mutableStateOf(RegistroUiState())
         private set
@@ -71,7 +77,7 @@ class RegistroViewModel(
             recordatorioActivo = recordatorioActivo
         )
         viewModelScope.launch {
-            val bitmap = withContext(Dispatchers.IO) { FotoStorage.cargar(fotoPath) }
+            val bitmap = withContext(Dispatchers.IO) { fotoPerfilStorage.cargar(fotoPath) }
             if (fotoPerfil == null) {
                 fotoPerfil = bitmap
             }
@@ -87,10 +93,7 @@ class RegistroViewModel(
     fun actualizarFoto(bitmap: Bitmap) {
         fotoPerfil = bitmap
         viewModelScope.launch {
-            val context = getApplication<Application>()
-            val path = withContext(Dispatchers.IO) {
-                runCatching { FotoStorage.guardar(context, bitmap) }.getOrNull()
-            }
+            val path = withContext(Dispatchers.IO) { fotoPerfilStorage.guardar(bitmap) }
             if (path == null) {
                 uiState = uiState.copy(mensaje = "No se pudo guardar la foto")
                 return@launch
@@ -103,11 +106,10 @@ class RegistroViewModel(
     fun activarRecordatorio(activo: Boolean) {
         perfil = perfil.copy(recordatorioActivo = activo)
         perfilRepository.guardarRecordatorio(activo)
-        val context = getApplication<Application>()
         if (activo) {
-            RecordatorioScheduler.programar(context)
+            recordatorioProgramador.programar()
         } else {
-            RecordatorioScheduler.cancelar(context)
+            recordatorioProgramador.cancelar()
         }
     }
 
@@ -197,7 +199,7 @@ class RegistroViewModel(
                 )
                 return@launch
             }
-            val ahora = System.currentTimeMillis()
+            val ahora = clock()
             val registro = RegistroEntity(
                 id = formulario.editandoId ?: 0,
                 usuarioAlias = perfil.alias.ifBlank { "Usuario de prueba" },
@@ -334,14 +336,10 @@ class RegistroViewModel(
                     return@launch
                 }
 
-                val exportado = withContext(Dispatchers.IO) {
-                    runCatching {
-                        val contenido = RegistroCsvExporter.generar(lista)
-                        getApplication<Application>().contentResolver.openOutputStream(uri)?.use { salida ->
-                            salida.write(contenido.toByteArray(Charsets.UTF_8))
-                        } != null
-                    }.getOrDefault(false)
-                }
+                val exportado = runCatching {
+                    val contenido = RegistroCsvExporter.generar(lista)
+                    exportadorArchivo.escribir(uri, contenido)
+                }.getOrDefault(false)
 
                 uiState = uiState.copy(
                     mensaje = if (exportado) {
@@ -379,9 +377,11 @@ class RegistroViewModelFactory(
         if (modelClass.isAssignableFrom(RegistroViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return RegistroViewModel(
-                application,
-                registroRepository,
-                perfilRepository
+                registroRepository = registroRepository,
+                perfilRepository = perfilRepository,
+                fotoPerfilStorage = FotoPerfilStorageAndroid(application),
+                recordatorioProgramador = RecordatorioProgramadorAndroid(application),
+                exportadorArchivo = ExportadorArchivoAndroid(application)
             ) as T
         }
         throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")

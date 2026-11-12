@@ -10,6 +10,7 @@ import com.example.gestiondocumental.data.repository.UsuarioRepository
 import com.example.limpio_moviles.data.local.LemacDatabase
 import com.example.limpio_moviles.data.remote.FakeLemacApi
 import com.example.limpio_moviles.data.repository.PerfilRepository
+import com.example.limpio_moviles.data.repository.PerfilRepositorySharedPreferences
 import com.example.limpio_moviles.data.repository.RegistroRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +37,7 @@ class LemacApplication : Application() {
         RegistroRepository(database.registroDao(), FakeLemacApi())
     }
 
-    val perfilRepository: PerfilRepository by lazy { PerfilRepository(this) }
+    val perfilRepository: PerfilRepository by lazy { PerfilRepositorySharedPreferences(this) }
 
     // Módulo Gestión Documental RR.HH.
     val gestionDatabase: GestionDatabase by lazy { GestionDatabase.obtener(this) }
