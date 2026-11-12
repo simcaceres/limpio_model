@@ -49,7 +49,7 @@
 
 <table style="margin-top:26px; font-size:9.4pt;">
   <tr><td style="width:26%; background:#eef2f3; border:1px solid #c6d3d6;"><b>Preparado para</b></td><td style="border:1px solid #c6d3d6;">Simon</td></tr>
-  <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Fecha</b></td><td style="border:1px solid #c6d3d6;">7 de noviembre de 2026</td></tr>
+  <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Fecha</b></td><td style="border:1px solid #c6d3d6;">12 de noviembre de 2026</td></tr>
   <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Proyecto revisado</b></td><td style="border:1px solid #c6d3d6;">/home/simon/AndroidStudioProjects/limpio_moviles</td></tr>
   <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Documentos revisados</b></td><td style="border:1px solid #c6d3d6;">trabajo moviles.docx &middot; Respuestas _MVP (2).docx &middot; cartadeanimo.cl</td></tr>
   <tr><td style="background:#eef2f3; border:1px solid #c6d3d6;"><b>Alcance</b></td><td style="border:1px solid #c6d3d6;">(1) Revisar si la app cumple lo pedido. (2) Explicar el flujo model &rarr; repository &rarr; datos &rarr; ViewModel &rarr; UI para estudiarlo. (3) Recomendar como crear un proyecto propio con la misma idea.</td></tr>
@@ -116,7 +116,7 @@
 <tr><td>Compose + Navigation</td><td>Pantallas, rutas y navegación ya funcionando.</td></tr>
 <tr><td>WorkManager y notificaciones</td><td>Base para recordatorios, vencimientos y avisos de aprobación/rechazo.</td></tr>
 <tr><td>Exportador CSV puro y testeable</td><td>Se puede adaptar a reportes de cumplimiento documental.</td></tr>
-<tr><td>19 pruebas unitarias</td><td>Demuestran que sabes separar lógica testeable de Android.</td></tr>
+<tr><td>33 pruebas unitarias de bienestar</td><td>Demuestran que sabes separar lógica testeable de Android; con la app unificada suman 76.</td></tr>
 </table>
 
 <div class="ok">
@@ -193,7 +193,7 @@
 <tr><td>Notificaciones</td><td>Recordatorio diario genérico a las 20:00 con WorkManager</td></tr>
 <tr><td>Exportación</td><td>CSV local vía SAF (selector de documentos del sistema)</td></tr>
 <tr><td>Privacidad</td><td>Sin permiso <code>INTERNET</code>, sin permiso <code>CAMERA</code>, sin permisos de almacenamiento</td></tr>
-<tr><td>Pruebas</td><td>19 pruebas unitarias JUnit 4 (validador, resumen y CSV)</td></tr>
+<tr><td>Pruebas</td><td>33 pruebas unitarias JUnit 4 de bienestar (validador, resumen, CSV, repositorio y ViewModel); 76 en la app unificada</td></tr>
 </table>
 
 <h3>Relación con Carta de Ánimo</h3>
@@ -269,7 +269,7 @@
 <tr><td>Exportación de datos</td><td><b>Sí (técnica)</b></td><td><code>RegistroCsvExporter</code> con BOM, CRLF y RFC 4180.</td><td>Adaptar a reportes de cumplimiento.</td></tr>
 <tr><td>Backend / API real</td><td><b>No</b></td><td><code>FakeLemacApi</code> solo simula 700 ms.</td><td>API REST/GraphQL + autenticación + sincronización real.</td></tr>
 <tr><td>Seguridad y cifrado</td><td><b>No</b></td><td>Room sin cifrar; sin login; <code>allowBackup="true"</code>.</td><td>Cifrado (SQLCipher o servidor), RBAC, consentimiento y auditoría.</td></tr>
-<tr><td>Pruebas de datos, repositorios y UI</td><td><b>Parcial</b></td><td>19 pruebas unitarias de lógica pura; sin pruebas de Room, repos, ViewModel ni instrumentadas.</td><td>Agregar pruebas de DAO, repositorio, ViewModel y UI.</td></tr>
+<tr><td>Pruebas de datos, repositorios y UI</td><td><b>Parcial</b></td><td>33 pruebas unitarias de bienestar (76 en la app unificada): repositorio con DAO falsificado y ViewModel en JVM; sin pruebas de Room real ni instrumentadas.</td><td>Agregar pruebas de DAO real, escritura SAF y UI instrumentada.</td></tr>
 </table>
 
 <div class="callout">
@@ -351,7 +351,7 @@ class LemacApplication : Application() {
     val registroRepository by lazy {
         RegistroRepository(database.registroDao(), FakeLemacApi())
     }
-    val perfilRepository by lazy { PerfilRepository(this) }
+    val perfilRepository by lazy { PerfilRepositorySharedPreferences(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -359,7 +359,7 @@ class LemacApplication : Application() {
     }
 }
 </pre>
-<p>El <code>RegistroViewModelFactory</code> recibe esas dependencias y construye el ViewModel. Para un MVP es suficiente, se entiende y se explica bien en una defensa.</p>
+<p>El <code>RegistroViewModelFactory</code> recibe la <code>Application</code> y los repositorios, y construye el ViewModel con las implementaciones Android de los efectos y el reloj por defecto. Para un MVP es suficiente, se entiende y se explica bien en una defensa.</p>
 
 <!-- ================= 8 ================= -->
 <div class="pagebreak"></div>
@@ -542,23 +542,35 @@ class RegistroRepository(
 <tr><td><code>cargarDemo</code></td><td>Inserta datos de ejemplo solo si la tabla está vacía (evita duplicados).</td></tr>
 </table>
 
-<h3><code>PerfilRepository.kt</code></h3>
+<h3><code>PerfilRepository.kt</code> (interfaz) + <code>PerfilRepositorySharedPreferences.kt</code> (implementación)</h3>
 <pre>
-class PerfilRepository(context: Context) {
+interface PerfilRepository {
+    fun cargarAlias(): String
+    fun guardarAlias(alias: String)
+    fun cargarFotoPath(): String?
+    fun guardarFotoPath(path: String?)
+    fun cargarRecordatorio(): Boolean
+    fun guardarRecordatorio(activo: Boolean)
+}
+
+class PerfilRepositorySharedPreferences(context: Context) : PerfilRepository {
     private val preferencias = context.applicationContext
         .getSharedPreferences("perfil_lemac", Context.MODE_PRIVATE)
 
-    fun cargarAlias(): String = preferencias.getString("alias", "") ?: ""
-    fun guardarAlias(alias: String) { preferencias.edit().putString("alias", alias).apply() }
+    override fun cargarAlias(): String = preferencias.getString("alias", "") ?: ""
+    override fun guardarAlias(alias: String) {
+        preferencias.edit().putString("alias", alias).apply()
+    }
 
-    fun cargarFotoPath(): String? = preferencias.getString("foto_path", null)
-    fun guardarFotoPath(path: String?) { /* put o remove */ }
+    override fun cargarFotoPath(): String? = preferencias.getString("foto_path", null)
+    override fun guardarFotoPath(path: String?) { /* put o remove */ }
 
-    fun cargarRecordatorio(): Boolean = preferencias.getBoolean("recordatorio_activo", false)
-    fun guardarRecordatorio(activo: Boolean) { /* putBoolean */ }
+    override fun cargarRecordatorio(): Boolean =
+        preferencias.getBoolean("recordatorio_activo", false)
+    override fun guardarRecordatorio(activo: Boolean) { /* putBoolean */ }
 }
 </pre>
-<p><b>Qué explica:</b> el perfil no es una entidad Room porque son pocos datos simples. Se guarda en <code>SharedPreferences</code>. El repositorio envuelve esas claves para que el ViewModel no maneje strings sueltos.</p>
+<p><b>Qué explica:</b> el perfil no es una entidad Room porque son pocos datos simples. Se guarda en <code>SharedPreferences</code> (<code>perfil_lemac</code>) mediante <code>PerfilRepositorySharedPreferences</code>. <code>PerfilRepository</code> es una <b>interfaz</b>: el ViewModel depende del contrato y los tests pueden inyectar un doble en memoria sin tocar Android. <code>LemacApplication</code> es quien inyecta la implementación real.</p>
 
 <div class="callout">
 <b>Regla:</b> el repositorio es el único que conoce la fuente de datos. Si mañana cambias Room por una API, cambias el repositorio, no la UI.
@@ -656,10 +668,13 @@ object RegistroCsvExporter {
 <h3>Estado</h3>
 <pre>
 class RegistroViewModel(
-    application: Application,
     private val registroRepository: RegistroRepository,
-    private val perfilRepository: PerfilRepository
-) : AndroidViewModel(application) {
+    private val perfilRepository: PerfilRepository,
+    private val fotoPerfilStorage: FotoPerfilStorage,
+    private val recordatorioProgramador: RecordatorioProgramador,
+    private val exportadorArchivo: ExportadorArchivo,
+    private val clock: () -&gt; Long = System::currentTimeMillis
+) : ViewModel() {
 
     var uiState by mutableStateOf(RegistroUiState())
         private set
@@ -705,9 +720,18 @@ fun guardar() {
     uiState = uiState.copy(cargando = true, guardadoExitoso = false, errores = emptyMap())
 
     viewModelScope.launch {
-        val existente = formulario.editandoId?.let { id ->
+        val existente = formulario.editandoId?.let { id -&gt;
             runCatching { registroRepository.obtener(id) }.getOrNull()
         }
+        if (formulario.editandoId != null &amp;&amp; existente == null) {
+            uiState = uiState.copy(
+                cargando = false,
+                guardadoExitoso = false,
+                mensaje = "No se encontró el registro que intentas editar"
+            )
+            return@launch
+        }
+        val ahora = clock()
         val registro = RegistroEntity(
             id = formulario.editandoId ?: 0,
             usuarioAlias = perfil.alias.ifBlank { "Usuario de prueba" },
@@ -718,26 +742,54 @@ fun guardar() {
             estrategia = formulario.estrategia.trim(),
             nota = formulario.nota.trim(),
             estadoObjetivo = formulario.estadoObjetivo.trim(),
-            fechaHora = existente?.fechaHora ?: System.currentTimeMillis(),
+            fechaHora = existente?.fechaHora ?: ahora,
             sincronizado = false
         )
-        val guardado = registroRepository.guardar(registro)
-        uiState = uiState.copy(
-            cargando = false,
-            guardadoExitoso = guardado,
-            mensaje = if (guardado) "Registro guardado" else "No se pudo guardar"
-        )
+
+        runCatching { registroRepository.guardar(registro) }
+            .onSuccess { guardado -&gt;
+                if (!guardado) {
+                    uiState = uiState.copy(
+                        cargando = false,
+                        guardadoExitoso = false,
+                        mensaje = if (formulario.editandoId != null) {
+                            "No se pudo actualizar el registro"
+                        } else {
+                            "No se pudo guardar el registro"
+                        }
+                    )
+                    return@onSuccess
+                }
+                uiState = uiState.copy(
+                    cargando = false,
+                    guardadoExitoso = true,
+                    mensaje = if (formulario.editandoId != null) {
+                        "Registro actualizado"
+                    } else {
+                        "Registro guardado"
+                    }
+                )
+            }
+            .onFailure {
+                uiState = uiState.copy(
+                    cargando = false,
+                    guardadoExitoso = false,
+                    mensaje = "No se pudo guardar el registro"
+                )
+            }
     }
 }
 </pre>
-<p><b>Qué explica:</b> valida primero, sin tocar la base. Si hay errores, no hace nada más. Si todo está bien, construye la entidad, llama al repositorio dentro de <code>viewModelScope</code> y actualiza el estado. La UI reacciona al nuevo estado.</p>
+<p><b>Qué explica:</b> valida primero, sin tocar la base: si hay errores, no llama al repositorio. Copia el formulario a una variable local antes de lanzar la corrutina para no leer un estado que puede cambiar. Si está editando, relee el registro; si ya no existe, muestra “No se encontró el registro que intentas editar” y no inserta ni actualiza. La fecha se obtiene del reloj inyectable (<code>clock()</code>) y, al editar, se conserva la <code>fechaHora</code> original y se fuerza <code>sincronizado = false</code>. Distingue los mensajes de creación y edición, y también las ramas de fallo. La UI reacciona al nuevo estado.</p>
+
+<p><b>Por qué el reloj y las interfaces de efectos:</b> el ViewModel ya no extiende <code>AndroidViewModel</code>. Depende de <code>FotoPerfilStorage</code>, <code>RecordatorioProgramador</code> y <code>ExportadorArchivo</code>, tres interfaces con implementaciones Android (<code>FotoPerfilStorageAndroid</code>, <code>RecordatorioProgramadorAndroid</code>, <code>ExportadorArchivoAndroid</code>), más un reloj <code>() -&gt; Long</code>. Así se puede probar en la JVM con dobles y un reloj fijo, sin <code>Robolectric</code> ni emulador. Es el mismo principio de inversión de dependencias que ya usa el repositorio.</p>
 
 <h2>8.5. Application, Activity y Factory</h2>
 <table>
 <tr><th style="width:26%;">Archivo</th><th>Responsabilidad</th></tr>
 <tr><td><code>LemacApplication.kt</code></td><td>Contenedor de dependencias y creación del canal de notificaciones.</td></tr>
 <tr><td><code>MainActivity.kt</code></td><td>Única Activity. Aplica el tema y monta <code>LemacApp()</code>.</td></tr>
-<tr><td><code>RegistroViewModelFactory</code></td><td>Construye el ViewModel con la Application y los repositorios.</td></tr>
+<tr><td><code>RegistroViewModelFactory</code></td><td>Construye el ViewModel con los repositorios, las implementaciones Android de los efectos (<code>FotoPerfilStorageAndroid</code>, <code>RecordatorioProgramadorAndroid</code>, <code>ExportadorArchivoAndroid</code>) y el reloj por defecto.</td></tr>
 </table>
 
 <h2>8.6. UI y navegación — la punta del iceberg</h2>
@@ -824,7 +876,7 @@ fun sincronizar() {
   <li>El sistema abre el selector de documentos; el usuario elige dónde guardar.</li>
   <li><code>viewModel.exportarCsv(uri)</code> lee todos los registros con <code>registroRepository.obtenerTodos()</code>.</li>
   <li><code>RegistroCsvExporter.generar(lista)</code> produce el texto.</li>
-  <li><code>contentResolver.openOutputStream(uri)</code> escribe el archivo en <code>Dispatchers.IO</code>.</li>
+  <li><code>ExportadorArchivo.escribir(uri, contenido)</code> escribe el archivo; su implementación Android usa <code>contentResolver.openOutputStream(uri)</code> dentro de <code>Dispatchers.IO</code>.</li>
   <li>Se muestra “Datos exportados (N registros)”.</li>
 </ol>
 <p>No se pide permiso de almacenamiento porque SAF otorga acceso temporal al archivo elegido.</p>
@@ -840,7 +892,7 @@ fun sincronizar() {
 <p><b>Limitación:</b> la notificación no distingue eventos (aprobación, rechazo, vencimiento). Para el sistema documental habría que crear notificaciones por evento.</p>
 
 <h2>10.4. Foto de perfil</h2>
-<p><code>SelectorFotoPerfil</code> usa un contrato propio (<code>TomarFotoConUri</code>) que lanza <code>ACTION_IMAGE_CAPTURE</code> con <code>EXTRA_OUTPUT</code> hacia un archivo temporal compartido con <code>FileProvider</code>, y por eso no requiere permiso <code>CAMERA</code>. El bitmap se decodifica en <code>Dispatchers.IO</code> corrigiendo la orientación EXIF y se pasa a <code>viewModel.actualizarFoto(bitmap)</code>, que guarda en <code>Dispatchers.IO</code> con <code>FotoStorage.guardar</code> y persiste la ruta en SharedPreferences.</p>
+<p><code>SelectorFotoPerfil</code> usa un contrato propio (<code>TomarFotoConUri</code>) que lanza <code>ACTION_IMAGE_CAPTURE</code> con <code>EXTRA_OUTPUT</code> hacia un archivo temporal compartido con <code>FileProvider</code>, y por eso no requiere permiso <code>CAMERA</code>. El bitmap se decodifica en <code>Dispatchers.IO</code> corrigiendo la orientación EXIF y se pasa a <code>viewModel.actualizarFoto(bitmap)</code>, que guarda en <code>Dispatchers.IO</code> a través de <code>FotoPerfilStorage</code> (la implementación Android delega en <code>FotoStorage.guardar</code>) y persiste la ruta en SharedPreferences.</p>
 
 <!-- ================= 11 ================= -->
 <div class="pagebreak"></div>
@@ -851,17 +903,19 @@ fun sincronizar() {
 <tr><th style="width:34%;">Archivo</th><th style="width:10%;">Pruebas</th><th>Qué cubre</th></tr>
 <tr><td><code>RegistroValidatorTest</code></td><td>9</td><td>Tipo obligatorio, rangos de intensidad, campos por ámbito y límite de 200 caracteres.</td></tr>
 <tr><td><code>ResumenCalculatorTest</code></td><td>4</td><td>Lista vacía, promedios, última fecha y ámbito sin datos.</td></tr>
-<tr><td><code>RegistroCsvExporterTest</code></td><td>6</td><td>BOM y cabecera, fila completa, escapado RFC 4180, lista vacía, nombre de archivo y CRLF.</td></tr>
-<tr><td><b>Total</b></td><td><b>19</b></td><td>JUnit 4, ejecutables con <code>./gradlew :app:testDebugUnitTest</code>.</td></tr>
+<tr><td><code>RegistroCsvExporterTest</code></td><td>8</td><td>BOM y cabecera, fila completa, escapado RFC 4180, lista vacía, nombre de archivo, neutralización de fórmulas y CRLF.</td></tr>
+<tr><td><code>RegistroRepositoryTest</code></td><td>5</td><td>Insertar, actualizar conservando la fecha, edición de un registro inexistente y carga demo con y sin datos.</td></tr>
+<tr><td><code>RegistroViewModelTest</code></td><td>7</td><td>Crear con reloj y <code>sincronizado = false</code>, editar conservando la fecha y reencolando, edición inexistente, validación sin tocar el repositorio y carga demo en sus tres ramas.</td></tr>
+<tr><td><b>Total bienestar</b></td><td><b>33</b></td><td>JUnit 4, ejecutables con <code>./gradlew :app:testDebugUnitTest</code>.</td></tr>
 </table>
+<p class="small"><b>App unificada:</b> 76 pruebas = 33 de bienestar + 43 de gestión documental. <code>RegistroViewModelTest</code> corre en la JVM con <code>kotlinx-coroutines-test</code> y <code>Dispatchers.setMain</code>, usando dobles de las interfaces y un reloj fijo; no necesita <code>Robolectric</code> ni emulador.</p>
 
 <h2>11.2. Qué no está probado</h2>
 <ul>
-  <li>Room (DAO y base de datos).</li>
-  <li>Repositorios.</li>
-  <li>ViewModel y corrutinas.</li>
+  <li>Room real (DAO y base de datos): el repositorio se prueba con un DAO falsificado, no contra SQLite.</li>
   <li>WorkManager y notificaciones.</li>
   <li>Interfaz (no hay pruebas instrumentadas ni <code>androidTest</code>).</li>
+  <li>Escritura real vía SAF/<code>ContentResolver</code>: en los tests, <code>ExportadorArchivo</code> se sustituye por un doble; la implementación Android no se prueba.</li>
 </ul>
 
 <h2>11.3. Limitaciones reales del MVP</h2>
@@ -1002,8 +1056,8 @@ com.example.gestiondocumental/
 <tr><td><code>app/src/main/java/.../ui/screens/</code></td><td>Seis pantallas Compose.</td></tr>
 <tr><td><code>app/src/main/java/.../ui/components/</code></td><td>Componentes reutilizables.</td></tr>
 <tr><td><code>app/src/main/java/.../util/</code></td><td>Foto, notificaciones y recordatorios.</td></tr>
-<tr><td><code>app/src/test/java/...</code></td><td>19 pruebas unitarias.</td></tr>
-<tr><td><code>docs/GUIA_ESTUDIO.md</code></td><td>Guía extendida de estudio (1267 líneas).</td></tr>
+<tr><td><code>app/src/test/java/...</code></td><td>33 pruebas unitarias de bienestar (76 en la app unificada).</td></tr>
+<tr><td><code>docs/GUIA_ESTUDIO.md</code></td><td>Guía extendida de estudio (1343 líneas).</td></tr>
 <tr><td><code>docs/DISERTACION.md</code></td><td>Guion de exposición y demo.</td></tr>
 </table>
 
@@ -1015,7 +1069,7 @@ com.example.gestiondocumental/
 # Instalar en emulador o dispositivo
 ./gradlew :app:installDebug
 
-# Ejecutar las 19 pruebas unitarias
+# Ejecutar las 76 pruebas unitarias de la app unificada
 ./gradlew :app:testDebugUnitTest
 
 # Ver el reporte HTML de pruebas
@@ -1023,7 +1077,7 @@ com.example.gestiondocumental/
 </pre>
 
 <h2>13.4. Nota sobre el estado del repositorio</h2>
-<p>Al momento de la revisión, el repositorio local tiene dos archivos modificados sin confirmar: <code>ui/components/BotonExportarCsv.kt</code> (se quitó un comentario) y <code>util/NotificacionHelper.kt</code> (se agregó <code>@SuppressLint("MissingPermission")</code>). Son cambios menores y no afectan el análisis. El último commit es <code>f7120c5</code> (“Estabilización de arquitectura Compose, Room y ViewModels”).</p>
+<p>El estado del repositorio se verificó el 12 de noviembre de 2026; para el estado exacto en el momento de leer este informe, consultar <code>git log -1</code> y <code>git status</code>. Los conteos de pruebas y la arquitectura descritos corresponden a esa verificación.</p>
 
 <div class="callout">
 <b>Cierre.</b> La app actual no es el sistema documental que describe <code>Respuestas_MVP</code>. Pero la arquitectura que construiste es un buen punto de partida para tu próximo proyecto. Estudia el orden <b>model &rarr; repository &rarr; datos &rarr; ViewModel &rarr; UI</b>, y replica ese esqueleto con tu propio dominio.

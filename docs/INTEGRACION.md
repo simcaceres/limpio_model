@@ -110,7 +110,7 @@ Todo el codigo de gestion documental se copio **dentro del mismo modulo `:app`**
 ### 4.7 Pruebas
 
 - Se copiaron las 43 pruebas unitarias de gestion documental a `app/src/test/java/com/example/gestiondocumental/` (6 archivos: validadores, permisos, carga de permisos, flujo de modificacion, reportes y tipos MIME).
-- Se mantienen las 26 pruebas de bienestar, incluidas las nuevas del repositorio con DAO falsificado y las ampliadas del exportador CSV.
+- Se mantienen las 26 pruebas de bienestar vigentes en la integracion (hoy son 33 tras anadir `RegistroViewModelTest`), incluidas las del repositorio con DAO falsificado y las ampliadas del exportador CSV.
 
 ## 5. Arquitectura resultante
 
@@ -172,7 +172,7 @@ El manifiesto mantiene `android:allowBackup="true"`, pero las reglas XML definen
 | `files/perfil.png` (foto de perfil de bienestar) | `file` | No (`exclude`) | Imagen personal; evitar respaldar datos biometricos/fotos. |
 | Cache | — | No | La plataforma la excluye siempre de forma automatica; al usar `<include>`, el respaldo queda limitado a lo incluido. |
 
-Las mismas reglas se aplican en tres lugares: `backup_rules.xml` (full backup, API 30 o inferior) y los dos bloques de `data_extraction_rules.xml` (API 31 o superior: `<cloud-backup>` y `<device-transfer>` identicos). El `include` de `sharedpref` esta acotado a `perfil_lemac.xml` (definido por `PerfilRepository.NOMBRE_PREFERENCIAS`) para no respaldar preferencias tecnicas no deseadas.
+Las mismas reglas se aplican en tres lugares: `backup_rules.xml` (full backup, API 30 o inferior) y los dos bloques de `data_extraction_rules.xml` (API 31 o superior: `<cloud-backup>` y `<device-transfer>` identicos). El `include` de `sharedpref` esta acotado a `perfil_lemac.xml` (nombre definido en `PerfilRepositorySharedPreferences`) para no respaldar preferencias tecnicas no deseadas.
 
 ### Riesgos de privacidad conocidos
 
@@ -195,7 +195,7 @@ Las mismas reglas se aplican en tres lugares: `backup_rules.xml` (full backup, A
 
 5. **Respaldo de la base de bienestar como decision de producto pendiente.** Se respalda `lemac_datalab.db` sin cifrar y sin consentimiento explicito. Si la app fuera real, habria que decidir: opt-in del usuario, cifrado de la base (por ejemplo SQLCipher) o exclusion del respaldo. Hoy la decision favorece la continuidad de datos sobre el maximo resguardo.
 
-6. **Otras limitaciones.** Dos bases Room duplican la infraestructura de persistencia; los ViewModels de gestion dependen del contenedor via FQN (acoplamiento aceptado para no refactorizar); no hay pruebas de UI, instrumentadas, de navegacion ni de Room real (solo unitarias de logica pura y del repositorio con DAO falsificado); el APK de debug ronda los 65 MB (build de debug sin minificar); y las pruebas del portal y de las pantallas de gestion no existen.
+6. **Otras limitaciones.** Dos bases Room duplican la infraestructura de persistencia; los ViewModels de gestion dependen del contenedor via FQN (acoplamiento aceptado para no refactorizar); no hay pruebas de UI, instrumentadas, de navegacion ni de Room real (unitarias de logica pura, repositorio con DAO falsificado y ViewModel de bienestar en JVM); el APK de debug ronda los 62 MB (build de debug sin minificar); y las pruebas del portal y de las pantallas de gestion no existen.
 
 ## 8. Build y pruebas
 
@@ -212,11 +212,11 @@ Comandos usados para verificar la integracion, desde la raiz del proyecto:
 ./gradlew :app:installDebug
 ```
 
-Resultados verificados tras la integracion:
+Resultados verificados tras la integracion (actualizados el 12 de noviembre de 2026; el detalle historico de la integracion fue 69 pruebas):
 
-- `:app:assembleDebug --offline`: **BUILD SUCCESSFUL**. APK unico en `app/build/outputs/apk/debug/app-debug.apk` (contiene portal + bienestar + gestion).
-- `:app:testDebugUnitTest`: **69 aprobadas, 0 fallidas**.
-  - Bienestar: 26 (validador 9, resumen 4, exportador CSV 8, repositorio con DAO falso 5).
+- `:app:assembleDebug`: **BUILD SUCCESSFUL**. APK unico en `app/build/outputs/apk/debug/app-debug.apk` (~62 MB; contiene portal + bienestar + gestion).
+- `:app:testDebugUnitTest`: **76 aprobadas, 0 fallidas**.
+  - Bienestar: 33 (validador 9, resumen 4, exportador CSV 8, repositorio con DAO falso 5, ViewModel en JVM 7).
   - Gestion documental: 43 (validadores 4, permisos 7, carga de permisos 9, flujo de modificacion 6, reportes 9, MIME 8).
 - Reporte HTML: `app/build/reports/tests/testDebugUnitTest/index.html`.
 - Sin pruebas instrumentadas ni de interfaz (`app/src/androidTest` no existe).

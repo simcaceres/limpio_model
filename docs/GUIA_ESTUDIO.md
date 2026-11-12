@@ -104,6 +104,7 @@ com.example.limpio_moviles/
 │   │   └── LemacApi.kt
 │   └── repository/
 │       ├── PerfilRepository.kt
+│       ├── PerfilRepositorySharedPreferences.kt
 │       └── RegistroRepository.kt
 ├── model/
 │   ├── Ambito.kt
@@ -139,8 +140,11 @@ com.example.limpio_moviles/
 │   └── util/
 │       └── Formato.kt
 ├── util/
+│   ├── ExportadorArchivo.kt
+│   ├── FotoPerfilStorage.kt
 │   ├── FotoStorage.kt
 │   ├── NotificacionHelper.kt
+│   ├── RecordatorioProgramador.kt
 │   ├── RecordatorioScheduler.kt
 │   └── RecordatorioWorker.kt
 └── viewmodel/
@@ -159,7 +163,8 @@ com.example.limpio_moviles/
 | `data/local/RegistroCsvExporter.kt` | Generador de CSV puro | Recibe `List<RegistroEntity>` y produce texto UTF-8 con BOM, cabecera exacta, CRLF, escapado RFC 4180 y `nombreArchivo()`. No conoce Android ni el sistema de archivos. |
 | `data/remote/LemacApi.kt` | Contrato de sincronizacion y simulacion | `LemacApi` define `sincronizar`; `FakeLemacApi` espera 700 ms y devuelve exito. |
 | `data/repository/RegistroRepository.kt` | Repositorio de registros | Expone `Flow`, decide insertar o actualizar de forma explicita (sin upsert `REPLACE`), obtiene todos (`obtenerTodos`), elimina, sincroniza y carga datos demo de forma atomica. |
-| `data/repository/PerfilRepository.kt` | Persistencia del perfil | Guarda alias, ruta de foto y estado del recordatorio en `SharedPreferences`. |
+| `data/repository/PerfilRepository.kt` | Contrato del perfil (interfaz) | Define las operaciones de alias, foto y recordatorio sin depender de Android. |
+| `data/repository/PerfilRepositorySharedPreferences.kt` | Implementación con SharedPreferences | Persiste alias, ruta de foto y recordatorio en `perfil_lemac` usando `apply()`. |
 | `model/Ambito.kt` | Enumeracion de los cuatro ambitos | Cada valor tiene `etiqueta` y `descripcion`; `desdeNombre` convierte texto a enum con valor por defecto. |
 | `model/Catalogos.kt` | Catalogos dependientes del ambito | Tipos disponibles, rango de intensidad, etiquetas de contexto y estrategia. |
 | `model/RegistroUiState.kt` | Estado del formulario | Campos del registro, errores por clave, estado de carga, mensaje y bandera de exito. |
@@ -387,7 +392,7 @@ El repositorio es el lugar donde vive la decision "insertar o actualizar" y la c
 
 #### `PerfilRepository`
 
-Usa `SharedPreferences` con nombre `perfil_lemac`. Claves:
+`PerfilRepository` es la **interfaz** que define el contrato del perfil. Su implementación es `PerfilRepositorySharedPreferences`, que usa `SharedPreferences` con nombre `perfil_lemac` y es la que inyecta `LemacApplication`. Claves:
 
 - `alias`
 - `foto_path`
@@ -399,7 +404,7 @@ Metodos: `cargarAlias`, `guardarAlias`, `cargarFotoPath`, `guardarFotoPath`, `ca
 
 #### `RegistroViewModel`
 
-Extiende `AndroidViewModel` porque necesita un `Application` para acceder al contexto al guardar la foto y programar recordatorios. Recibe ademas `RegistroRepository` y `PerfilRepository`.
+Es un `ViewModel` normal (ya no extiende `AndroidViewModel`). Recibe por constructor `RegistroRepository`, la interfaz `PerfilRepository`, las interfaces de efectos `FotoPerfilStorage`, `RecordatorioProgramador` y `ExportadorArchivo`, y un reloj inyectable `clock: () -> Long = System::currentTimeMillis`. Las implementaciones Android de esos efectos se inyectan desde la Factory; asi el ViewModel se puede probar en la JVM sin `Robolectric`.
 
 Estado que expone:
 
@@ -415,7 +420,7 @@ En el `init`:
 
 1. Lee alias, ruta de foto y estado del recordatorio desde `PerfilRepository`.
 2. Construye `PerfilUiState`.
-3. Carga el `Bitmap` desde la ruta con `FotoStorage.cargar`.
+3. Carga el `Bitmap` desde la ruta con `FotoPerfilStorage.cargar` (la implementación Android delega en `FotoStorage.cargar`).
 
 Metodos importantes:
 
@@ -429,21 +434,21 @@ Metodos importantes:
 - `eliminar(registro)`: borra y publica un mensaje.
 - `sincronizar()`: llama al repositorio y publica cuantos registros proceso.
 - `nombreArchivoCsv()`: devuelve `RegistroCsvExporter.nombreArchivo()`, por ejemplo `lemac_datalab_20261104_233000.csv`.
-- `exportarCsv(uri)`: lee todos los registros, genera el CSV con `RegistroCsvExporter.generar`, escribe en el `uri` con `contentResolver.openOutputStream` dentro de `Dispatchers.IO` y publica un mensaje de exito, lista vacia o fallo.
+- `exportarCsv(uri)`: lee todos los registros, genera el CSV con `RegistroCsvExporter.generar`, lo escribe en el `uri` mediante `ExportadorArchivo.escribir` (la implementación Android usa `contentResolver.openOutputStream` dentro de `Dispatchers.IO`) y publica un mensaje de exito, lista vacia o fallo.
 - `cargarDemo()`: inserta datos de ejemplo solo si la base esta vacia; si ya hay registros, avisa que no se duplicaron.
 - `borrarTodos()`: elimina todos los registros.
 - `limpiarMensaje()`, `limpiarFormulario()`, `mostrarMensaje()`: utilidades de estado.
 
 Detalle importante de `guardar()`: la fecha y la bandera de sincronizacion tienen una semantica distinta segun el caso.
 
-- **Al crear** (`editandoId == null`): la entidad se construye con `fechaHora = System.currentTimeMillis()`.
+- **Al crear** (`editandoId == null`): la entidad se construye con `fechaHora = clock()`; en produccion el reloj por defecto es `System.currentTimeMillis()` y en los tests se inyecta un valor fijo.
 - **Al editar** (`editandoId != null`): antes de construir la entidad se relee el registro con `obtener(editandoId)` y se conserva su `fechaHora` original (`existente?.fechaHora ?: ahora`). Por eso editar no reordena el historial (el DAO ordena por `fechaHora DESC`) ni altera la ultima fecha del resumen (`ResumenCalculator.ultimaFecha` es el maximo de `fechaHora`).
 - **En ambos casos** la entidad se guarda con `sincronizado = false`: un registro editado vuelve a la cola de pendientes y se reenvia en la sincronizacion simulada.
 - **Si el registro a editar ya no existe** (por ejemplo, se borro en otra pantalla antes de guardar), `guardar()` no crea nada: muestra el mensaje "No se encontró el registro que intentas editar" y termina ahi.
 
 #### `RegistroViewModelFactory`
 
-Implementa `ViewModelProvider.Factory`. Verifica que la clase solicitada sea `RegistroViewModel` y la construye con `Application`, `RegistroRepository` y `PerfilRepository`. Si recibe otra clase, lanza `IllegalArgumentException`.
+Implementa `ViewModelProvider.Factory`. Verifica que la clase solicitada sea `RegistroViewModel` y la construye con `RegistroRepository`, `PerfilRepository` y las implementaciones Android de los efectos (`FotoPerfilStorageAndroid`, `RecordatorioProgramadorAndroid`, `ExportadorArchivoAndroid`), ademas de la `Application` para crearlas. Si recibe otra clase, lanza `IllegalArgumentException`.
 
 Se usa porque el ViewModel tiene parametros en el constructor y `viewModel()` no puede crearlo por defecto.
 
@@ -943,9 +948,9 @@ Aclaracion importante: la sincronizacion es **simulada**. Los datos no salen del
 6. Si la captura termina bien, el componente decodifica con `FotoStorage.cargarDesdeUri` fuera del hilo principal (`withContext(Dispatchers.IO)`): mide con `inJustDecodeBounds`, aplica `inSampleSize` hasta un lado maximo de 1024 px y corrige la orientacion EXIF (las 8 variantes) **antes** de entregar el bitmap. El temporal se borra siempre en el `finally`, incluso si la decodificacion falla.
 7. El bitmap ya orientado se entrega a `onFotoCapturada`, que en ambas pantallas es `viewModel.actualizarFoto(it)`.
 8. El ViewModel actualiza `fotoPerfil` en el hilo principal para que Compose la muestre.
-9. Lanza una corrutina y guarda el PNG en `filesDir/perfil.png` con `FotoStorage.guardar` dentro de `withContext(Dispatchers.IO)`; el guardado es atomico (escribe en `perfil.png.tmp` y renombra); si el guardado falla, muestra "No se pudo guardar la foto".
+9. Lanza una corrutina y guarda el PNG en `filesDir/perfil.png` a traves de `FotoPerfilStorage.guardar` (la implementacion Android delega en `FotoStorage.guardar`) dentro de `withContext(Dispatchers.IO)`; el guardado es atomico (escribe en `perfil.png.tmp` y renombra); si el guardado falla, muestra "No se pudo guardar la foto".
 10. De vuelta en el hilo principal, actualiza `perfil.fotoPath` y guarda la ruta en `SharedPreferences`.
-11. En el siguiente arranque, el `init` del ViewModel lee la ruta y carga el `Bitmap` con `FotoStorage.cargar` dentro de `withContext(Dispatchers.IO)`; luego asigna `fotoPerfil` en el hilo principal.
+11. En el siguiente arranque, el `init` del ViewModel lee la ruta y carga el `Bitmap` con `FotoPerfilStorage.cargar` dentro de `withContext(Dispatchers.IO)`; luego asigna `fotoPerfil` en el hilo principal.
 
 No hay permiso de camara: la foto la toma la app de camara del sistema, no esta app, y `uses-feature android.hardware.camera` se declara como opcional. Tampoco hay permiso de almacenamiento: el temporal vive en la cache interna y la imagen final en `filesDir`. La rotacion de camara queda resuelta de punta a punta: el EXIF se corrige antes de mostrar y de guardar, por eso la foto ya no sale rotada. Todo el trabajo con archivos (decodificar y guardar) se hace en `Dispatchers.IO` para no bloquear el hilo principal.
 
@@ -979,7 +984,7 @@ Borrar:
 7. `RegistroRepository.obtenerTodos()` llama a `RegistroDao.obtenerTodos()`, que ejecuta `SELECT * FROM registros ORDER BY fechaHora DESC`.
 8. Si la lista esta vacia, publica "No hay registros para exportar" y termina. En la practica el boton ya llega deshabilitado cuando no hay registros (`hayRegistros`), asi que este mensaje es una defensa del ViewModel para el caso de que la base quede vacia entre el render y la exportacion.
 9. `RegistroCsvExporter.generar(lista)` construye el texto CSV.
-10. La escritura se hace con `withContext(Dispatchers.IO)`: `contentResolver.openOutputStream(uri)?.use { salida -> salida.write(contenido.toByteArray(Charsets.UTF_8)) }`.
+10. La escritura la hace `ExportadorArchivo.escribir(uri, contenido)`; su implementación Android usa `contentResolver.openOutputStream(uri)` dentro de `Dispatchers.IO`. `RegistroCsvExporter.generar(lista)` se ejecuta dentro del mismo `runCatching` que la escritura, sin un `withContext` adicional alrededor de la generación.
 11. Si la escritura devuelve un stream valido, publica "Datos exportados (N registros)"; si falla o el stream es nulo, "No se pudo exportar".
 12. En `finally` se restaura `cargando = false`, y el boton vuelve a estar habilitado.
 
@@ -994,7 +999,7 @@ Detalles del formato que conviene poder explicar:
 - **Una fila por registro**, en el mismo orden que devuelve el DAO (mas reciente primero).
 - **Texto plano**: el CSV no esta cifrado e incluye alias y notas; conviene guardarlo en un lugar privado.
 
-`RegistroCsvExporter` es un objeto puro: no conoce Android, ni `Uri`, ni el sistema de archivos. Eso permite probarlo con JUnit sin emulador. La escritura real queda en el ViewModel, que si tiene acceso al `contentResolver`.
+`RegistroCsvExporter` es un objeto puro: no conoce Android, ni `Uri`, ni el sistema de archivos. Eso permite probarlo con JUnit sin emulador. La escritura real queda en `ExportadorArchivo` (su implementacion Android usa `contentResolver.openOutputStream`), que el ViewModel recibe inyectado y los tests sustituyen por un doble.
 
 Aclaracion: exportar **no** reemplaza a la sincronizacion. La sincronizacion sigue siendo simulada con `FakeLemacApi` en Ajustes y no usa red; la exportacion es un archivo local real que el usuario decide donde guardar.
 
@@ -1141,7 +1146,7 @@ Detalles:
 
 ## 10. Pruebas existentes
 
-La app unificada tiene **69 pruebas unitarias** con JUnit 4: 26 del modulo de bienestar, en `app/src/test/java/com/example/limpio_moviles/` (9 del validador, 4 del resumen, 8 del generador CSV y 5 del repositorio con DAO falsificado), y 43 del modulo de gestion documental, en `app/src/test/java/com/example/gestiondocumental/` (4 de validadores, 7 de permisos, 9 de carga de permisos, 6 del flujo de modificacion, 9 de reportes y 8 de tipos MIME). Esta seccion detalla las del modulo de bienestar; el desglose completo de gestion esta en el README y en [INTEGRACION.md](INTEGRACION.md).
+La app unificada tiene **76 pruebas unitarias** con JUnit 4: 33 del modulo de bienestar, en `app/src/test/java/com/example/limpio_moviles/` (9 del validador, 4 del resumen, 8 del generador CSV, 5 del repositorio con DAO falsificado y 7 del ViewModel en JVM), y 43 del modulo de gestion documental, en `app/src/test/java/com/example/gestiondocumental/` (4 de validadores, 7 de permisos, 9 de carga de permisos, 6 del flujo de modificacion, 9 de reportes y 8 de tipos MIME). Esta seccion detalla las del modulo de bienestar; el desglose completo de gestion esta en el README y en [INTEGRACION.md](INTEGRACION.md).
 
 ### `RegistroValidatorTest` (9 pruebas)
 
@@ -1181,15 +1186,28 @@ La app unificada tiene **69 pruebas unitarias** con JUnit 4: 26 del modulo de bi
 4. `cargarDemo` inserta cuatro registros cuando la base esta vacia.
 5. `cargarDemo` no duplica datos si ya hay registros.
 
+### `RegistroViewModelTest` (7 pruebas, en JVM sin Robolectric)
+
+Corre con `kotlinx-coroutines-test`: `Dispatchers.setMain` con un `StandardTestDispatcher` y `advanceUntilIdle`. Usa un DAO falso, un `PerfilRepository` falso y dobles de `FotoPerfilStorage`, `RecordatorioProgramador` y `ExportadorArchivo`; inyecta un reloj fijo.
+
+1. Crear un registro usa el reloj inyectado y guarda con `sincronizado = false`, mensaje "Registro guardado" y una sola insercion.
+2. Editar conserva la `fechaHora` original, actualiza (no inserta), fuerza `sincronizado = false` y muestra "Registro actualizado".
+3. Editar un registro que ya no existe muestra "No se encontró el registro que intentas editar" sin insertar ni actualizar.
+4. Un formulario con errores de validacion no llama al repositorio y expone los errores por campo.
+5. `cargarDemo` con base vacia inserta los datos y muestra "Datos de demostración cargados".
+6. `cargarDemo` con datos existentes no duplica y avisa que ya habia registros.
+7. `cargarDemo` muestra "No se pudieron cargar los datos de demostración" cuando el repositorio falla.
+
 ### Que no esta probado
 
 - Room y el DAO real (el repositorio de bienestar se prueba con un DAO falsificado).
-- El ViewModel (deuda conocida: la semantica de edicion y los mensajes se cubren hoy a nivel de repositorio, pero falta al menos un test del ViewModel).
-- La escritura real del archivo y el selector SAF (la generacion del texto si esta probada).
+- La escritura real del archivo y el selector SAF (la generacion del texto si esta probada; `ExportadorArchivo` se sustituye por un doble en los tests).
 - La interfaz Compose.
 - WorkManager y las notificaciones.
 - La captura de foto (el contrato custom, el FileProvider y la correccion EXIF no tienen pruebas).
 - El portal y las pantallas del modulo de gestion documental (de gestion si estan probados sus modelos: validadores, permisos, flujo de modificacion, reportes y tipos MIME).
+
+El ViewModel de bienestar ya no es deuda: `RegistroViewModelTest` cubre creacion, edicion, edicion inexistente, validacion y carga demo (7 pruebas) en la JVM, sin `Robolectric`.
 
 No hay carpeta `app/src/androidTest`, por lo que no existen pruebas instrumentadas ni pruebas end-to-end.
 
@@ -1199,7 +1217,7 @@ Comando:
 ./gradlew :app:testDebugUnitTest
 ```
 
-Verificacion del 11 de noviembre de 2026 (ajustes del flujo de camara y de la semantica de edicion): `compileDebugKotlin` correcto, `testDebugUnitTest` con 69/69 aprobadas (26 de bienestar + 43 de gestion documental), `assembleDebug` correcto con APK de ~64.9 MB en `app/build/outputs/apk/debug/app-debug.apk`, y manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`.
+Verificacion del 12 de noviembre de 2026, con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, `testDebugUnitTest` con 76/76 aprobadas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes) en `app/build/outputs/apk/debug/app-debug.apk`. Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`.
 
 ## 11. Limitaciones reales del MVP
 
@@ -1327,4 +1345,4 @@ Si hubiera que resumir el proyecto en una frase por capa:
 - **Navegacion:** una Activity, un `NavHost`, rutas con ambito e id.
 - **Recordatorios:** WorkManager periodico, worker y notificacion generica.
 - **Privacidad:** datos locales, sin red real, con advertencias y limitaciones documentadas.
-- **Pruebas:** 69 pruebas unitarias en la app unificada (26 de bienestar: validador, resumen, generador CSV y repositorio con DAO falsificado; 43 de gestion documental).
+- **Pruebas:** 76 pruebas unitarias en la app unificada (33 de bienestar: validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM; 43 de gestion documental).

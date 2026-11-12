@@ -132,7 +132,7 @@ app/build/reports/tests/testDebugUnitTest/index.html
 
 El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con precision:
 
-**Modulo de bienestar** (26 pruebas):
+**Modulo de bienestar** (33 pruebas):
 
 - `app/src/test/java/com/example/limpio_moviles/model/RegistroValidatorTest.kt` contiene 9 pruebas de validacion.
 - `app/src/test/java/com/example/limpio_moviles/model/ResumenCalculatorTest.kt` contiene 4 pruebas de calculo del resumen.
@@ -146,6 +146,7 @@ El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con p
   7. Un retorno de carro aislado se escapa entre comillas.
   8. Las filas usan saltos de linea CRLF, sin `\n` sueltos.
 - `app/src/test/java/com/example/limpio_moviles/data/repository/RegistroRepositoryTest.kt` contiene 5 pruebas del repositorio con un DAO falsificado (insertar nuevo, actualizar conservando la `fechaHora` original, registro inexistente al editar, carga demo con base vacia y carga demo sin duplicar).
+- `app/src/test/java/com/example/limpio_moviles/viewmodel/RegistroViewModelTest.kt` contiene 7 pruebas del ViewModel en la JVM, sin Robolectric: crear con reloj inyectado y `sincronizado = false`, editar conservando la `fechaHora` original y reencolando, editar un registro inexistente sin insertar, validacion con errores que no llama al repositorio, y `cargarDemo` en sus tres ramas (exito, ya hay datos y fallo). Usa `kotlinx-coroutines-test` y `Dispatchers.setMain`.
 
 **Modulo de gestion documental** (43 pruebas):
 
@@ -156,10 +157,10 @@ El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con p
 - `app/src/test/java/com/example/gestiondocumental/model/ReportesTest.kt`: 9 pruebas de reportes.
 - `app/src/test/java/com/example/gestiondocumental/util/ArchivosMimeTest.kt`: 8 pruebas de tipos MIME de archivos.
 
-En total son **69 pruebas unitarias** con JUnit 4 (26 de bienestar + 43 de gestion documental). La ejecucion de `./gradlew :app:testDebugUnitTest` tras la integracion termino con 69 aprobadas y 0 fallidas. Se verifico de nuevo el 11 de noviembre de 2026, tras los ajustes del flujo de camara y la semantica de edicion: `compileDebugKotlin` correcto, 69/69 aprobadas, `assembleDebug` correcto (APK de ~64.9 MB en `app/build/outputs/apk/debug/app-debug.apk`) y manifest fusionado sin `uses-permission` de `CAMERA`, con el `FileProvider` y su `file_paths`.
+En total son **76 pruebas unitarias** con JUnit 4 (33 de bienestar + 43 de gestion documental). La ejecucion de `./gradlew clean compileDebugKotlin testDebugUnitTest assembleDebug` el 12 de noviembre de 2026 termino con `BUILD SUCCESSFUL`, 76/76 aprobadas y 0 fallidas, y APK de debug de ~62 MB (64,915,563 bytes) en `app/build/outputs/apk/debug/app-debug.apk`. Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA`, con el `FileProvider` y su `file_paths`.
 
 - **No hay pruebas instrumentadas ni pruebas de interfaz** (`app/src/androidTest` no existe).
-- **No hay pruebas de Room real, ViewModels, navegacion ni WorkManager**; el repositorio de bienestar se prueba con un DAO falsificado y la pantalla del portal y las pantallas de gestion no tienen cobertura.
+- **No hay pruebas de Room real, UI/navegacion ni WorkManager**; el repositorio de bienestar se prueba con un DAO falsificado y el ViewModel de bienestar ya se prueba en la JVM con dobles (7 pruebas, sin Robolectric). La escritura real SAF/`ContentResolver` tampoco se prueba: `ExportadorArchivo` se sustituye por un doble. La pantalla del portal y las pantallas de gestion no tienen cobertura.
 
 ## Exportar los datos
 
@@ -265,7 +266,7 @@ limpio_model/
 │       │   │   └── viewmodel/            Sesion, Documentos, Usuarios y Auditoria
 │       │   └── res/                      Strings, colores, temas, iconos y reglas XML de backup
 │       └── test/java/com/example/
-│           ├── limpio_moviles/           26 pruebas unitarias de bienestar
+│           ├── limpio_moviles/           33 pruebas unitarias de bienestar
 │           └── gestiondocumental/        43 pruebas unitarias de gestion documental
 ├── docs/
 │   ├── GUIA_ESTUDIO.md                   Guia principal de estudio

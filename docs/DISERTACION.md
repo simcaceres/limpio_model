@@ -17,7 +17,7 @@ Si se olvida todo lo demas, recordar estas cinco ideas:
 2. La app es un **portal unificado** con dos modulos (bienestar y gestion documental), cada uno con su base Room propia; la arquitectura es UI Compose, un ViewModel compartido, repositorios y fuentes de datos locales.
 3. Room guarda los registros y emite `Flow`; el ViewModel lo convierte en `StateFlow` y la UI lo recolecta con `collectAsStateWithLifecycle`.
 4. La sincronizacion es simulada con `FakeLemacApi`; no hay backend ni permiso `INTERNET`. La salida real de datos es la **exportacion CSV local**, con el selector de documentos del sistema (SAF).
-5. Hay 69 pruebas unitarias (26 de bienestar y 43 de gestion documental); no hay pruebas de UI ni instrumentadas.
+5. Hay 76 pruebas unitarias (33 de bienestar y 43 de gestion documental); no hay pruebas de UI ni instrumentadas.
 
 ## Guion por bloques
 
@@ -147,7 +147,7 @@ Puntos:
 
 - La app no tiene backend real, autenticacion en bienestar, cifrado ni migraciones de Room.
 - La sincronizacion solo marca una bandera local.
-- Hay 69 pruebas unitarias: 26 de bienestar (validador, resumen, generador CSV y repositorio con DAO falsificado) y 43 de gestion documental (validadores, permisos, flujo de modificacion, reportes y tipos MIME).
+- Hay 76 pruebas unitarias: 33 de bienestar (validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM sin Robolectric) y 43 de gestion documental (validadores, permisos, flujo de modificacion, reportes y tipos MIME).
 - No hay pruebas instrumentadas ni de interfaz.
 - El ViewModel de bienestar es unico y compartido; para una app mas grande convendria separar por pantalla.
 - `fallbackToDestructiveMigration` es aceptable en el MVP, no en produccion.
@@ -382,7 +382,7 @@ Esta seccion detalla como demostrar la exportacion de datos en la disertacion. E
 15. **Honestidad sobre limites.** No hay cifrado, migraciones ni pruebas de UI; decirlo suma criterio.
 16. **Catalogo de versiones.** `gradle/libs.versions.toml` centraliza versiones y evita numeros dispersos.
 17. **KSP.** Room genera codigo en compilacion; KSP es el procesador recomendado para Kotlin.
-18. **Pruebas unitarias.** 69 pruebas rapidas que no necesitan emulador: 26 de bienestar y 43 de gestion documental.
+18. **Pruebas unitarias.** 76 pruebas rapidas que no necesitan emulador: 33 de bienestar (incluye 7 del ViewModel en JVM) y 43 de gestion documental.
 19. **Exportacion CSV con SAF.** `CreateDocument("text/csv")` evita permisos de almacenamiento; BOM UTF-8 y CRLF para Excel; escapado RFC 4180 y neutralizacion de formulas; el generador (`RegistroCsvExporter`) es puro y testeable con JUnit.
 20. **Portal unificado sin mezclar dominios.** Un APK, dos paquetes (`com.example.limpio_moviles` y `com.example.gestiondocumental`), dos bases Room; `LemacApplication` como contenedor dual con dos canales de notificacion y siembra de datos demo de gestion en `Dispatchers.IO`.
 21. **Semantica de edicion explicita.** Al editar se conserva la `fechaHora` original y se fuerza `sincronizado = false`, de modo que el registro editado vuelve a la cola de sincronizacion simulada; el repositorio usa insert/update explicitos (sin upsert `REPLACE`, no resucita registros borrados) y `cargarDemo` es un `@Transaction` atomico que avisa cuando ya habia datos.
@@ -451,7 +451,7 @@ No. Se programa con retraso inicial hasta las 20:00, pero WorkManager puede retr
 
 ### 16. Que se prueba y que no
 
-Se prueban con JUnit 69 casos: del modulo de bienestar, el validador (9), el calculador de resumen (4), el generador CSV (8) y el repositorio con un DAO falsificado (5); del modulo de gestion documental, validadores, permisos, flujo de modificacion, reportes y tipos MIME (43). No hay pruebas de Room real, ViewModel, UI ni WorkManager. Es una deuda tecnica reconocida.
+Se prueban con JUnit 76 casos: del modulo de bienestar, el validador (9), el calculador de resumen (4), el generador CSV (8), el repositorio con un DAO falsificado (5) y el ViewModel en la JVM sin Robolectric (7); del modulo de gestion documental, validadores, permisos, flujo de modificacion, reportes y tipos MIME (43). El ViewModel ya no es deuda: se cubren creacion, edicion, edicion inexistente, validacion y carga demo con dobles de las interfaces y un reloj fijo. Siguen sin cubrirse Room real, UI instrumentada, WorkManager y la escritura real SAF/ContentResolver. Es una deuda tecnica reconocida y acotada.
 
 ### 17. Por que no se uso Hilt
 
@@ -475,7 +475,7 @@ Porque es un MVP con version 1 y se prioriza no bloquear el arranque ante un cam
 
 ### 22. Que mejoraria primero
 
-Antes de agregar funciones: migraciones de Room, pruebas de repositorio y ViewModel, cifrado o almacenamiento seguro, y completar la politica de backup (hoy acotada a Room y preferencias, y sin cifrado). Despues: backend real, exportacion parcial por ambito (hoy se exportan todos los registros de una vez) y configuracion de la hora del recordatorio.
+Antes de agregar funciones: migraciones de Room, pruebas de Room real y de UI instrumentada, cifrado o almacenamiento seguro, y completar la politica de backup (hoy acotada a Room y preferencias, y sin cifrado). Despues: backend real, exportacion parcial por ambito (hoy se exportan todos los registros de una vez) y configuracion de la hora del recordatorio.
 
 ### 23. Por que el ViewModel es compartido
 
@@ -514,7 +514,7 @@ La fecha original se conserva. Al editar, `guardar()` relee el registro existent
 ### La noche anterior
 
 - [ ] Ejecutar `./gradlew :app:assembleDebug` y confirmar que compila.
-- [ ] Ejecutar `./gradlew :app:testDebugUnitTest` y confirmar las 69 pruebas.
+- [ ] Ejecutar `./gradlew :app:testDebugUnitTest` y confirmar las 76 pruebas.
 - [ ] Abrir el reporte de pruebas y verificar que no hay fallos.
 - [ ] Revisar que el emulador tenga Android 13 (API 33) o superior.
 - [ ] Probar la app de punta a punta una vez, incluido el portal con las dos tarjetas.
@@ -524,7 +524,7 @@ La fecha original se conserva. Al editar, `guardar()` relee el registro existent
 - [ ] Confirmar que `docs/GUIA_ESTUDIO.md` y `docs/DISERTACION.md` estan actualizados.
 - [ ] Verificar que el repositorio local este limpio y hacer el push cuando el repositorio remoto ya exista.
 
-Referencia de la verificacion del 11 de noviembre de 2026 (ajustes de camara y semantica de edicion): `compileDebugKotlin` correcto, 69/69 pruebas (26 de bienestar + 43 de gestion documental), `assembleDebug` correcto con APK de ~64.9 MB, y manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
+Referencia de la verificacion del 12 de noviembre de 2026, con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, 76/76 pruebas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes). Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
 
 ### El dia de la presentacion
 
