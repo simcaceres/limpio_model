@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia maestra de estudio y replicacion - Lemac DataLab + Gestion Documental</title>
+<style>
+  @page { size: A4; margin: 17mm 15mm 16mm 15mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "DejaVu Sans", "Segoe UI", Arial, sans-serif;
+    font-size: 10.2pt; line-height: 1.52; color: #1e293b; margin: 0;
+  }
+  h1, h2, h3, h4 { color: #1e1b4b; line-height: 1.2; }
+  h1 {
+    font-size: 21pt; margin: 0 0 8pt; padding-bottom: 6pt;
+    border-bottom: 3px solid #4f46e5; page-break-before: always;
+  }
+  h1.nobreak { page-break-before: auto; }
+  h2 { font-size: 14pt; margin: 18pt 0 7pt; padding-bottom: 3pt; border-bottom: 1px solid #c7d2fe; }
+  h3 { font-size: 11.6pt; margin: 13pt 0 5pt; color: #312e81; }
+  h4 { font-size: 10.4pt; margin: 10pt 0 4pt; color: #4338ca; }
+  p { margin: 0 0 6pt; text-align: justify; }
+  ul, ol { margin: 0 0 7pt 0; padding-left: 17pt; }
+  li { margin-bottom: 3pt; }
+  code {
+    font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.6pt;
+    background: #eef2ff; color: #3730a3; padding: 1px 4px; border-radius: 3px;
+    word-break: break-word;
+  }
+  pre {
+    font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 8.2pt; line-height: 1.45;
+    background: #0f172a; color: #e2e8f0; padding: 9pt 11pt; border-radius: 6px;
+    white-space: pre-wrap; word-break: break-word; margin: 6pt 0 9pt;
+    page-break-inside: avoid; border-left: 3px solid #6366f1;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #94a3b8; }
+  pre .k { color: #93c5fd; }
+  pre .s { color: #86efac; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 8.8pt; }
+  th { background: #eef2ff; color: #312e81; text-align: left; padding: 5pt 6pt; border: 1px solid #c7d2fe; }
+  td { padding: 4.5pt 6pt; border: 1px solid #dbeafe; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  .callout { padding: 8pt 10pt; border-radius: 6px; margin: 8pt 0 10pt; page-break-inside: avoid; font-size: 9.3pt; }
+  .info { background: #eff6ff; border-left: 4px solid #3b82f6; }
+  .tip { background: #f0fdf4; border-left: 4px solid #22c55e; }
+  .warn { background: #fffbeb; border-left: 4px solid #f59e0b; }
+  .danger { background: #fef2f2; border-left: 4px solid #ef4444; }
+  .callout b { display: block; margin-bottom: 2pt; }
+  .cover {
+    height: 262mm; display: flex; flex-direction: column; justify-content: space-between;
+    background: linear-gradient(150deg, #1e1b4b 0%, #312e81 58%, #4338ca 100%);
+    color: white; padding: 22mm 16mm; border-radius: 8px; page-break-after: always;
+  }
+  .cover .kicker { font-size: 9.5pt; letter-spacing: 2.5px; text-transform: uppercase; color: #c7d2fe; }
+  .cover h1 { border: none; color: white; font-size: 32pt; margin: 8pt 0 4pt; padding: 0; page-break-before: auto; }
+  .cover .sub { font-size: 14pt; color: #e0e7ff; margin: 0 0 18pt; font-weight: 300; }
+  .cover .desc { font-size: 10.5pt; color: #c7d2fe; max-width: 145mm; line-height: 1.6; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6pt; margin-top: 16pt; }
+  .chip { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.35); padding: 4pt 9pt; border-radius: 20pt; font-size: 8.4pt; }
+  .cover .meta { font-size: 9pt; color: #c7d2fe; border-top: 1px solid rgba(255,255,255,.3); padding-top: 9pt; }
+  .cover .meta b { color: white; }
+  .toc { page-break-after: always; }
+  .toc h1 { page-break-before: auto; }
+  .toc ol { list-style: none; padding-left: 0; font-size: 9.6pt; }
+  .toc > ol > li { margin: 5pt 0; font-weight: 600; color: #312e81; }
+  .toc ol ol { padding-left: 16pt; font-weight: 400; color: #475569; font-size: 9pt; margin-top: 2pt; }
+  .toc ol ol li { margin: 1.5pt 0; }
+  .two-col { column-count: 2; column-gap: 10mm; }
+  .kpi { display: flex; gap: 7pt; flex-wrap: wrap; margin: 8pt 0 10pt; }
+  .kpi div { flex: 1 1 30%; background: #f8fafc; border: 1px solid #c7d2fe; border-radius: 6px; padding: 7pt; text-align: center; }
+  .kpi div b { display: block; font-size: 16pt; color: #4338ca; line-height: 1.1; }
+  .kpi div span { font-size: 8.2pt; color: #64748b; }
+  .tag { display: inline-block; background: #e0e7ff; color: #3730a3; font-size: 7.6pt; padding: 1px 5px; border-radius: 8px; margin-right: 3px; }
+  .muted { color: #64748b; font-size: 9pt; }
+  .ascii { background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; border-left: 3px solid #6366f1; }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 18pt; position: relative; margin-bottom: 3pt; }
+  .checklist li:before { content: "\2610"; position: absolute; left: 0; color: #4f46e5; font-size: 11pt; }
+  .footer-note { margin-top: 14pt; padding-top: 7pt; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 8pt; }
+  .avoid { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ============================ PORTADA ============================ -->
+<section class="cover">
+  <div>
+    <div class="kicker">Guia maestra &middot; Estudio + Replicacion</div>
+    <h1>Lemac DataLab<br>+ Gestion Documental</h1>
+    <p class="sub">Arquitectura, componentes, flujo de datos, comandos y paso a paso para replicar el proyecto</p>
+    <p class="desc">
+      Documento unico de estudio y transferencia. Explica como esta construida la aplicacion Android
+      unificada (Kotlin + Jetpack Compose + Room + MVVM), como fluye la informacion de la UI a la base
+      de datos y viceversa, y entrega el catalogo completo de comandos usados en el proyecto junto a
+      una guia secuencial para reconstruirlo en otro repositorio y repetir el flujo SDD con Lemoria.
+    </p>
+    <div class="chips">
+      <span class="chip">Kotlin 2.0.21</span>
+      <span class="chip">Jetpack Compose</span>
+      <span class="chip">Room 2.8.5</span>
+      <span class="chip">MVVM + Repository</span>
+      <span class="chip">76 pruebas JVM</span>
+      <span class="chip">Lemoria SDD</span>
+    </div>
+  </div>
+  <div class="meta">
+    <b>Proyecto:</b> limpio_model (Gradle: limpio_moviles) &nbsp;&middot;&nbsp;
+    <b>Paquete:</b> com.example.limpio_moviles &nbsp;&middot;&nbsp;
+    <b>Rama:</b> entrega_hito2<br>
+    <b>Entregable:</b> Guia de estudio y replicacion en PDF &nbsp;&middot;&nbsp;
+    <b>Fecha:</b> 12 de noviembre de 2026 &nbsp;&middot;&nbsp;
+    <b>Version:</b> 1.0
+  </div>
+</section>
+
+<!-- ============================ TOC ============================ -->
+<section class="toc">
+  <h1 class="nobreak">Contenido</h1>
+  <div class="two-col">
+  <ol>
+    <li>Como usar esta guia
+      <ol><li>Ruta A: estudiar</li><li>Ruta B: replicar</li><li>Ruta C: exponer</li></ol>
+    </li>
+    <li>Resumen ejecutivo
+      <ol><li>Que es el proyecto</li><li>Estado real y metricas</li><li>Alcance y limites</li></ol>
+    </li>
+    <li>Stack tecnologico y versiones
+      <ol><li>Versiones exactas</li><li>Requisitos de entorno</li></ol>
+    </li>
+    <li>Arquitectura general
+      <ol><li>Vista de capas</li><li>App unificada y portal</li><li>Principios de diseno</li></ol>
+    </li>
+    <li>Estructura del repositorio
+      <ol><li>Arbol de carpetas</li><li>Convenciones de nombres</li></ol>
+    </li>
+    <li>Componentes explicados
+      <ol><li>Nucleo y navegacion</li><li>Modulo Bienestar</li><li>Modulo Gestion Documental</li><li>Componentes transversales</li></ol>
+    </li>
+    <li>Modelo de datos
+      <ol><li>Base de bienestar</li><li>Base de gestion</li><li>Estados, roles y categorias</li></ol>
+    </li>
+    <li>Flujo de datos de extremo a extremo
+      <ol><li>Crear un registro</li><li>Editar un registro</li><li>Exportar CSV</li><li>Foto de perfil</li><li>Login y permisos</li><li>Documento y aprobacion</li></ol>
+    </li>
+    <li>Seguridad, permisos y privacidad
+      <ol><li>Matriz RBAC</li><li>Manifest y backup</li><li>Privacidad de datos</li></ol>
+    </li>
+    <li>Pruebas y calidad
+      <ol><li>Las 76 pruebas</li><li>Como ejecutarlas</li><li>Cobertura y deuda</li></ol>
+    </li>
+    <li>Replicacion paso a paso en otro proyecto
+      <ol>
+        <li>Fase 0: preparar entorno</li>
+        <li>Fase 1: crear el proyecto</li>
+        <li>Fase 2: Gradle y dependencias</li>
+        <li>Fase 3: paquetes y manifiesto</li>
+        <li>Fase 4: Room</li>
+        <li>Fase 5: repositorios</li>
+        <li>Fase 6: ViewModels</li>
+        <li>Fase 7: UI Compose y navegacion</li>
+        <li>Fase 8: funciones transversales</li>
+        <li>Fase 9: pruebas</li>
+        <li>Fase 10: build e instalacion</li>
+        <li>Fase 11: Git y GitHub</li>
+        <li>Fase 12: flujo SDD con Lemoria</li>
+        <li>Fase 13: checklist final</li>
+      </ol>
+    </li>
+    <li>Catalogo completo de comandos
+      <ol><li>Lemoria</li><li>Gradle</li><li>Git</li><li>ADB</li><li>Android SDK</li><li>Utilidades de Linux</li></ol>
+    </li>
+    <li>Errores comunes y soluciones</li>
+    <li>Glosario</li>
+    <li>Anexos
+      <ol><li>ADRs clave</li><li>PRDs y flujos</li><li>Commits</li><li>Prompts para agentes</li><li>Plantilla PRD / tareas</li><li>Checklist de cierre Lemoria</li></ol>
+    </li>
+  </ol>
+  </div>
+</section>
+
+<!-- ============================ 1 ============================ -->
+<h1>1. Como usar esta guia</h1>
+<p>Esta guia tiene tres lecturas posibles. No es necesario leerla completa de principio a fin: elige la ruta segun lo que necesites en este momento.</p>
+
+<h2>1.1 Ruta A: estudiar la aplicacion</h2>
+<p>Lee en orden las secciones 2 a 10. Empieza por el resumen ejecutivo y el stack, sigue con la arquitectura por capas y el arbol de carpetas, y detente en los componentes y el flujo de datos. Las secciones 7, 8 y 10 son las que mas se preguntan en una defensa tecnica: modelo de datos, flujo de extremo a extremo y pruebas.</p>
+
+<h2>1.2 Ruta B: replicar el proyecto en otro repositorio</h2>
+<p>Ve directo a la seccion 11 y usala como receta. Cada fase tiene un objetivo, los archivos que debes crear y los comandos que debes ejecutar. La seccion 12 es el catalogo de comandos para consulta rapida, y la seccion 13 resuelve los errores mas frecuentes. Si vas a repetir el flujo de trabajo con Lemoria, la fase 12 de la seccion 11 es la parte mas importante.</p>
+
+<h2>1.3 Ruta C: preparar la exposicion</h2>
+<p>Usa las secciones 2, 4, 6, 8 y 10, mas el anexo A (decisiones) y el anexo F (checklist). La estructura recomendada de la exposicion es: problema, arquitectura, demo del portal, demo de un flujo de bienestar, demo de un flujo documental, pruebas y cierre.</p>
+
+<div class="callout tip">
+  <b>Convencion de esta guia</b>
+  Todo lo que aparece en bloques oscuros es un comando ejecutable o un fragmento de codigo. Los textos entre
+  <code>&lt;ANGULOS&gt;</code> son marcadores que debes reemplazar por tus valores reales (por ejemplo,
+  <code>&lt;PROJECT_ID&gt;</code> o <code>&lt;SHA&gt;</code>).
+</div>
+
+<!-- ============================ 2 ============================ -->
+<h1>2. Resumen ejecutivo</h1>
+
+<h2>2.1 Que es el proyecto</h2>
+<p><b>Lemac DataLab + Gestion Documental</b> es una aplicacion Android unica que integra dos productos academicos en un solo APK. El primero, <b>Lemac DataLab</b>, es un diario de autorregistro de bienestar en cuatro ambitos (neurodesarrollo, terapia dialectico-conductual, animo y adicciones). El segundo, <b>Gestion Documental RR.HH.</b>, es un sistema documental con login, siete roles, carga y versionado de documentos, flujo de solicitudes y aprobaciones, auditoria y reportes.</p>
+<p>La integracion se resolvio con una pantalla <b>Portal</b> que permite entrar a cada modulo. Cada modulo conserva su propia navegacion, sus ViewModels y su propia base Room, pero comparten una sola <code>Application</code>, un solo <code>MainActivity</code>, un solo manifest y un unico APK.</p>
+
+<div class="ascii"><pre>
+                         +----------------------------------+
+                         |   MainActivity (unica Activity)  |
+                         |   LemacTheme { UnifiedApp() }    |
+                         +----------------+-----------------+
+                                          |
+                                   +------v------+
+                                   |  PortalScreen |
+                                   +---+-------+---+
+                                       |       |
+                    +------------------+       +------------------+
+                    |                                                 |
+          +---------v----------+                           +----------v---------+
+          | LemacApp()         |                           | GestionTheme {     |
+          | Bienestar          |                           |   GestionApp() }   |
+          | 6 pantallas        |                           | 9 pantallas        |
+          | Room lemac_datalab |                           | Room gestion_doc   |
+          +--------------------+                           +--------------------+
+</pre></div>
+
+<h2>2.2 Estado real y metricas</h2>
+<div class="kpi">
+  <div><b>96</b><span>archivos Kotlin</span></div>
+  <div><b>76</b><span>pruebas JVM verdes</span></div>
+  <div><b>2</b><span>bases Room separadas</span></div>
+  <div><b>16</b><span>pantallas Compose</span></div>
+  <div><b>7</b><span>roles RBAC</span></div>
+  <div><b>29</b><span>decisiones (ADR)</span></div>
+</div>
+<table>
+  <thead><tr><th style="width:34%">Indicador</th><th>Valor verificado</th></tr></thead>
+  <tbody>
+    <tr><td>Build de debug</td><td><code>BUILD SUCCESSFUL</code> con <code>assembleDebug</code> (verificado el 12-11-2026)</td></tr>
+    <tr><td>Pruebas unitarias</td><td>76/76 aprobadas, 0 fallidas, 0 errores (33 bienestar + 43 gestion)</td></tr>
+    <tr><td>APK de debug</td><td><code>app/build/outputs/apk/debug/app-debug.apk</code> (~62 MB; 64.915.563 bytes)</td></tr>
+    <tr><td>Base de bienestar</td><td><code>lemac_datalab.db</code>, version 1, 1 entidad (<code>registros</code>)</td></tr>
+    <tr><td>Base de gestion</td><td><code>gestion_documental.db</code>, version 2, 6 entidades</td></tr>
+    <tr><td>Rama de trabajo</td><td><code>entrega_hito2</code>; integracion en <code>13ef480</code>; ultimos commits <code>ded8cde</code> (tests) y <code>8e87e82</code> (docs/PDF)</td></tr>
+    <tr><td>Repositorio local</td><td><code>&lt;ruta-del-repositorio&gt;/limpio_model</code></td></tr>
+  </tbody>
+</table>
+
+<div class="callout info">
+  <b>Precision importante</b>
+  El proyecto no tiene backend real, no pide permiso de <code>INTERNET</code> y no usa datos reales de salud.
+  La sincronizacion es simulada (<code>FakeLemacApi</code>) y la exportacion es local via Storage Access Framework.
+  Esto no es una carencia accidental: es una decision de alcance y privacidad documentada en los ADR.
+</div>
+
+<h2>2.3 Alcance y limites</h2>
+<table>
+  <thead><tr><th>Incluido (MVP)</th><th>Fuera de alcance (documentado)</th></tr></thead>
+  <tbody>
+    <tr><td>Autorregistro en 4 ambitos con validacion</td><td>Diagnostico clinico o interpretacion medica</td></tr>
+    <tr><td>Historial, resumen y recordatorios locales</td><td>Backend en la nube / cuentas reales</td></tr>
+    <tr><td>Foto de perfil con camara y correccion EXIF</td><td>Permiso <code>CAMERA</code> y CameraX</td></tr>
+    <tr><td>Exportacion CSV local (SAF) para analisis</td><td>Subida automatica de datos a un servidor</td></tr>
+    <tr><td>Login simulado con 7 roles y matriz de permisos</td><td>Autenticacion real, OAuth o hash de claves en produccion</td></tr>
+    <tr><td>Documentos, versiones, solicitudes, aprobaciones y auditoria</td><td>Firma digital, integracion con sistemas externos</td></tr>
+    <tr><td>Backup selectivo y reglas de extraccion de datos</td><td>Cifrado de base de datos (deuda academica declarada)</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ 3 ============================ -->
+<h1>3. Stack tecnologico y versiones</h1>
+
+<h2>3.1 Versiones exactas</h2>
+<p>Las versiones se toman de <code>gradle/libs.versions.toml</code>, <code>app/build.gradle.kts</code> y <code>gradle/wrapper/gradle-wrapper.properties</code>. No inventes versiones al replicar: usa el catalogo de versiones para que Gradle resuelva todo de forma consistente.</p>
+<table>
+  <thead><tr><th style="width:32%">Tecnologia</th><th>Version / configuracion</th></tr></thead>
+  <tbody>
+    <tr><td>Lenguaje</td><td>Kotlin 2.0.21</td></tr>
+    <tr><td>Android Gradle Plugin (AGP)</td><td>9.2.1</td></tr>
+    <tr><td>Gradle (wrapper)</td><td>9.5.0</td></tr>
+    <tr><td>Compose BOM</td><td>2026.02.01</td></tr>
+    <tr><td>Material 3</td><td>Gestionado por el BOM de Compose</td></tr>
+    <tr><td>Navigation Compose</td><td>2.8.9</td></tr>
+    <tr><td>Room</td><td>2.8.5 (runtime, ktx y compiler por KSP)</td></tr>
+    <tr><td>WorkManager</td><td>2.10.0</td></tr>
+    <tr><td>KSP</td><td>2.0.21-1.0.28</td></tr>
+    <tr><td>Lifecycle Runtime / ViewModel Compose</td><td>2.8.5</td></tr>
+    <tr><td>Activity Compose</td><td>1.8.0</td></tr>
+    <tr><td>AndroidX Core KTX</td><td>1.10.1</td></tr>
+    <tr><td>JUnit</td><td>4.13.2</td></tr>
+    <tr><td>kotlinx-coroutines-test</td><td>1.9.0</td></tr>
+    <tr><td>compileSdk / targetSdk / minSdk</td><td>37 / 37 / 33 (Android 13 o superior)</td></tr>
+    <tr><td>Java source / target</td><td>11</td></tr>
+    <tr><td>applicationId</td><td><code>com.example.limpio_moviles</code></td></tr>
+    <tr><td>Modulo de gestion</td><td><code>com.example.gestiondocumental</code> dentro del mismo modulo <code>:app</code></td></tr>
+    <tr><td>Nombre Gradle</td><td><code>limpio_moviles</code></td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <b>Detalle de configuracion que suele confundir</b>
+  El modulo <code>app</code> aplica <code>com.android.application</code>, <code>org.jetbrains.kotlin.plugin.compose</code> y
+  <code>com.google.devtools.ksp</code>. No hay una linea explicita de <code>org.jetbrains.kotlin.android</code> porque
+  AGP 9 incorpora el soporte de Kotlin dentro del plugin de Android. Si replicas con una version anterior de AGP,
+  si tendras que aplicar <code>org.jetbrains.kotlin.android</code>.
+</div>
+
+<h2>3.2 Requisitos de entorno</h2>
+<ul>
+  <li><b>Android Studio</b> actualizado, con soporte para AGP 9.2.1.</li>
+  <li><b>JDK 17 o superior.</b> Android Studio incluye un JDK compatible; tambien sirve uno instalado en el sistema.</li>
+  <li><b>Android SDK 37</b> instalado desde el SDK Manager.</li>
+  <li><b>Emulador o dispositivo fisico con Android 13 (API 33) o superior.</b></li>
+  <li><b>Conexion a Internet la primera vez</b>, para que Gradle descargue el wrapper y las dependencias.</li>
+  <li><b>Git</b> para el control de versiones y <b>Lemoria</b> para el flujo SDD (opcional al replicar la app, obligatorio si repites el proceso de trazabilidad).</li>
+</ul>
+<pre><code><span class="c"># Verificaciones rapidas del entorno</span>
+java -version
+./gradlew --version
+adb devices
+sdkmanager --list_installed
+git --version
+lemoria --version</code></pre>
+
+<!-- ============================ 4 ============================ -->
+<h1>4. Arquitectura general</h1>
+
+<h2>4.1 Vista de capas</h2>
+<p>La aplicacion sigue MVVM con Repository y flujo de datos unidireccional. La UI observa estado inmutable; los eventos suben al ViewModel; el ViewModel valida y delega en el repositorio; el repositorio habla con Room o con la fuente remota simulada; Room es la fuente de verdad local.</p>
+<div class="ascii"><pre>
++-------------------------------------------------------------+
+|  UI (Jetpack Compose)                                       |
+|  Pantallas y componentes; no accede a datos directamente.   |
++-----------------------------+-------------------------------+
+                              | eventos (onClick, onSave...)
+                              v
++-------------------------------------------------------------+
+|  ViewModel (StateFlow<UiState>)                             |
+|  Orquesta casos de uso, valida, expone estado y mensajes.   |
++-----------------------------+-------------------------------+
+                              | llama
+                              v
++-------------------------------------------------------------+
+|  Repository                                                 |
+|  Reglas de negocio, mapeo, seleccion de fuente de datos.    |
++------------------+--------------------+---------------------+
+                   |                    |
+                   v                    v
+        +---------------------+  +----------------------+
+        | Room (DAOs)         |  | Remoto simulado      |
+        | fuente de verdad    |  | FakeLemacApi         |
+        +---------------------+  +----------------------+
+                   |
+                   v
+        +---------------------+
+        | SQLite en el device |
+        +---------------------+
+</pre></div>
+
+<h2>4.2 App unificada y portal</h2>
+<p>La integracion de los dos modulos se hizo sin fusionar sus codigos internos. Se reutilizo el paquete <code>com.example.gestiondocumental</code> dentro del mismo modulo <code>:app</code> y se cambio solo el punto de entrada de su navegacion para que apunte al contenedor unico <code>LemacApplication</code>.</p>
+<table>
+  <thead><tr><th>Pieza</th><th>Responsabilidad</th><th>Clave</th></tr></thead>
+  <tbody>
+    <tr><td><code>LemacApplication</code></td><td>Contenedor manual de dependencias de ambos modulos</td><td>Expone bases, repositorios, canales y siembra</td></tr>
+    <tr><td><code>MainActivity</code></td><td>Unica Activity; monta <code>LemacTheme</code> y <code>UnifiedApp</code></td><td><code>setContent { LemacTheme { UnifiedApp() } }</code></td></tr>
+    <tr><td><code>UnifiedApp</code></td><td>NavHost raiz con tres rutas: portal, bienestar, gestion</td><td>Portal como <code>startDestination</code></td></tr>
+    <tr><td><code>PortalScreen</code></td><td>Dos tarjetas de acceso y aviso de privacidad</td><td>No mezcla datos ni navegacion</td></tr>
+    <tr><td><code>LemacApp</code></td><td>Grafo de navegacion de bienestar</td><td>Hereda <code>LemacTheme</code></td></tr>
+    <tr><td><code>GestionApp</code></td><td>Grafo de navegacion de gestion</td><td>Envuelto en <code>GestionTheme</code></td></tr>
+  </tbody>
+</table>
+<div class="callout info">
+  <b>Por que una sola Application</b>
+  Android solo permite una clase <code>Application</code> por proceso. En lugar de mantener dos y pelear con el manifest,
+  <code>LemacApplication</code> expone las dependencias de ambos modulos. Cada base Room sigue siendo independiente:
+  <code>lemac_datalab.db</code> y <code>gestion_documental.db</code>.
+</div>
+
+<h2>4.3 Principios de diseno</h2>
+<ul>
+  <li><b>Separacion de responsabilidades:</b> la UI no conoce Room; el ViewModel no conoce Android Context salvo en la Factory.</li>
+  <li><b>Fuente de verdad unica:</b> Room es la verdad local. La sincronizacion simulada no reemplaza la base.</li>
+  <li><b>Estado inmutable:</b> cada pantalla observa un <code>UiState</code> y reacciona a cambios, sin mutar estado compartido a mano.</li>
+  <li><b>Inyeccion manual:</b> no hay Hilt/Koin. La <code>Application</code> construye las dependencias y las Factory las pasan a los ViewModels.</li>
+  <li><b>Offline-first:</b> todo funciona sin red; no se declara permiso de <code>INTERNET</code>.</li>
+  <li><b>Testabilidad:</b> logica pura en <code>model/</code> y dobles de prueba para repositorios y ViewModels.</li>
+</ul>
+
+<!-- ============================ 5 ============================ -->
+<h1>5. Estructura del repositorio</h1>
+
+<h2>5.1 Arbol de carpetas</h2>
+<pre><code>limpio_model/
++-- app/
+|   +-- build.gradle.kts              Unico modulo Android (:app)
+|   +-- src/
+|       +-- main/
+|       |   +-- AndroidManifest.xml   Application, Activity, FileProvider, permisos
+|       |   +-- java/com/example/limpio_moviles/       Modulo Bienestar + raiz
+|       |   |   +-- LemacApplication.kt   Contenedor dual de dependencias
+|       |   |   +-- MainActivity.kt       Unica Activity; monta UnifiedApp
+|       |   |   +-- data/local/           Room bienestar + RegistroCsvExporter
+|       |   |   +-- data/remote/          LemacApi + FakeLemacApi
+|       |   |   +-- data/repository/      RegistroRepository, PerfilRepository
+|       |   |   +-- model/                Ambito, catalogos, validadores, resumen
+|       |   |   +-- navigation/           LemacApp + UnifiedApp
+|       |   |   +-- ui/components/        Componentes reutilizables
+|       |   |   +-- ui/screens/           6 pantallas + PortalScreen
+|       |   |   +-- ui/theme/             LemacTheme
+|       |   |   +-- util/                 Foto, notificaciones, recordatorios
+|       |   |   +-- viewmodel/            RegistroViewModel + Factory
+|       |   +-- java/com/example/gestiondocumental/    Modulo Gestion RR.HH.
+|       |   |   +-- data/local/           Room gestion, DAOs, Sembrador
+|       |   |   +-- data/repository/      Sesion, Documento, Usuario, Auditoria
+|       |   |   +-- model/                Roles, permisos, flujo, reportes
+|       |   |   +-- navigation/           GestionApp / AppNavigation
+|       |   |   +-- ui/screens/           9 pantallas de gestion
+|       |   |   +-- ui/theme/             GestionTheme
+|       |   |   +-- util/                 Archivos, fechas, notificaciones
+|       |   |   +-- viewmodel/            Sesion, Documentos, Usuarios, Auditoria
+|       |   +-- res/                      strings, themes, iconos, XML de backup
+|       +-- test/java/com/example/
+|           +-- limpio_moviles/           33 pruebas de bienestar
+|           +-- gestiondocumental/        43 pruebas de gestion
++-- docs/                                 Guias, disertacion, integracion, PDF
++-- gradle/
+|   +-- libs.versions.toml                Catalogo de versiones
+|   +-- wrapper/                          Gradle Wrapper 9.5.0
++-- build.gradle.kts                      Plugins del proyecto raiz
++-- settings.gradle.kts                   Repositorios y modulo :app
++-- gradle.properties
++-- gradlew / gradlew.bat
++-- .gitignore</code></pre>
+
+<h2>5.2 Convenciones de nombres</h2>
+<table>
+  <thead><tr><th>Elemento</th><th>Convencion</th><th>Ejemplo</th></tr></thead>
+  <tbody>
+    <tr><td>Entidad Room</td><td>Nombre + <code>Entity</code></td><td><code>RegistroEntity</code>, <code>DocumentoEntity</code></td></tr>
+    <tr><td>DAO</td><td>Nombre + <code>Dao</code></td><td><code>RegistroDao</code>, <code>UsuarioDao</code></td></tr>
+    <tr><td>Repositorio</td><td>Nombre + <code>Repository</code></td><td><code>RegistroRepository</code></td></tr>
+    <tr><td>ViewModel</td><td>Pantalla + <code>ViewModel</code></td><td><code>RegistroViewModel</code></td></tr>
+    <tr><td>Estado de UI</td><td>Pantalla + <code>UiState</code></td><td><code>RegistroUiState</code></td></tr>
+    <tr><td>Pantalla Compose</td><td>Nombre + <code>Screen</code></td><td><code>HistorialScreen</code></td></tr>
+    <tr><td>Ruta de navegacion</td><td>Objeto <code>Rutas</code> con constantes</td><td><code>Rutas.HOME</code></td></tr>
+    <tr><td>Prueba</td><td>Clase bajo prueba + <code>Test</code></td><td><code>RegistroValidatorTest</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ 6 ============================ -->
+<h1>6. Componentes explicados</h1>
+<p>Esta seccion recorre los archivos que importan para entender y replicar la app. No es un inventario exhaustivo de los 96 archivos Kotlin, sino un mapa de responsabilidades: que hace cada pieza, con que se conecta y que debes crear si reconstruyes el proyecto.</p>
+
+<h2>6.1 Nucleo y navegacion</h2>
+<h3>LemacApplication</h3>
+<p>Es el contenedor de dependencias manual. Usa <code>by lazy</code> para crear las bases y repositorios cuando se necesitan por primera vez. Expone:</p>
+<ul>
+  <li><b>Bienestar:</b> <code>database</code> (<code>LemacDatabase</code>), <code>registroRepository</code>, <code>perfilRepository</code>.</li>
+  <li><b>Gestion:</b> <code>gestionDatabase</code>, <code>sesionRepository</code>, <code>documentoRepository</code>, <code>usuarioRepository</code>, <code>auditoriaRepository</code>.</li>
+  <li><b>Arranque:</b> crea los dos canales de notificacion y lanza la siembra de datos de gestion en un <code>CoroutineScope(SupervisorJob() + Dispatchers.IO)</code>.</li>
+</ul>
+<pre><code>class LemacApplication : Application() {
+    private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    val database: LemacDatabase by lazy { LemacDatabase.getDatabase(this) }
+    val registroRepository: RegistroRepository by lazy {
+        RegistroRepository(database.registroDao(), FakeLemacApi())
+    }
+    val perfilRepository: PerfilRepository by lazy { PerfilRepositorySharedPreferences(this) }
+
+    val gestionDatabase: GestionDatabase by lazy { GestionDatabase.obtener(this) }
+    val sesionRepository: SesionRepository by lazy {
+        SesionRepository(gestionDatabase.usuarioDao(), gestionDatabase.auditoriaDao())
+    }
+    val documentoRepository: DocumentoRepository by lazy { DocumentoRepository(gestionDatabase) }
+    val usuarioRepository: UsuarioRepository by lazy { UsuarioRepository(gestionDatabase) }
+    val auditoriaRepository: AuditoriaRepository by lazy {
+        AuditoriaRepository(gestionDatabase.auditoriaDao())
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        com.example.limpio_moviles.util.NotificacionHelper.crearCanal(this)
+        com.example.gestiondocumental.util.NotificacionHelper.crearCanal(this)
+        alcance.launch { Sembrador.sembrarSiVacio(gestionDatabase) }
+    }
+}</code></pre>
+
+<h3>MainActivity</h3>
+<p>Es la unica Activity de la aplicacion. Aplica el tema raiz y monta la navegacion unificada. No contiene logica de negocio.</p>
+<pre><code>class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent { LemacTheme { UnifiedApp() } }
+    }
+}</code></pre>
+
+<h3>UnifiedApp y RutasPortal</h3>
+<p>Define tres rutas: <code>portal</code>, <code>bienestar</code> y <code>gestion</code>. El portal es el destino inicial. El modulo de bienestar se monta sin envolver el tema (porque <code>MainActivity</code> ya lo aplica) y el de gestion se envuelve en <code>GestionTheme</code> para conservar su identidad visual.</p>
+<pre><code>object RutasPortal {
+    const val PORTAL = "portal"
+    const val BIENESTAR = "bienestar"
+    const val GESTION = "gestion"
+}
+
+@Composable
+fun UnifiedApp() {
+    val nav = rememberNavController()
+    NavHost(navController = nav, startDestination = RutasPortal.PORTAL) {
+        composable(RutasPortal.PORTAL) {
+            PortalScreen(
+                onBienestar = { nav.navigate(RutasPortal.BIENESTAR) },
+                onGestion = { nav.navigate(RutasPortal.GESTION) }
+            )
+        }
+        composable(RutasPortal.BIENESTAR) { LemacApp() }
+        composable(RutasPortal.GESTION) { GestionTheme { GestionApp() } }
+    }
+}</code></pre>
+
+<h3>PortalScreen</h3>
+<p>Punto de entrada visual. Presenta dos tarjetas accesibles (una por modulo) y un aviso de privacidad. No comparte estado con los modulos: cada tarjeta navega a un grafo independiente. La accesibilidad se refuerza con <code>contentDescription</code> en las tarjetas.</p>
+
+<h2>6.2 Modulo Bienestar (Lemac DataLab)</h2>
+<table>
+  <thead><tr><th style="width:30%">Componente</th><th>Responsabilidad</th></tr></thead>
+  <tbody>
+    <tr><td><code>OnboardingScreen</code></td><td>Primer uso: explica el proposito, pide alias y muestra el aviso de privacidad.</td></tr>
+    <tr><td><code>HomeScreen</code></td><td>Pantalla principal: resumen rapido, cuatro tarjetas de ambito y accesos a registro e historial.</td></tr>
+    <tr><td><code>RegistroScreen</code></td><td>Formulario de autorregistro: ambito, tipo, intensidad, contexto, estrategia, nota y estado objetivo.</td></tr>
+    <tr><td><code>HistorialScreen</code></td><td>Lista cronologica de registros con opcion de editar y eliminar; conserva la fecha original al editar.</td></tr>
+    <tr><td><code>ResumenScreen</code></td><td>Estadisticas por ambito, promedio de intensidad, ultima fecha y acceso a exportacion CSV.</td></tr>
+    <tr><td><code>AjustesScreen</code></td><td>Foto de perfil, recordatorios, exportacion CSV, carga de datos demo y aviso de privacidad.</td></tr>
+    <tr><td><code>LemacApp</code></td><td>Grafo de navegacion interno de bienestar, con rutas y guardas de onboarding.</td></tr>
+    <tr><td><code>RegistroViewModel</code></td><td>Orquesta el formulario, valida, guarda/edita/elimina, carga demo, exporta CSV y gestiona la foto.</td></tr>
+    <tr><td><code>RegistroUiState</code></td><td>Estado inmutable: lista de registros, errores de validacion, cargando, mensaje y resultado de exportacion.</td></tr>
+    <tr><td><code>RegistroValidator</code></td><td>Validacion pura de campos por ambito (rangos de intensidad, campos obligatorios, longitudes).</td></tr>
+    <tr><td><code>ResumenCalculator</code></td><td>Calculos puros del resumen (conteos, promedios, ultima fecha) sin dependencias Android.</td></tr>
+    <tr><td><code>Ambito</code> y <code>Catalogos</code></td><td>Definen los cuatro ambitos y los tipos/estrategias disponibles en cada uno.</td></tr>
+    <tr><td><code>RegistroRepository</code></td><td>Acceso a datos: insertar, actualizar, eliminar, listar, cargar demo y marcar sincronizado.</td></tr>
+    <tr><td><code>PerfilRepository</code></td><td>Interfaz de perfil (alias y foto); implementacion en SharedPreferences.</td></tr>
+    <tr><td><code>LemacApi</code> / <code>FakeLemacApi</code></td><td>Contrato de sincronizacion y simulacion sin red.</td></tr>
+    <tr><td><code>RegistroCsvExporter</code></td><td>Generador CSV puro: BOM UTF-8, cabecera, RFC 4180, CRLF y neutralizacion de formulas.</td></tr>
+    <tr><td><code>BotonExportarCsv</code></td><td>Boton reutilizable que lanza <code>CreateDocument("text/csv")</code> y maneja cancelacion.</td></tr>
+    <tr><td><code>ExportadorArchivo</code></td><td>Escribe el CSV usando <code>ContentResolver</code> en <code>Dispatchers.IO</code>.</td></tr>
+  </tbody>
+</table>
+
+<h3>Flujo de estado del RegistroViewModel</h3>
+<pre><code><span class="c">// Idea central (simplificada): estado inmutable + eventos</span>
+data class RegistroUiState(
+    val registros: List&lt;RegistroEntity&gt; = emptyList(),
+    val errores: Map&lt;String, String&gt; = emptyMap(),
+    val cargando: Boolean = false,
+    val mensaje: String? = null
+)
+
+class RegistroViewModel(
+    private val repository: RegistroRepository,
+    private val perfil: PerfilRepository,
+    private val fotoStorage: FotoPerfilStorage,
+    private val recordatorios: RecordatorioProgramador,
+    private val exportador: ExportadorArchivo,
+    private val clock: () -&gt; Long = System::currentTimeMillis
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(RegistroUiState())
+    val uiState: StateFlow&lt;RegistroUiState&gt; = _uiState.asStateFlow()
+
+    fun guardar(...) { <span class="c">/* valida, decide insert vs update, conserva fechaHora */</span> }
+    fun exportarCsv(uri: Uri) { <span class="c">/* genera + escribe con runCatching */</span> }
+}</code></pre>
+<div class="callout info">
+  <b>Por que el reloj es inyectable</b>
+  Para probar en la JVM, sin Robolectric, que al crear se usa la hora actual y que al editar se conserva la
+  <code>fechaHora</code> original. Esa fue la decision <b>5bf5d126</b> y la razon de las 7 pruebas de
+  <code>RegistroViewModelTest</code>.
+</div>
+
+<h2>6.3 Modulo Gestion Documental RR.HH.</h2>
+<table>
+  <thead><tr><th style="width:30%">Componente</th><th>Responsabilidad</th></tr></thead>
+  <tbody>
+    <tr><td><code>GestionDatabase</code></td><td>Room con 6 entidades y migracion 1-&gt;2 (adjunto y observacion).</td></tr>
+    <tr><td><code>Entidades.kt</code></td><td>Usuario, Documento, Version, Solicitud, Auditoria y Dependencia.</td></tr>
+    <tr><td><code>Daos.kt</code></td><td>Consultas por usuario, documento, version, solicitud y auditoria.</td></tr>
+    <tr><td><code>Mappers.kt</code></td><td>Conversion entre entidades Room y modelos de dominio.</td></tr>
+    <tr><td><code>Sembrador</code></td><td>Siembra idempotente de usuarios, dependencias y documentos de demostracion.</td></tr>
+    <tr><td><code>SesionRepository</code></td><td>Login simulado, usuario actual y registro de auditoria de sesion.</td></tr>
+    <tr><td><code>DocumentoRepository</code></td><td>CRUD de documentos, versionado y solicitudes de modificacion.</td></tr>
+    <tr><td><code>UsuarioRepository</code></td><td>Gestion de cuentas y roles.</td></tr>
+    <tr><td><code>AuditoriaRepository</code></td><td>Registro y consulta de eventos auditables.</td></tr>
+    <tr><td><code>Permisos</code></td><td>Matriz RBAC pura: ver, cargar, modificar, resolver, reportes y auditoria.</td></tr>
+    <tr><td><code>FlujoModificacion</code></td><td>Reglas de aprobacion/rechazo y aplicacion de cambios al documento.</td></tr>
+    <tr><td><code>Validadores</code></td><td>Validacion de RUT, correo, campos y reglas de entrada.</td></tr>
+    <tr><td><code>Reportes</code></td><td>Agregados y filtros para jefaturas, RR.HH. y supervisor.</td></tr>
+    <tr><td><code>SesionViewModel</code></td><td>Login, cierre de sesion y rol activo.</td></tr>
+    <tr><td><code>DocumentosViewModel</code></td><td>Listado, detalle, creacion, versionado y solicitudes.</td></tr>
+    <tr><td><code>UsuariosViewModel</code></td><td>Alta y edicion de usuarios segun permisos.</td></tr>
+    <tr><td><code>AuditoriaViewModel</code></td><td>Consulta de eventos y filtros.</td></tr>
+    <tr><td><code>GestionApp</code></td><td>Grafo de navegacion con guardas por sesion y por rol.</td></tr>
+  </tbody>
+</table>
+<p>Las nueve pantallas de gestion son: <code>SplashScreen</code>, <code>LoginScreen</code>, <code>HomeScreen</code>, <code>DocumentosScreen</code>, <code>DetalleDocumentoScreen</code>, <code>BandejaAprobacionScreen</code>, <code>UsuariosScreen</code>, <code>AuditoriaScreen</code> y <code>ReportesScreen</code>. Cada una observa su ViewModel y no accede directamente a la base.</p>
+
+<div class="callout tip">
+  <b>Regla de oro del modulo de gestion</b>
+  Denegar por defecto. Solo se concede acceso cuando una regla explicita lo permite. Los perfiles de plataforma
+  (administrador del sistema, TI/ciberseguridad) y el supervisor no obtienen acceso automatico al contenido de los
+  expedientes: administran la plataforma o ven reportes agregados, no datos individuales.
+</div>
+
+<h2>6.4 Componentes transversales</h2>
+<h3>Foto de perfil sin permiso CAMERA</h3>
+<p><code>SelectorFotoPerfil</code> usa un contrato propio <code>TomarFotoConUri</code>:</p>
+<ol>
+  <li>Crea un archivo temporal en <code>cacheDir/fotos/captura_*.jpg</code>.</li>
+  <li>Lo expone con <code>FileProvider</code> (<code>${applicationId}.fileprovider</code>).</li>
+  <li>Lanza <code>ACTION_IMAGE_CAPTURE</code> con <code>EXTRA_OUTPUT</code>, <code>ClipData</code> y flags de lectura/escritura.</li>
+  <li><code>FotoStorage</code> decodifica con <code>inJustDecodeBounds</code> + <code>inSampleSize</code> (lado maximo 1024 px) y aplica la orientacion EXIF (8 variantes).</li>
+  <li>Guarda el resultado como PNG atomico en <code>filesDir/perfil.png</code> y limpia temporales de mas de 24 h.</li>
+</ol>
+<p>El manifest solo declara <code>&lt;uses-feature android:name="android.hardware.camera" android:required="false" /&gt;</code>. No hay <code>uses-permission CAMERA</code>: el intent de camara no lo necesita y se usa <code>runCatching</code> para el caso de camara no disponible.</p>
+
+<h3>Exportacion CSV local</h3>
+<p>Se usa Storage Access Framework: <code>ActivityResultContracts.CreateDocument("text/csv")</code>. El ViewModel recibe la <code>Uri</code> y <code>ExportadorArchivo</code> escribe con <code>contentResolver.openOutputStream(uri)</code> en <code>Dispatchers.IO</code>. No se pide permiso de almacenamiento, no se usa <code>FileProvider</code> para exportar y no se sube nada a la nube.</p>
+<p>Formato del archivo: BOM UTF-8, cabecera fija, campos escapados segun RFC 4180, saltos CRLF y neutralizacion de formulas (si un campo empieza con <code>=</code>, <code>+</code>, <code>-</code> o <code>@</code>, se prefija con apostrofo). Nombre: <code>lemac_datalab_yyyyMMdd_HHmmss.csv</code>.</p>
+
+<h3>Recordatorios y notificaciones</h3>
+<p><code>RecordatorioScheduler</code> programa <code>RecordatorioWorker</code> con WorkManager. <code>NotificacionHelper</code> crea el canal de notificaciones (Android 13+ exige <code>POST_NOTIFICATIONS</code>) y publica recordatorios discretos. Cada modulo tiene su propio canal para no mezclar avisos de bienestar con avisos documentales.</p>
+
+<h3>Backup selectivo</h3>
+<p><code>backup_rules.xml</code> (API &lt;= 30) y <code>data_extraction_rules.xml</code> (API 31+, con bloques identicos de <code>cloud-backup</code> y <code>device-transfer</code>) usan una lista de inclusion: <code>domain="database"</code> y <code>domain="sharedpref"</code> (acotado a <code>perfil_lemac.xml</code>). Excluyen explicitamente <code>gestion_documental.db</code>, sus <code>-wal/-shm/-journal</code>, <code>files/documentos/</code> y <code>file/perfil.png</code>. La cache la excluye el sistema, no hace falta una regla.</p>
+
+<!-- ============================ 7 ============================ -->
+<h1>7. Modelo de datos</h1>
+
+<h2>7.1 Base de bienestar: <code>lemac_datalab.db</code></h2>
+<p>Version 1, una sola tabla. La decision de diseno fue una entidad unica con un campo <code>ambito</code> en lugar de cuatro tablas duplicadas (ADR <b>Modelo de datos unico</b>).</p>
+<table>
+  <thead><tr><th>Columna</th><th>Tipo</th><th>Descripcion</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>Int (PK, autoGenerate)</td><td>Identificador local.</td></tr>
+    <tr><td><code>usuarioAlias</code></td><td>String</td><td>Alias elegido en onboarding; no es un dato real de salud.</td></tr>
+    <tr><td><code>ambito</code></td><td>String</td><td>NEURODESARROLLO, DBT, ANIMO o ADICCIONES.</td></tr>
+    <tr><td><code>tipo</code></td><td>String</td><td>Tipo de registro dentro del ambito (catalogo).</td></tr>
+    <tr><td><code>intensidad</code></td><td>Int</td><td>Escala validada por ambito.</td></tr>
+    <tr><td><code>contexto</code></td><td>String</td><td>Contexto opcional.</td></tr>
+    <tr><td><code>estrategia</code></td><td>String</td><td>Estrategia usada (catalogo por ambito).</td></tr>
+    <tr><td><code>nota</code></td><td>String</td><td>Nota libre opcional.</td></tr>
+    <tr><td><code>estadoObjetivo</code></td><td>String</td><td>Estado objetivo (catalogo por ambito).</td></tr>
+    <tr><td><code>fechaHora</code></td><td>Long</td><td>Millis; al editar se conserva la fecha original.</td></tr>
+    <tr><td><code>sincronizado</code></td><td>Boolean</td><td>Se re-encola a <code>false</code> al editar.</td></tr>
+  </tbody>
+</table>
+
+<h2>7.2 Base de gestion: <code>gestion_documental.db</code></h2>
+<p>Version 2. La migracion <code>1-&gt;2</code> agrega <code>documentos.archivoNombre</code> y <code>solicitudes.observacion</code> con <code>ALTER TABLE</code>.</p>
+<table>
+  <thead><tr><th>Tabla</th><th>Columnas principales</th><th>Relacion</th></tr></thead>
+  <tbody>
+    <tr><td><code>usuarios</code></td><td>id, rut, nombre, correo, rol, dependencia, tipoContrato, activo, clave</td><td>1 usuario -&gt; N documentos</td></tr>
+    <tr><td><code>documentos</code></td><td>id, usuarioId, propietario, categoria, titulo, estado, versionActual, fechaVencimiento, dependencia, archivoNombre</td><td>pertenece a un usuario</td></tr>
+    <tr><td><code>versiones</code></td><td>id, documentoId, numeroVersion, autor, fecha, comentario</td><td>N versiones por documento</td></tr>
+    <tr><td><code>solicitudes</code></td><td>id, documentoId, documentoTitulo, solicitante, tipoCambio, datosPropuestos, estado, revisor, motivoRechazo, fecha, observacion</td><td>N solicitudes por documento</td></tr>
+    <tr><td><code>auditoria</code></td><td>id, usuario, fechaHora, entidad, accion, detalle, resultado</td><td>eventos independientes</td></tr>
+    <tr><td><code>dependencias</code></td><td>id, nombre</td><td>catalogo de unidades</td></tr>
+  </tbody>
+</table>
+
+<h2>7.3 Estados, roles y categorias</h2>
+<div class="two-col">
+<h3>Roles (7)</h3>
+<ul>
+  <li><b>Funcionario:</b> ve sus propios documentos y solicita correcciones.</li>
+  <li><b>Jefatura:</b> revisa y aprueba documentos de su dependencia.</li>
+  <li><b>Administrativo:</b> carga y clasifica documentos de su ambito.</li>
+  <li><b>RR.HH.:</b> administra expedientes y antecedentes laborales.</li>
+  <li><b>Administrador del sistema:</b> cuentas y configuracion, sin acceso automatico a contenido.</li>
+  <li><b>TI / Ciberseguridad:</b> acceso excepcional, autorizado y trazable.</li>
+  <li><b>Supervisor institucional:</b> reportes e indicadores agregados.</li>
+</ul>
+<h3>Estados de documento (5)</h3>
+<ul>
+  <li>Vigente</li><li>Pendiente de revision</li><li>Aprobado</li><li>Rechazado</li><li>Archivado</li>
+</ul>
+<h3>Estados de solicitud (3)</h3>
+<ul>
+  <li>Pendiente</li><li>Aprobada</li><li>Rechazada</li>
+</ul>
+<h3>Categorias documentales (6)</h3>
+<ul>
+  <li>Contrato y anexos</li><li>Certificado laboral</li><li>Solicitud de permiso</li>
+  <li>Licencia medica</li><li>Antecedente sensible</li><li>Reporte institucional</li>
+</ul>
+<h3>Tipos de cambio (2)</h3>
+<ul>
+  <li>Directo (sin aprobacion)</li><li>Con revision</li>
+</ul>
+<h3>Acciones auditables (6)</h3>
+<ul>
+  <li>Ver</li><li>Cargar</li><li>Validar</li><li>Aprobar</li><li>Rechazar</li><li>Auditar</li>
+</ul>
+</div>
+
+<!-- ============================ 8 ============================ -->
+<h1>8. Flujo de datos de extremo a extremo</h1>
+<p>Entender estos seis recorridos es lo que permite defender el proyecto y replicarlo sin copiar a ciegas. En todos, la UI emite eventos, el ViewModel decide y el repositorio persiste.</p>
+
+<h2>8.1 Crear un registro de bienestar</h2>
+<pre><code>[Usuario] completa RegistroScreen
+   -&gt; onClick "Guardar"
+   -&gt; RegistroViewModel.guardar(datos)
+       -&gt; RegistroValidator.valida(datos)        <span class="c">// si hay errores, actualiza uiState.errores y termina</span>
+       -&gt; clock()                                <span class="c">// hora actual inyectada</span>
+       -&gt; RegistroRepository.insertar(entidad)   <span class="c">// id == 0 -&gt; INSERT</span>
+           -&gt; RegistroDao.insertar()
+               -&gt; Room / SQLite (lemac_datalab.db)
+       -&gt; FakeLemacApi.sincronizar()             <span class="c">// simulada, sin red</span>
+       -&gt; actualiza uiState (lista, mensaje de exito)
+   -&gt; Compose recompone y muestra el registro en Historial/Resumen</code></pre>
+
+<h2>8.2 Editar un registro</h2>
+<p>Al editar se conserva la <code>fechaHora</code> original y se fuerza <code>sincronizado = false</code>. Esto evita que el registro salte al tope del historial y garantiza que el cambio se reenvie en la siguiente sincronizacion. Si el registro ya no existe, se informa un mensaje claro y no se hace un UPDATE silencioso.</p>
+<pre><code>existente == null  -&gt; mensaje "El registro ya no existe" (sin escritura)
+existente != null  -&gt; copia(fechaHora = existente.fechaHora, sincronizado = false)
+                   -&gt; RegistroRepository.actualizar()  -&gt; UPDATE
+                   -&gt; uiState.registros se recalcula</code></pre>
+
+<h2>8.3 Exportar CSV</h2>
+<pre><code>[Ajustes o Resumen] "Exportar CSV"
+   -&gt; ActivityResultContracts.CreateDocument("text/csv")   <span class="c">// usuario elige destino</span>
+   -&gt; onResult(uri)
+   -&gt; RegistroViewModel.exportarCsv(uri)
+       -&gt; RegistroCsvExporter.generar(registros)   <span class="c">// puro: BOM + cabecera + RFC4180 + CRLF</span>
+       -&gt; ExportadorArchivo.escribir(uri, texto)   <span class="c">// withContext(Dispatchers.IO)</span>
+       -&gt; runCatching { ... }.getOrDefault(false)  <span class="c">// un solo bloque de error</span>
+   -&gt; uiState.mensaje = "CSV exportado" o error controlado</code></pre>
+
+<h2>8.4 Foto de perfil</h2>
+<pre><code>[Ajustes] "Cambiar foto"
+   -&gt; SelectorFotoPerfil lanza TomarFotoConUri
+       -&gt; crea cacheDir/fotos/captura_*.jpg
+       -&gt; FileProvider.getUriForFile(...)
+       -&gt; ACTION_IMAGE_CAPTURE + EXTRA_OUTPUT + flags
+   -&gt; onResult(ok)
+       -&gt; FotoStorage.decodificar(uri)   <span class="c">// inSampleSize max 1024 px</span>
+       -&gt; ExifInterface corrige orientacion (8 variantes)
+       -&gt; guarda filesDir/perfil.png (rename atomico)
+       -&gt; PerfilRepository actualiza el estado de perfil
+   -&gt; Compose muestra la nueva foto</code></pre>
+
+<h2>8.5 Login y permisos (gestion)</h2>
+<pre><code>[LoginScreen] RUT + clave
+   -&gt; SesionViewModel.iniciarSesion()
+       -&gt; Validadores.validaRut / validaCampos
+       -&gt; SesionRepository.login(rut, clave)
+           -&gt; UsuarioDao.buscarPorRut()
+           -&gt; AuditoriaDao.registrar(LOGIN, resultado)
+       -&gt; si ok: guarda usuarioActual y navega a Home
+       -&gt; si falla: mensaje generico (no revela si el RUT existe)
+   -&gt; GestionApp aplica guardas por sesion y por rol
+   -&gt; cada pantalla consulta Permisos antes de mostrar acciones</code></pre>
+
+<h2>8.6 Documento, solicitud y aprobacion (RF12)</h2>
+<pre><code>1. Administrativo/RRHH crea o carga un documento
+   -&gt; DocumentoRepository.crear()  -&gt; estado inicial (Vigente o Pendiente de revision)
+   -&gt; AuditoriaRepository.registra(CARGAR)
+2. Funcionario/Jefatura solicita un cambio
+   -&gt; DocumentoRepository.crearSolicitud(tipoCambio, datosPropuestos)
+   -&gt; estado = Pendiente; se notifica a quien puede resolver
+3. RRHH/Jefatura abre BandejaAprobacion
+   -&gt; Permisos.puedeResolverSolicitud(rol, categoria, mismaDependencia)
+   -&gt; aprueba: FlujoModificacion.aplicar()  -&gt; nueva Version + estado actualizado
+   -&gt; rechaza: motivoRechazo + observacion
+   -&gt; AuditoriaRepository.registra(APROBAR o RECHAZAR)
+4. El documento conserva historial de versiones y trazabilidad de quien hizo que</code></pre>
+
+<!-- ============================ 9 ============================ -->
+<h1>9. Seguridad, permisos y privacidad</h1>
+
+<h2>9.1 Matriz RBAC</h2>
+<p>La logica vive en <code>com.example.gestiondocumental.model.Permisos</code> y se prueba sin Android. La matriz completa se resume asi:</p>
+<table>
+  <thead><tr><th>Rol</th><th>Ver documento</th><th>Cargar</th><th>Modificar</th><th>Resolver</th><th>Reportes</th><th>Auditar</th></tr></thead>
+  <tbody>
+    <tr><td>Funcionario</td><td>Solo propios</td><td>Solo propios</td><td>Si puede ver</td><td>No</td><td>No</td><td>No</td></tr>
+    <tr><td>Jefatura</td><td>Misma dependencia (no sensibles)</td><td>Misma dependencia</td><td>Si puede ver</td><td>Misma dependencia, no sensibles</td><td>Si</td><td>No</td></tr>
+    <tr><td>Administrativo</td><td>Misma dependencia (no sensibles)</td><td>Misma dependencia</td><td>Si puede ver</td><td>No</td><td>No</td><td>No</td></tr>
+    <tr><td>RR.HH.</td><td>Todo</td><td>Todo</td><td>Si puede ver</td><td>Todo</td><td>Si (individuales)</td><td>Si</td></tr>
+    <tr><td>Administrador del sistema</td><td>No por defecto</td><td>No</td><td>No</td><td>No</td><td>No</td><td>Si</td></tr>
+    <tr><td>TI / Ciberseguridad</td><td>No por defecto</td><td>No</td><td>No</td><td>No</td><td>No</td><td>Si</td></tr>
+    <tr><td>Supervisor</td><td>No</td><td>No</td><td>No</td><td>No</td><td>Si (agregados)</td><td>No</td></tr>
+  </tbody>
+</table>
+<div class="callout warn">
+  <b>Datos sensibles</b>
+  <code>LICENCIA_MEDICA</code> y <code>ANTECEDENTE_SENSIBLE</code> tienen una regla mas estricta: solo el propio funcionario
+  y RR.HH. pueden verlos; la jefatura no accede por defecto aunque sea la misma dependencia.
+</div>
+
+<h2>9.2 Manifest y backup</h2>
+<table>
+  <thead><tr><th>Elemento</th><th>Configuracion</th><th>Motivo</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST_NOTIFICATIONS</code></td><td>Declarado y solicitado en runtime</td><td>Recordatorios discretos en Android 13+</td></tr>
+    <tr><td><code>uses-feature camera</code></td><td><code>required="false"</code></td><td>La app funciona sin camara</td></tr>
+    <tr><td><code>uses-permission CAMERA</code></td><td>Ausente</td><td>El intent de captura no lo requiere</td></tr>
+    <tr><td><code>INTERNET</code></td><td>Ausente</td><td>Offline-first; no hay backend real</td></tr>
+    <tr><td><code>FileProvider</code></td><td><code>${applicationId}.fileprovider</code>, no exportado</td><td>Compartir el archivo temporal de la camara</td></tr>
+    <tr><td><code>allowBackup</code></td><td><code>true</code></td><td>Respaldo selectivo, no indiscriminado</td></tr>
+    <tr><td>Reglas de backup</td><td>Allowlist: database + sharedpref (<code>perfil_lemac.xml</code>)</td><td>No respaldar datos laborales ni cache</td></tr>
+    <tr><td>Exclusiones</td><td><code>gestion_documental.db(-wal/-shm/-journal)</code>, <code>files/documentos/</code>, <code>file/perfil.png</code></td><td>Privacidad de expedientes y foto</td></tr>
+  </tbody>
+</table>
+
+<h2>9.3 Privacidad de datos</h2>
+<ul>
+  <li>Datos ficticios y sinteticos: no se usan datos reales de salud ni de personas.</li>
+  <li>La app no es un instrumento de diagnostico; el aviso se muestra en onboarding y ajustes.</li>
+  <li>La exportacion CSV la inicia el usuario y el destino lo elige el usuario (SAF).</li>
+  <li>La clave de demostracion no se expone en el modelo de dominio; en produccion se reemplazaria por hash + backend.</li>
+  <li>Deuda declarada: la base local no esta cifrada. Es una decision de alcance academico, no un olvido.</li>
+</ul>
+
+<!-- ============================ 10 ============================ -->
+<h1>10. Pruebas y calidad</h1>
+
+<h2>10.1 Las 76 pruebas</h2>
+<table>
+  <thead><tr><th>Modulo</th><th>Archivo</th><th style="width:12%">Pruebas</th><th>Que cubre</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="6">Bienestar (33)</td><td><code>RegistroValidatorTest</code></td><td>9</td><td>Validacion de campos y rangos por ambito.</td></tr>
+    <tr><td><code>ResumenCalculatorTest</code></td><td>4</td><td>Conteos, promedios y ultima fecha.</td></tr>
+    <tr><td><code>RegistroCsvExporterTest</code></td><td>8</td><td>BOM, cabecera, RFC 4180, CRLF, formulas, nombre de archivo.</td></tr>
+    <tr><td><code>RegistroRepositoryTest</code></td><td>5</td><td>Insertar, editar conservando fecha, inexistente, demo vacia y sin duplicar.</td></tr>
+    <tr><td><code>RegistroViewModelTest</code></td><td>7</td><td>Crear, editar, editar inexistente, validacion y tres ramas de <code>cargarDemo</code>.</td></tr>
+    <tr><td colspan="2"><b>Subtotal</b></td><td><b>33</b></td></tr>
+    <tr><td rowspan="7">Gestion (43)</td><td><code>ValidadoresTest</code></td><td>4</td><td>RUT, correo y campos.</td></tr>
+    <tr><td><code>PermisosTest</code></td><td>7</td><td>Matriz RBAC por rol y categoria.</td></tr>
+    <tr><td><code>PermisosCargaTest</code></td><td>9</td><td>Carga de permisos y casos sensibles.</td></tr>
+    <tr><td><code>FlujoModificacionTest</code></td><td>6</td><td>Aprobar, rechazar y aplicar cambios.</td></tr>
+    <tr><td><code>ReportesTest</code></td><td>9</td><td>Agregados y filtros por rol.</td></tr>
+    <tr><td><code>ArchivosMimeTest</code></td><td>8</td><td>Tipos MIME y validacion de adjuntos.</td></tr>
+    <tr><td colspan="2"><b>Subtotal</b></td><td><b>43</b></td></tr>
+    <tr><td colspan="2"><b>TOTAL</b></td><td><b>76</b></td><td>JUnit 4, sin Robolectric, ejecutadas en la JVM.</td></tr>
+  </tbody>
+</table>
+
+<h2>10.2 Como ejecutarlas</h2>
+<pre><code><span class="c"># Solo las pruebas unitarias</span>
+./gradlew :app:testDebugUnitTest
+
+<span class="c"># Verificacion completa usada en el cierre (recomendada)</span>
+./gradlew clean compileDebugKotlin testDebugUnitTest assembleDebug
+
+<span class="c"># Reporte HTML</span>
+xdg-open app/build/reports/tests/testDebugUnitTest/index.html</code></pre>
+<p>Resultado esperado: <code>BUILD SUCCESSFUL</code>, 76 pruebas aprobadas, 0 fallidas y 0 errores.</p>
+
+<h2>10.3 Cobertura y deuda tecnica</h2>
+<table>
+  <thead><tr><th>Cubierto</th><th>No cubierto (deuda declarada)</th></tr></thead>
+  <tbody>
+    <tr><td>Validadores, permisos, flujo, reportes, CSV, repositorio con doble, ViewModel con dobles.</td><td>Room real, navegacion, UI Compose, WorkManager, SAF/<code>ContentResolver</code> real, pantalla de portal y pantallas de gestion.</td></tr>
+    <tr><td>Logica pura de ambos modulos.</td><td>Pruebas instrumentadas (<code>androidTest</code> no existe).</td></tr>
+    <tr><td>Build de debug y compilacion Kotlin.</td><td>Build de release firmado y pruebas en dispositivos fisicos variados.</td></tr>
+  </tbody>
+</table>
+<div class="callout info">
+  <b>Como defender la deuda</b>
+  Di que la prioridad fue cubrir la logica de negocio pura (donde estan las reglas que pueden fallar) y que la deuda
+  restante es de infraestructura de pruebas, no de funcionalidad. Luego muestra el comando de verificacion completa y
+  el reporte HTML.
+</div>
+
+<!-- ============================ 11 ============================ -->
+<h1>11. Replicacion paso a paso en otro proyecto</h1>
+<p>Esta seccion es una receta. Sigue las fases en orden. Cada fase indica el objetivo, los archivos que debes crear y los comandos que debes ejecutar. Los fragmentos de codigo son esqueletos funcionales: al replicar, completa la logica de negocio de tu propio dominio.</p>
+
+<div class="callout tip">
+  <b>Antes de empezar</b>
+  Elige un nombre nuevo para no mezclar repositorios. En esta guia usaremos <code>mi_app</code> como nombre de ejemplo y
+  <code>com.example.mi_app</code> como paquete. Reemplaza esos valores por los tuyos en todos los comandos.
+</div>
+
+<h2>11.1 Fase 0: preparar el entorno</h2>
+<p><b>Objetivo:</b> comprobar que tienes JDK, SDK, Gradle, Git, ADB y (opcional) Lemoria antes de crear nada.</p>
+<pre><code><span class="c"># 1. Java y Gradle</span>
+java -version
+<span class="c"># Debe ser JDK 17 o superior (ideal 21).</span>
+
+<span class="c"># 2. SDK de Android</span>
+sdkmanager --list_installed | grep -E "platforms;android-37|build-tools|platform-tools"
+<span class="c"># Si falta el SDK 37:</span>
+sdkmanager "platforms;android-37" "build-tools;37.0.0" "platform-tools"
+
+<span class="c"># 3. Dispositivo o emulador</span>
+adb devices
+emulator -list-avds
+
+<span class="c"># 4. Git</span>
+git --version
+
+<span class="c"># 5. Lemoria (opcional, solo si repetiras el flujo SDD)</span>
+lemoria --version
+lemoria project list</code></pre>
+<table>
+  <thead><tr><th>Herramienta</th><th>Version usada en este proyecto</th><th>Nota</th></tr></thead>
+  <tbody>
+    <tr><td>JDK</td><td>21 (compatible con 17+)</td><td>Android Studio puede usar su JDK embebido.</td></tr>
+    <tr><td>Android SDK</td><td>API 37</td><td>minSdk 33 para ejecutar en Android 13+.</td></tr>
+    <tr><td>Gradle</td><td>9.5.0 (wrapper)</td><td>No instales Gradle global: usa <code>./gradlew</code>.</td></tr>
+    <tr><td>Lemoria</td><td>0.3.0</td><td>PostgreSQL en el puerto 5433 (contenedor <code>lemoria-db</code>).</td></tr>
+  </tbody>
+</table>
+
+<h2>11.2 Fase 1: crear el proyecto</h2>
+<p><b>Objetivo:</b> tener un proyecto Android con Compose, Kotlin y un modulo <code>:app</code> que compile en vacio.</p>
+<h3>Opcion recomendada: Android Studio</h3>
+<ol>
+  <li>Abre Android Studio y elige <b>New Project</b>.</li>
+  <li>Selecciona la plantilla <b>Empty Activity</b> (Compose).</li>
+  <li>Name: <code>mi_app</code>; Package: <code>com.example.mi_app</code>; Language: Kotlin; Minimum SDK: <b>API 33</b>.</li>
+  <li>Build configuration language: <b>Kotlin DSL</b>.</li>
+  <li>Finaliza y espera la sincronizacion de Gradle.</li>
+</ol>
+<h3>Opcion terminal: crear la estructura</h3>
+<pre><code>mkdir -p mi_app/app/src/main/java/com/example/mi_app
+mkdir -p mi_app/app/src/main/res/{values,xml,drawable,mipmap-hdpi}
+mkdir -p mi_app/app/src/test/java/com/example/mi_app
+mkdir -p mi_app/gradle/wrapper
+cd mi_app
+<span class="c"># Copia el wrapper de un proyecto existente o ejecuta "gradle wrapper --gradle-version 9.5.0"</span>
+ls -la</code></pre>
+<div class="callout warn">
+  <b>No copies el <code>local.properties</code></b>
+  Ese archivo contiene la ruta absoluta de tu SDK y no debe versionarse. Android Studio lo genera solo.
+</div>
+
+<h2>11.3 Fase 2: Gradle y dependencias</h2>
+<p><b>Objetivo:</b> dejar el catalogo de versiones y los tres archivos Gradle listos para Compose, Room y pruebas.</p>
+<h3><code>settings.gradle.kts</code></h3>
+<pre><code>pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "mi_app"
+include(":app")</code></pre>
+
+<h3><code>gradle/libs.versions.toml</code></h3>
+<pre><code>[versions]
+agp = "9.2.1"
+kotlin = "2.0.21"
+ksp = "2.0.21-1.0.28"
+composeBom = "2026.02.01"
+coreKtx = "1.10.1"
+lifecycle = "2.8.5"
+activityCompose = "1.8.0"
+navigationCompose = "2.8.9"
+room = "2.8.5"
+workRuntime = "2.10.0"
+junit = "4.13.2"
+coroutines = "1.9.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntime" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }</code></pre>
+
+<h3><code>build.gradle.kts</code> (raiz)</h3>
+<pre><code>plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.ksp) apply false
+}</code></pre>
+
+<h3><code>app/build.gradle.kts</code></h3>
+<pre><code>plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+}
+
+android {
+    namespace = "com.example.mi_app"
+    compileSdk = 37
+
+    defaultConfig {
+        applicationId = "com.example.mi_app"
+        minSdk = 33
+        targetSdk = 37
+        versionCode = 1
+        versionName = "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release { isMinifyEnabled = false }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    buildFeatures { compose = true }
+}
+
+dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.work.runtime.ktx)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+}</code></pre>
+<div class="callout info">
+  <b>Si usas una version de AGP anterior a la 9</b>
+  agrega <code>alias(libs.plugins.kotlin.android) apply false</code> en la raiz y
+  <code>alias(libs.plugins.kotlin.android)</code> en <code>app/build.gradle.kts</code>. Con AGP 9 el soporte de Kotlin
+  viene incluido y no hace falta.
+</div>
+
+<h2>11.4 Fase 3: paquetes y manifiesto</h2>
+<p><b>Objetivo:</b> crear el arbol de paquetes y el manifest con Application, Activity y FileProvider.</p>
+<pre><code>cd app/src/main/java/com/example/mi_app
+mkdir -p data/local data/remote data/repository model navigation \
+         ui/components ui/screens ui/theme ui/util util viewmodel
+
+cd ../../../../..
+mkdir -p app/src/test/java/com/example/mi_app/{data,model,viewmodel}
+mkdir -p app/src/main/res/xml</code></pre>
+<p><code>app/src/main/AndroidManifest.xml</code> minimo de partida:</p>
+<pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"&gt;
+
+    &lt;uses-permission android:name="android.permission.POST_NOTIFICATIONS" /&gt;
+    &lt;uses-feature android:name="android.hardware.camera" android:required="false" /&gt;
+
+    &lt;application
+        android:name=".MiApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MiApp"
+        tools:targetApi="37"&gt;
+
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+
+        &lt;provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true"&gt;
+            &lt;meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" /&gt;
+        &lt;/provider&gt;
+    &lt;/application&gt;
+&lt;/manifest&gt;</code></pre>
+
+<h2>11.5 Fase 4: Room</h2>
+<p><b>Objetivo:</b> persistir el dominio en SQLite con una entidad, un DAO y una base. Repite el patron para cada entidad.</p>
+<h3>Entidad</h3>
+<pre><code>@Entity(tableName = "registros")
+data class RegistroEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val usuarioAlias: String,
+    val ambito: String,
+    val tipo: String,
+    val intensidad: Int,
+    val contexto: String = "",
+    val estrategia: String = "",
+    val nota: String = "",
+    val estadoObjetivo: String = "",
+    val fechaHora: Long,
+    val sincronizado: Boolean = false
+)</code></pre>
+<h3>DAO</h3>
+<pre><code>@Dao
+interface RegistroDao {
+    @Query("SELECT * FROM registros ORDER BY fechaHora DESC")
+    fun observarTodos(): Flow&lt;List&lt;RegistroEntity&gt;&gt;
+
+    @Query("SELECT * FROM registros WHERE id = :id")
+    suspend fun buscarPorId(id: Int): RegistroEntity?
+
+    @Insert
+    suspend fun insertar(registro: RegistroEntity): Long
+
+    @Update
+    suspend fun actualizar(registro: RegistroEntity)
+
+    @Delete
+    suspend fun eliminar(registro: RegistroEntity)
+
+    @Query("SELECT COUNT(*) FROM registros")
+    suspend fun contar(): Int
+}</code></pre>
+<h3>Base</h3>
+<pre><code>@Database(entities = [RegistroEntity::class], version = 1, exportSchema = false)
+abstract class MiDatabase : RoomDatabase() {
+    abstract fun registroDao(): RegistroDao
+
+    companion object {
+        @Volatile private var INSTANCE: MiDatabase? = null
+
+        fun getDatabase(context: Context): MiDatabase =
+            INSTANCE ?: synchronized(this) {
+                Room.databaseBuilder(
+                    context.applicationContext,
+                    MiDatabase::class.java,
+                    "mi_app.db"
+                )
+                    .fallbackToDestructiveMigration() <span class="c">// solo en desarrollo</span>
+                    .build()
+                    .also { INSTANCE = it }
+            }
+    }
+}</code></pre>
+<div class="callout warn">
+  <b>Migraciones en produccion</b>
+  <code>fallbackToDestructiveMigration()</code> borra los datos al cambiar la version del esquema. Es aceptable en un MVP
+  academico, pero en produccion debes declarar <code>Migration</code> como hace el modulo de gestion (1-&gt;2).
+</div>
+
+<h2>11.6 Fase 5: repositorios</h2>
+<p><b>Objetivo:</b> encapsular el acceso a datos y las reglas que no pertenecen a la UI.</p>
+<pre><code>class RegistroRepository(
+    private val dao: RegistroDao,
+    private val api: LemacApi
+) {
+    fun observarTodos(): Flow&lt;List&lt;RegistroEntity&gt;&gt; = dao.observarTodos()
+
+    suspend fun guardar(registro: RegistroEntity): Result&lt;Unit&gt; = runCatching {
+        if (registro.id == 0) {
+            dao.insertar(registro)
+        } else {
+            val existente = dao.buscarPorId(registro.id)
+                ?: error("El registro ya no existe")
+            dao.actualizar(
+                registro.copy(
+                    fechaHora = existente.fechaHora,
+                    sincronizado = false
+                )
+            )
+            api.sincronizar(registro)
+        }
+    }
+
+    suspend fun eliminar(registro: RegistroEntity) = dao.eliminar(registro)
+}</code></pre>
+<p>Contrato remoto simulado (sin red):</p>
+<pre><code>interface LemacApi {
+    suspend fun sincronizar(registro: RegistroEntity): Boolean
+}
+
+class FakeLemacApi : LemacApi {
+    override suspend fun sincronizar(registro: RegistroEntity): Boolean {
+        delay(120) <span class="c">// simula latencia sin INTERNET</span>
+        return true
+    }
+}</code></pre>
+
+<h2>11.7 Fase 6: ViewModels y estado</h2>
+<p><b>Objetivo:</b> exponer estado inmutable y orquestar los casos de uso. La Factory construye las dependencias Android.</p>
+<pre><code>data class RegistroUiState(
+    val registros: List&lt;RegistroEntity&gt; = emptyList(),
+    val errores: Map&lt;String, String&gt; = emptyMap(),
+    val cargando: Boolean = false,
+    val mensaje: String? = null
+)
+
+class RegistroViewModel(
+    private val repository: RegistroRepository,
+    private val clock: () -&gt; Long = System::currentTimeMillis
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(RegistroUiState())
+    val uiState: StateFlow&lt;RegistroUiState&gt; = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repository.observarTodos().collect { lista -&gt;
+                _uiState.update { it.copy(registros = lista) }
+            }
+        }
+    }
+
+    fun guardar(datos: RegistroEntity) {
+        val errores = RegistroValidator.validar(datos)
+        if (errores.isNotEmpty()) {
+            _uiState.update { it.copy(errores = errores) }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(cargando = true, errores = emptyMap()) }
+            repository.guardar(datos.copy(fechaHora = clock()))
+                .onSuccess { _uiState.update { s -&gt; s.copy(cargando = false, mensaje = "Guardado") } }
+                .onFailure { e -&gt; _uiState.update { s -&gt; s.copy(cargando = false, mensaje = e.message) } }
+        }
+    }
+}
+
+class RegistroViewModelFactory(
+    private val app: MiApplication
+) : ViewModelProvider.Factory {
+    override fun &lt;T : ViewModel&gt; create(modelClass: Class&lt;T&gt;): T {
+        @Suppress("UNCHECKED_CAST")
+        return RegistroViewModel(app.registroRepository) as T
+    }
+}</code></pre>
+
+<h2>11.8 Fase 7: UI Compose y navegacion</h2>
+<p><b>Objetivo:</b> montar una Activity unica, un NavHost y pantallas que solo observen estado.</p>
+<pre><code>class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent { MiTheme { MiApp() } }
+    }
+}
+
+@Composable
+fun MiApp() {
+    val nav = rememberNavController()
+    NavHost(navController = nav, startDestination = "home") {
+        composable("home") {
+            val vm: RegistroViewModel = viewModel(
+                factory = RegistroViewModelFactory(
+                    LocalContext.current.applicationContext as MiApplication
+                )
+            )
+            val estado by vm.uiState.collectAsStateWithLifecycle()
+            HomeScreen(
+                estado = estado,
+                onGuardar = vm::guardar
+            )
+        }
+    }
+}</code></pre>
+<p>Regla de oro: la pantalla recibe <code>estado</code> y lambdas; no crea repositorios ni llama a Room. Si necesitas un modulo adicional, crea un grafo de navegacion propio y montalo desde un portal, como en este proyecto.</p>
+
+<h2>11.9 Fase 8: funciones transversales</h2>
+<p><b>Objetivo:</b> foto, CSV, backup y notificaciones. Se pueden agregar despues del MVP, pero conviene preverlas desde el inicio.</p>
+<h3>FileProvider: <code>res/xml/file_paths.xml</code></h3>
+<pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;paths xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+    &lt;cache-path name="fotos" path="fotos/" /&gt;
+    &lt;files-path name="documentos" path="documentos/" /&gt;
+&lt;/paths&gt;</code></pre>
+
+<h3>Backup: <code>res/xml/backup_rules.xml</code></h3>
+<pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;full-backup-content&gt;
+    &lt;include domain="database" path="." /&gt;
+    &lt;include domain="sharedpref" path="perfil.xml" /&gt;
+    &lt;exclude domain="database" path="gestion_documental.db" /&gt;
+    &lt;exclude domain="database" path="gestion_documental.db-wal" /&gt;
+    &lt;exclude domain="database" path="gestion_documental.db-shm" /&gt;
+    &lt;exclude domain="file" path="documentos/" /&gt;
+    &lt;exclude domain="file" path="perfil.png" /&gt;
+&lt;/full-backup-content&gt;</code></pre>
+<p>Para API 31+ usa <code>data_extraction_rules.xml</code> con dos bloques identicos: <code>cloud-backup</code> y <code>device-transfer</code>. No uses <code>domain="cache"</code>: no es un dominio valido y el sistema ya excluye la cache.</p>
+
+<h3>CSV puro</h3>
+<pre><code>object RegistroCsvExporter {
+    private const val BOM = "\uFEFF"
+    private const val CRLF = "\r\n"
+
+    fun generar(registros: List&lt;RegistroEntity&gt;): String = buildString {
+        append(BOM)
+        append("fecha,ambito,tipo,intensidad,contexto,estrategia,nota").append(CRLF)
+        registros.forEach { r -&gt;
+            append(listOf(
+                r.fechaHora.toString(),
+                r.ambito,
+                r.tipo,
+                r.intensidad.toString(),
+                escapar(r.contexto),
+                escapar(r.estrategia),
+                escapar(r.nota)
+            ).joinToString(",")).append(CRLF)
+        }
+    }
+
+    private fun escapar(campo: String): String {
+        val neutralizado = if (campo.startsWith("=") || campo.startsWith("+") ||
+            campo.startsWith("-") || campo.startsWith("@")) "'$campo" else campo
+        return "\"" + neutralizado.replace("\"", "\"\"") + "\""
+    }
+}</code></pre>
+
+<h2>11.10 Fase 9: pruebas</h2>
+<p><b>Objetivo:</b> cubrir la logica pura y los ViewModels sin Android. Empieza por validadores y calculos; luego repositorios con dobles y ViewModels con <code>Dispatchers.setMain</code>.</p>
+<pre><code>class RegistroValidatorTest {
+    @Test fun `intensidad fuera de rango produce error`() {
+        val errores = RegistroValidator.validar(
+            RegistroEntity(ambito = "ANIMO", tipo = "X", intensidad = 99, fechaHora = 0L)
+        )
+        assertTrue(errores.isNotEmpty())
+    }
+
+    @Test fun `un registro valido no produce errores`() {
+        val errores = RegistroValidator.validar(
+            RegistroEntity(ambito = "ANIMO", tipo = "X", intensidad = 5, fechaHora = 0L)
+        )
+        assertTrue(errores.isEmpty())
+    }
+}</code></pre>
+<pre><code>./gradlew :app:testDebugUnitTest
+<span class="c"># Reporte: app/build/reports/tests/testDebugUnitTest/index.html</span></code></pre>
+
+<h2>11.11 Fase 10: build e instalacion</h2>
+<pre><code><span class="c"># Compilar el APK de debug</span>
+./gradlew :app:assembleDebug
+
+<span class="c"># Instalar en el dispositivo/emulador conectado</span>
+./gradlew :app:installDebug
+
+<span class="c"># Alternativa con ADB</span>
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+<span class="c"># Abrir la app</span>
+adb shell am start -n com.example.mi_app/.MainActivity
+
+<span class="c"># Ver logs en vivo</span>
+adb logcat -s AndroidRuntime:E ActivityManager:I</code></pre>
+
+<h2>11.12 Fase 11: Git y GitHub</h2>
+<pre><code>cd mi_app
+git init
+git add .
+git commit -m "chore: version inicial de mi_app"
+git branch -M main
+
+<span class="c"># Crear el repositorio remoto vacio en GitHub/GitLab y luego:</span>
+git remote add origin https://github.com/&lt;USUARIO&gt;/&lt;REPONER&gt;.git
+git push -u origin main
+
+<span class="c"># Ramas de trabajo</span>
+git checkout -b feature/nombre-corto
+git add -A
+git commit -m "feat(&lt;TASK_ID&gt;): descripcion corta"
+git push -u origin feature/nombre-corto</code></pre>
+<div class="callout warn">
+  <b>Antes del primer commit</b>
+  Verifica <code>git status</code>. No deben aparecer <code>local.properties</code>, <code>.gradle/</code>,
+  <code>build/</code>, <code>.idea/</code> ni archivos <code>.apk</code>. Usa un <code>.gitignore</code> de Android y
+  conserva <code>!gradle/wrapper/gradle-wrapper.jar</code>.
+</div>
+
+<h2>11.13 Fase 12: flujo SDD con Lemoria</h2>
+<p><b>Objetivo:</b> repetir el proceso completo de trazabilidad: proyecto, conversacion, contexto, decisiones, PRD, tareas, delegacion por agentes, verificacion, commit, documentacion, vault y cierre. Estos son los comandos en el orden real del flujo.</p>
+
+<h3>Paso 12.1 Inicializar Lemoria (una sola vez)</h3>
+<pre><code>lemoria init
+lemoria --version
+<span class="c"># Si usas PostgreSQL local en Docker (config del proyecto):</span>
+docker compose -f ~/lemoria/docker-compose.yml up -d db
+lemoria project list</code></pre>
+
+<h3>Paso 12.2 Crear el proyecto y la conversacion</h3>
+<pre><code><span class="c"># 1. Crear el proyecto y copiar el ID que devuelve</span>
+lemoria project create "mi_app Android" -d "App Android con Compose, Room y MVVM"
+
+<span class="c"># 2. Guardar el ID en una variable para no repetirlo</span>
+export PROJECT_ID="&lt;PROJECT_ID&gt;"
+
+<span class="c"># 3. Abrir una conversacion</span>
+lemoria conv create "$PROJECT_ID" -t "Feature: MVP de mi_app"
+
+<span class="c"># 4. Copiar el ID de la conversacion</span>
+export CONV_ID="&lt;CONVERSATION_ID&gt;"
+
+<span class="c"># 5. Registrar la solicitud textual del usuario</span>
+lemoria conv add "$CONV_ID" user "Quiero una app Android con Compose y Room para registrar X"
+
+<span class="c"># 6. Registrar contexto de proyecto (repite por cada clave)</span>
+lemoria context set "$PROJECT_ID" -k tech_stack -v "Kotlin 2.0.21, Compose, Room 2.8.5, MVVM"
+lemoria context set "$PROJECT_ID" -k database -v "Room local, sin backend"
+lemoria context set "$PROJECT_ID" -k package -v "com.example.mi_app"
+
+<span class="c"># 7. Registrar decisiones tecnicas (ADR)</span>
+lemoria decision log "$PROJECT_ID" \
+  -t "Stack tecnologico" \
+  -d "Kotlin + Jetpack Compose + Room + MVVM" \
+  -r "Alternativas: Java/XML, Flutter, React Native"</code></pre>
+
+<h3>Paso 12.3 Iniciar el flujo y registrar el PRD</h3>
+<pre><code>lemoria flow start "$PROJECT_ID" "MVP de mi_app: registrar X, historial, resumen y exportacion CSV"
+
+<span class="c"># Copiar el ID del PRD que devuelve</span>
+export PRD_ID="&lt;PRD_ID&gt;"
+
+lemoria flow status "$PRD_ID"
+lemoria flow step "$PRD_ID" prd --status completed --output "PRD aprobado: alcance, stack y criterios de aceptacion"</code></pre>
+
+<h3>Paso 12.4 Descomponer en tareas INVEST</h3>
+<pre><code>lemoria task create "$PROJECT_ID" "$PRD_ID" \
+  -t "Configurar proyecto Android, Gradle y Compose" \
+  -d "Proyecto compila con assembleDebug; catalogo de versiones y tema base." \
+  -a implementation-agent
+
+lemoria task create "$PROJECT_ID" "$PRD_ID" \
+  -t "Implementar Room, DAO y repositorio" \
+  -d "Entidad, DAO, base y repositorio con pruebas unitarias." \
+  -a db-agent
+
+lemoria task create "$PROJECT_ID" "$PRD_ID" \
+  -t "Construir UI Compose y navegacion" \
+  -d "Pantallas, estado y ViewModel conectados al repositorio." \
+  -a frontend-agent
+
+lemoria task create "$PROJECT_ID" "$PRD_ID" \
+  -t "Probar build y suite unitaria" \
+  -d "compileDebugKotlin + testDebugUnitTest + assembleDebug en verde." \
+  -a testing-agent
+
+lemoria task create "$PROJECT_ID" "$PRD_ID" \
+  -t "Documentar, commit y sincronizar vault" \
+  -d "README, ADR, commit con task-id y vault sincronizado." \
+  -a documentation-agent
+
+lemoria flow step "$PRD_ID" tasks --status completed --output "5 tareas INVEST creadas"
+lemoria task list "$PROJECT_ID"</code></pre>
+
+<h3>Paso 12.5 Implementar y verificar (por cada tarea)</h3>
+<pre><code>lemoria task status "&lt;TASK_ID&gt;" in_progress
+
+<span class="c"># ... el agente implementa y tu verificas ...</span>
+./gradlew clean compileDebugKotlin testDebugUnitTest assembleDebug
+
+lemoria task status "&lt;TASK_ID&gt;" completed
+lemoria flow step "$PRD_ID" implement --status completed --output "Implementado: Room + repositorio"
+lemoria flow step "$PRD_ID" test      --status completed --output "76/76 pruebas, build OK"
+lemoria flow step "$PRD_ID" review    --status completed --output "Aprobado con observaciones menores"</code></pre>
+
+<h3>Paso 12.6 Commit con trazabilidad</h3>
+<pre><code>git add -A
+git commit -m "feat(&lt;TASK_ID&gt;): implementar Room y repositorio
+
+Task: &lt;TASK_ID&gt;"
+
+<span class="c"># Registrar el commit en Lemoria (lee metadata de git)</span>
+SHA=$(git rev-parse --short HEAD)
+lemoria commit add "$SHA" --task "&lt;TASK_ID&gt;"
+
+<span class="c"># O importar todo el historial y enlazar por el trailer "Task:"</span>
+lemoria commit sync --repo .
+lemoria commit list --project "$PROJECT_ID"
+
+lemoria flow step "$PRD_ID" commit --status completed --output "Commit $SHA con task-id"</code></pre>
+
+<h3>Paso 12.7 Documentar, sincronizar vault y cerrar</h3>
+<pre><code>lemoria flow step "$PRD_ID" document --status completed --output "README y docs actualizados"
+lemoria vault sync "$PROJECT_ID"
+lemoria flow step "$PRD_ID" vault_sync --status completed --output "Vault sincronizado"
+
+lemoria conv add "$CONV_ID" agent "Resumen: tareas completadas, pruebas 76/76, commit $SHA"
+lemoria flow step "$PRD_ID" consolidate --status completed --output "Conversacion consolidada"
+
+<span class="c"># Checklist final</span>
+lemoria task list "$PROJECT_ID"
+lemoria decision list "$PROJECT_ID"
+lemoria commit list --project "$PROJECT_ID"
+
+lemoria flow step "$PRD_ID" complete --status completed --output "Flujo cerrado"
+lemoria flow status "$PRD_ID"</code></pre>
+
+<div class="callout tip">
+  <b>Reanudar despues de perder contexto</b>
+  Antes de cualquier trabajo ejecuta <code>lemoria flow status "$PRD_ID"</code>. Si el flujo no ha empezado, crea uno nuevo
+  con <code>lemoria flow start</code>. Si ya existe, mira el ultimo paso completado y continua desde el siguiente. Por eso
+  el flujo es reanudable incluso si se cierra el editor o se compacta la conversacion.
+</div>
+
+<h2>11.14 Fase 13: checklist final de replicacion</h2>
+<ul class="checklist">
+  <li>El proyecto abre en Android Studio y sincroniza Gradle sin errores.</li>
+  <li><code>./gradlew :app:assembleDebug</code> termina en <code>BUILD SUCCESSFUL</code>.</li>
+  <li>La app instala y abre en un dispositivo o emulador con API 33+.</li>
+  <li>La navegacion principal funciona y no hay pantallas en blanco.</li>
+  <li>Los datos persisten al cerrar y reabrir la app.</li>
+  <li><code>./gradlew :app:testDebugUnitTest</code> pasa todas las pruebas.</li>
+  <li>No hay <code>local.properties</code>, <code>build/</code> ni <code>.idea/</code> versionados.</li>
+  <li>El manifest no pide permisos innecesarios.</li>
+  <li>El commit incluye el <code>task-id</code> y esta registrado en Lemoria.</li>
+  <li>El vault esta sincronizado y la conversacion consolidada.</li>
+</ul>
+
+<!-- ============================ 12 ============================ -->
+<h1>12. Catalogo completo de comandos</h1>
+<p>Esta seccion es de consulta. Los comandos estan agrupados por herramienta. Los ejemplos usan marcadores como <code>&lt;PROJECT_ID&gt;</code>; reemplazalos por los IDs reales.</p>
+
+<h2>12.1 Lemoria</h2>
+<p>Lemoria es el orquestador SDD. La base de datos corre en PostgreSQL (contenedor <code>lemoria-db</code>, puerto 5433) y el vault se exporta a <code>~/.lemoria/vault</code>.</p>
+<table>
+  <thead><tr><th style="width:36%">Comando</th><th>Para que sirve</th></tr></thead>
+  <tbody>
+    <tr><td><code>lemoria init</code></td><td>Crea tablas, directorios y vault inicial.</td></tr>
+    <tr><td><code>lemoria --version</code></td><td>Muestra la version instalada.</td></tr>
+    <tr><td><code>lemoria project create "Nombre" -d "Desc"</code></td><td>Crea un proyecto y devuelve su ID.</td></tr>
+    <tr><td><code>lemoria project list</code></td><td>Lista proyectos con su ID.</td></tr>
+    <tr><td><code>lemoria project get &lt;PROJECT_ID&gt;</code></td><td>Muestra el detalle de un proyecto.</td></tr>
+    <tr><td><code>lemoria conv create &lt;PROJECT_ID&gt; -t "Titulo"</code></td><td>Abre una conversacion de trabajo.</td></tr>
+    <tr><td><code>lemoria conv add &lt;CONV_ID&gt; user "texto"</code></td><td>Registra el mensaje del usuario.</td></tr>
+    <tr><td><code>lemoria conv add &lt;CONV_ID&gt; agent "texto"</code></td><td>Registra el resumen del agente.</td></tr>
+    <tr><td><code>lemoria conv list &lt;PROJECT_ID&gt;</code></td><td>Lista conversaciones del proyecto.</td></tr>
+    <tr><td><code>lemoria context set &lt;PROJECT_ID&gt; -k clave -v valor</code></td><td>Guarda contexto jerarquico (global, project, task, agent).</td></tr>
+    <tr><td><code>lemoria context set ... -l project</code></td><td>Fija el nivel del contexto.</td></tr>
+    <tr><td><code>lemoria context get &lt;PROJECT_ID&gt; -k clave</code></td><td>Lee un contexto guardado.</td></tr>
+    <tr><td><code>lemoria decision log &lt;PROJECT_ID&gt; -t "Titulo" -d "Decision" -r "Alternativas"</code></td><td>Registra un ADR.</td></tr>
+    <tr><td><code>lemoria decision list &lt;PROJECT_ID&gt;</code></td><td>Lista las decisiones del proyecto.</td></tr>
+    <tr><td><code>lemoria flow start &lt;PROJECT_ID&gt; "idea"</code></td><td>Crea un PRD y arranca el flujo SDD. Devuelve el PRD ID.</td></tr>
+    <tr><td><code>lemoria flow status &lt;PRD_ID&gt;</code></td><td>Muestra los pasos y donde se quedo el flujo.</td></tr>
+    <tr><td><code>lemoria flow list &lt;PROJECT_ID&gt;</code></td><td>Lista los flujos del proyecto (filtro <code>-s</code> por estado).</td></tr>
+    <tr><td><code>lemoria flow step &lt;PRD_ID&gt; &lt;PASO&gt; -s completed -o "resumen"</code></td><td>Registra un paso del flujo.</td></tr>
+    <tr><td><code>lemoria flow advance &lt;PRD_ID&gt;</code></td><td>Avanza al siguiente paso automaticamente.</td></tr>
+    <tr><td><code>lemoria flow complete &lt;PRD_ID&gt;</code></td><td>Cierra el flujo y marca el PRD como completado.</td></tr>
+    <tr><td><code>lemoria task create &lt;PROJECT_ID&gt; &lt;PRD_ID&gt; -t "Titulo" -d "Desc" -a agente</code></td><td>Crea una tarea INVEST y la asigna.</td></tr>
+    <tr><td><code>lemoria task list &lt;PROJECT_ID&gt;</code></td><td>Lista tareas (filtro <code>-s</code>).</td></tr>
+    <tr><td><code>lemoria task status &lt;TASK_ID&gt; completed</code></td><td>Cambia el estado de una tarea.</td></tr>
+    <tr><td><code>lemoria commit add &lt;SHA&gt; --task &lt;TASK_ID&gt;</code></td><td>Registra un commit y lo enlaza a una tarea.</td></tr>
+    <tr><td><code>lemoria commit sync --repo .</code></td><td>Importa el historial y enlaza por el trailer <code>Task:</code>.</td></tr>
+    <tr><td><code>lemoria commit list --project &lt;PROJECT_ID&gt;</code></td><td>Lista commits con su tarea.</td></tr>
+    <tr><td><code>lemoria vault sync &lt;PROJECT_ID&gt;</code></td><td>Exporta PRDs, tareas, decisiones, conversaciones y commits a Markdown.</td></tr>
+    <tr><td><code>lemoria vault restore &lt;PROJECT_ID&gt;</code></td><td>Restaura el proyecto desde el vault a la base.</td></tr>
+    <tr><td><code>lemoria spec create / list</code></td><td>Gestiona especificaciones.</td></tr>
+    <tr><td><code>lemoria error log / list / resolve</code></td><td>Registra errores y soluciones.</td></tr>
+    <tr><td><code>lemoria agent list / status / sync</code></td><td>Administra agentes, modelos y uso de tokens.</td></tr>
+    <tr><td><code>lemoria agent model / effort</code></td><td>Fija modelo y esfuerzo de razonamiento por agente.</td></tr>
+    <tr><td><code>lemoria budget [LIMIT]</code></td><td>Fija el presupuesto mensual de tokens.</td></tr>
+    <tr><td><code>lemoria budget</code></td><td>Muestra el presupuesto actual.</td></tr>
+    <tr><td><code>lemoria budget --clear</code></td><td>Borra el presupuesto mensual.</td></tr>
+    <tr><td><code>lemoria usage</code></td><td>Muestra el uso de tokens por modelo.</td></tr>
+    <tr><td><code>lemoria configure</code></td><td>Imprime la configuracion de modelos y esfuerzo.</td></tr>
+    <tr><td><code>lemoria omarchy ...</code></td><td>Integracion con el escritorio Omarchy.</td></tr>
+  </tbody>
+</table>
+<div class="callout info">
+  <b>Pasos validos del flujo observados en este proyecto</b>
+  <code>prd</code>, <code>tasks</code>, <code>implement</code>, <code>test</code>, <code>review</code>, <code>commit</code>,
+  <code>document</code>, <code>vault_sync</code>, <code>consolidate</code>, <code>complete</code>. Usa exactamente esos
+  nombres en <code>flow step</code>.
+</div>
+
+<h2>12.2 Gradle</h2>
+<table>
+  <thead><tr><th style="width:42%">Comando</th><th>Para que sirve</th></tr></thead>
+  <tbody>
+    <tr><td><code>./gradlew --version</code></td><td>Muestra la version del wrapper, Gradle, Kotlin y JVM.</td></tr>
+    <tr><td><code>./gradlew tasks</code></td><td>Lista las tareas disponibles.</td></tr>
+    <tr><td><code>./gradlew clean</code></td><td>Borra <code>build/</code> del proyecto y de los modulos.</td></tr>
+    <tr><td><code>./gradlew :app:assembleDebug</code></td><td>Genera el APK de debug.</td></tr>
+    <tr><td><code>./gradlew :app:assembleRelease</code></td><td>Genera el APK de release (requiere firma).</td></tr>
+    <tr><td><code>./gradlew :app:installDebug</code></td><td>Compila e instala en el dispositivo conectado.</td></tr>
+    <tr><td><code>./gradlew :app:compileDebugKotlin</code></td><td>Compila solo Kotlin (verificacion rapida).</td></tr>
+    <tr><td><code>./gradlew :app:testDebugUnitTest</code></td><td>Ejecuta las pruebas unitarias JVM.</td></tr>
+    <tr><td><code>./gradlew :app:connectedDebugAndroidTest</code></td><td>Ejecuta pruebas instrumentadas (no hay en este proyecto).</td></tr>
+    <tr><td><code>./gradlew :app:lintDebug</code></td><td>Analisis estatico de Android Lint.</td></tr>
+    <tr><td><code>./gradlew :app:dependencies</code></td><td>Arbol de dependencias resuelto.</td></tr>
+    <tr><td><code>./gradlew --offline ...</code></td><td>Usa solo dependencias cacheadas (util sin red).</td></tr>
+    <tr><td><code>./gradlew --console=plain ...</code></td><td>Salida sin animaciones, ideal para logs.</td></tr>
+    <tr><td><code>./gradlew --stacktrace ...</code></td><td>Muestra la traza completa ante un error.</td></tr>
+    <tr><td><code>./gradlew --stop</code></td><td>Detiene los daemons de Gradle.</td></tr>
+    <tr><td><code>./gradlew clean compileDebugKotlin testDebugUnitTest assembleDebug</code></td><td>Verificacion completa usada en el cierre.</td></tr>
+  </tbody>
+</table>
+
+<h2>12.3 Git</h2>
+<table>
+  <thead><tr><th style="width:42%">Comando</th><th>Para que sirve</th></tr></thead>
+  <tbody>
+    <tr><td><code>git init</code></td><td>Inicializa el repositorio local.</td></tr>
+    <tr><td><code>git branch -M main</code></td><td>Renombra la rama actual a <code>main</code>.</td></tr>
+    <tr><td><code>git status</code></td><td>Muestra cambios y archivos sin seguimiento.</td></tr>
+    <tr><td><code>git add .</code> / <code>git add -A</code></td><td>Prepara cambios para el commit.</td></tr>
+    <tr><td><code>git commit -m "mensaje"</code></td><td>Crea el commit.</td></tr>
+    <tr><td><code>git commit -m "feat(&lt;TASK_ID&gt;): ..."</code></td><td>Commit con task-id para trazabilidad.</td></tr>
+    <tr><td><code>git log --oneline --graph --decorate</code></td><td>Historial compacto y visual.</td></tr>
+    <tr><td><code>git diff</code> / <code>git diff --check</code></td><td>Cambios y verificacion de espacios/conflictos.</td></tr>
+    <tr><td><code>git remote add origin &lt;URL&gt;</code></td><td>Conecta el repositorio remoto.</td></tr>
+    <tr><td><code>git remote -v</code></td><td>Verifica el remoto configurado.</td></tr>
+    <tr><td><code>git push -u origin main</code></td><td>Primer push y tracking de la rama.</td></tr>
+    <tr><td><code>git push origin &lt;RAMA&gt;</code></td><td>Sube una rama existente.</td></tr>
+    <tr><td><code>git pull --rebase</code></td><td>Actualiza sin crear merge commits.</td></tr>
+    <tr><td><code>git checkout -b &lt;RAMA&gt;</code> / <code>git switch -c &lt;RAMA&gt;</code></td><td>Crea y cambia a una rama nueva.</td></tr>
+    <tr><td><code>git merge &lt;RAMA&gt;</code></td><td>Fusiona una rama en la actual.</td></tr>
+    <tr><td><code>git tag -a v1.0 -m "Entrega"</code></td><td>Crea una etiqueta anotada.</td></tr>
+    <tr><td><code>git rm --cached &lt;ARCHIVO&gt;</code></td><td>Deja de versionar sin borrar del disco.</td></tr>
+    <tr><td><code>git stash</code> / <code>git stash pop</code></td><td>Guarda y recupera cambios temporales.</td></tr>
+  </tbody>
+</table>
+
+<h2>12.4 ADB</h2>
+<table>
+  <thead><tr><th style="width:42%">Comando</th><th>Para que sirve</th></tr></thead>
+  <tbody>
+    <tr><td><code>adb devices</code></td><td>Lista dispositivos y emuladores conectados.</td></tr>
+    <tr><td><code>adb install -r app-debug.apk</code></td><td>Instala o reemplaza el APK.</td></tr>
+    <tr><td><code>adb uninstall com.example.mi_app</code></td><td>Desinstala la app.</td></tr>
+    <tr><td><code>adb shell pm clear com.example.mi_app</code></td><td>Borra datos y cache de la app.</td></tr>
+    <tr><td><code>adb shell am start -n com.example.mi_app/.MainActivity</code></td><td>Abre la Activity principal.</td></tr>
+    <tr><td><code>adb logcat</code></td><td>Muestra todos los logs.</td></tr>
+    <tr><td><code>adb logcat -s AndroidRuntime:E</code></td><td>Filtra solo errores de ejecucion.</td></tr>
+    <tr><td><code>adb shell screencap -p /sdcard/cap.png</code></td><td>Captura la pantalla.</td></tr>
+    <tr><td><code>adb pull /sdcard/cap.png .</code></td><td>Copia la captura al equipo.</td></tr>
+    <tr><td><code>adb push archivo /sdcard/</code></td><td>Copia un archivo al dispositivo.</td></tr>
+    <tr><td><code>adb shell dumpsys meminfo com.example.mi_app</code></td><td>Estado de memoria de la app.</td></tr>
+  </tbody>
+</table>
+
+<h2>12.5 Android SDK</h2>
+<table>
+  <thead><tr><th style="width:42%">Comando</th><th>Para que sirve</th></tr></thead>
+  <tbody>
+    <tr><td><code>sdkmanager --list_installed</code></td><td>Lista paquetes instalados.</td></tr>
+    <tr><td><code>sdkmanager --list</code></td><td>Lista paquetes disponibles.</td></tr>
+    <tr><td><code>sdkmanager "platforms;android-37"</code></td><td>Instala la plataforma API 37.</td></tr>
+    <tr><td><code>sdkmanager "build-tools;37.0.0"</code></td><td>Instala las build-tools.</td></tr>
+    <tr><td><code>sdkmanager "platform-tools"</code></td><td>Instala ADB y utilidades.</td></tr>
+    <tr><td><code>sdkmanager --licenses</code></td><td>Acepta licencias pendientes.</td></tr>
+    <tr><td><code>avdmanager list avd</code></td><td>Lista emuladores creados.</td></tr>
+    <tr><td><code>avdmanager create avd -n Pixel_API33 -k "system-images;android-33;google_apis;x86_64"</code></td><td>Crea un emulador API 33.</td></tr>
+    <tr><td><code>emulator -list-avds</code></td><td>Lista nombres de emuladores.</td></tr>
+    <tr><td><code>emulator -avd Pixel_API33</code></td><td>Arranca el emulador.</td></tr>
+  </tbody>
+</table>
+
+<h2>12.6 Utilidades de Linux usadas</h2>
+<table>
+  <thead><tr><th style="width:42%">Comando</th><th>Para que sirve</th></tr></thead>
+  <tbody>
+    <tr><td><code>find . -name "*.kt" | wc -l</code></td><td>Cuenta archivos Kotlin.</td></tr>
+    <tr><td><code>find app/src -name "*.kt" | sort</code></td><td>Lista la estructura de fuentes.</td></tr>
+    <tr><td><code>grep -rn "TakePicture" app/src</code></td><td>Busca referencias en el codigo.</td></tr>
+    <tr><td><code>grep -nE "^#{1,3} " README.md</code></td><td>Extrae el indice de un Markdown.</td></tr>
+    <tr><td><code>wc -l docs/*.md</code></td><td>Cuenta lineas de documentacion.</td></tr>
+    <tr><td><code>tree -L 3 -I "build|.gradle"</code></td><td>Muestra el arbol sin artefactos.</td></tr>
+    <tr><td><code>xdg-open reporte.html</code></td><td>Abre un archivo con la app por defecto.</td></tr>
+    <tr><td><code>cp archivo.pdf ~/Descargas/</code></td><td>Copia el entregable a Descargas.</td></tr>
+    <tr><td><code>google-chrome --headless --print-to-pdf=salida.pdf archivo.html</code></td><td>Convierte HTML a PDF (como este documento).</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ 13 ============================ -->
+<h1>13. Errores comunes y soluciones</h1>
+<table>
+  <thead><tr><th style="width:30%">Sintoma</th><th>Causa probable</th><th>Solucion</th></tr></thead>
+  <tbody>
+    <tr><td>Gradle no sincroniza y pide SDK 37</td><td>Falta la plataforma instalada.</td><td><code>sdkmanager "platforms;android-37"</code> y reinstalar.</td></tr>
+    <tr><td><code>Unsupported class file major version</code></td><td>JDK demasiado nuevo o demasiado viejo para Gradle.</td><td>Settings &gt; Build Tools &gt; Gradle JDK: usa 21 (o 17).</td></tr>
+    <tr><td>KSP falla al generar el esquema de Room</td><td>Version de KSP incompatible con Kotlin.</td><td>Alinea <code>ksp = "2.0.21-1.0.28"</code> con Kotlin 2.0.21.</td></tr>
+    <tr><td><code>Schema export directory is not provided</code></td><td>Room exige carpeta de esquemas.</td><td>Usa <code>exportSchema = false</code> en el MVP o configura <code>room.schemaLocation</code>.</td></tr>
+    <tr><td><code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code></td><td>Firma distinta o app previa instalada.</td><td><code>adb uninstall com.example.mi_app</code> e instalar de nuevo.</td></tr>
+    <tr><td>La camara no abre</td><td>Dispositivo sin app de camara o emulador sin configurar.</td><td>Usa <code>runCatching</code>, configura la camara del emulador o prueba en dispositivo fisico.</td></tr>
+    <tr><td><code>FileProvider</code> lanza <code>IllegalArgumentException</code></td><td>Authority duplicada o ruta no declarada.</td><td>Una sola authority <code>${applicationId}.fileprovider</code> y revisa <code>file_paths.xml</code>.</td></tr>
+    <tr><td>Backup falla la validacion</td><td><code>domain="cache"</code> u otro dominio invalido.</td><td>Elimina esa regla; los dominios validos son root, file, database, sharedpref, external y device_*.</td></tr>
+    <tr><td>Las pruebas fallan por <code>Main dispatcher</code></td><td>ViewModel usa <code>viewModelScope</code> en la JVM.</td><td><code>Dispatchers.setMain(StandardTestDispatcher())</code> en <code>@Before</code> y <code>resetMain()</code> en <code>@After</code>.</td></tr>
+    <tr><td><code>git push</code> rechazado</td><td>Credenciales o rama remota desactualizada.</td><td>Configura token/SSH, <code>git pull --rebase</code> y vuelve a empujar.</td></tr>
+    <tr><td><code>local.properties</code> aparece en git</td><td>Se agrego antes de configurar el <code>.gitignore</code>.</td><td><code>git rm --cached local.properties</code> y commit.</td></tr>
+    <tr><td>La app muestra datos viejos tras cambiar el esquema</td><td>Migracion no declarada y <code>fallbackToDestructiveMigration</code> no aplicada.</td><td>Desinstala, borra datos con <code>adb shell pm clear</code> o agrega una <code>Migration</code>.</td></tr>
+    <tr><td>Lemoria no conecta a la base</td><td>PostgreSQL no esta corriendo en el puerto 5433.</td><td><code>docker compose -f ~/lemoria/docker-compose.yml up -d db</code> y <code>lemoria init</code>.</td></tr>
+    <tr><td><code>lemoria flow step</code> rechaza el paso</td><td>Nombre de paso distinto al del flujo.</td><td>Usa <code>prd</code>, <code>tasks</code>, <code>implement</code>, <code>test</code>, <code>review</code>, <code>commit</code>, <code>document</code>, <code>vault_sync</code>, <code>consolidate</code>, <code>complete</code>.</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ 14 ============================ -->
+<h1>14. Glosario</h1>
+<table>
+  <thead><tr><th style="width:22%">Termino</th><th>Definicion</th></tr></thead>
+  <tbody>
+    <tr><td>ADR</td><td>Architecture Decision Record: registro de una decision tecnica con su contexto y alternativas.</td></tr>
+    <tr><td>AGP</td><td>Android Gradle Plugin: integra Android con Gradle.</td></tr>
+    <tr><td>BOM</td><td>Bill of Materials: fija versiones coherentes de un conjunto de dependencias (por ejemplo, Compose).</td></tr>
+    <tr><td>DAO</td><td>Data Access Object: interfaz que declara las consultas a la base.</td></tr>
+    <tr><td>EXIF</td><td>Metadatos de una imagen; incluye la orientacion con la que fue capturada.</td></tr>
+    <tr><td>FileProvider</td><td>Proveedor de Android que comparte archivos de forma segura mediante URIs temporales.</td></tr>
+    <tr><td>INVEST</td><td>Criterio de tareas: independiente, negociable, valiosa, estimable, pequena y testeable.</td></tr>
+    <tr><td>KSP</td><td>Kotlin Symbol Processing: generador de codigo usado por Room en lugar de KAPT.</td></tr>
+    <tr><td>MVVM</td><td>Model-View-ViewModel: separa UI, estado y datos.</td></tr>
+    <tr><td>PRD</td><td>Product Requirements Document: especificacion de la funcionalidad.</td></tr>
+    <tr><td>RBAC</td><td>Role-Based Access Control: permisos segun el rol del usuario.</td></tr>
+    <tr><td>Room</td><td>Capa de persistencia de Android sobre SQLite.</td></tr>
+    <tr><td>SAF</td><td>Storage Access Framework: el usuario elige el archivo/destino sin permisos de almacenamiento.</td></tr>
+    <tr><td>SDD</td><td>Spec-Driven Development: desarrollo guiado por especificaciones.</td></tr>
+    <tr><td>StateFlow</td><td>Flujo de estado observable de Kotlin Coroutines.</td></tr>
+    <tr><td>UiState</td><td>Objeto inmutable que representa todo lo que la pantalla necesita mostrar.</td></tr>
+    <tr><td>Vault</td><td>Exportacion en Markdown de la memoria del proyecto (PRDs, tareas, ADR, conversaciones).</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ 15 ============================ -->
+<h1>15. Anexos</h1>
+
+<h2>Anexo A: decisiones clave (ADR)</h2>
+<table>
+  <thead><tr><th style="width:38%">Decision</th><th>Resumen</th></tr></thead>
+  <tbody>
+    <tr><td>Stack tecnologico</td><td>Kotlin + Compose + Material 3 + Room + Navigation + Activity Result + MVVM/StateFlow.</td></tr>
+    <tr><td>Modelo de datos unico</td><td>Una entidad <code>RegistroEntity</code> con campo <code>ambito</code> en lugar de cuatro tablas.</td></tr>
+    <tr><td>Recurso nativo camara</td><td>Captura con intent y contrato propio; sin CameraX.</td></tr>
+    <tr><td>API remota simulada</td><td><code>LemacApi</code> con <code>FakeLemacApi</code>; sin backend ni INTERNET.</td></tr>
+    <tr><td>Gitignore exhaustivo</td><td>Cubre build, gradle, kotlin, local.properties, idea y material de firma.</td></tr>
+    <tr><td>Backup selectivo</td><td>Allowlist de Room + SharedPreferences; excluye foto, expedientes y cache.</td></tr>
+    <tr><td>I/O de foto en Dispatchers.IO</td><td>Evita bloquear el hilo principal.</td></tr>
+    <tr><td>Eliminar permiso CAMERA</td><td>El intent de captura no lo requiere; se usa <code>runCatching</code>.</td></tr>
+    <tr><td>CSV local con SAF</td><td><code>CreateDocument("text/csv")</code>; sin permisos de almacenamiento ni nube.</td></tr>
+    <tr><td>Exportador CSV puro</td><td>BOM, cabecera, RFC 4180, CRLF y neutralizacion de formulas; testeable en JVM.</td></tr>
+    <tr><td>Room local + sincronizacion simulada</td><td>Room es la fuente de verdad; la nube queda fuera de alcance.</td></tr>
+    <tr><td>Captura con FileProvider + EXIF</td><td>Corrige rotacion y calidad sin permiso CAMERA.</td></tr>
+    <tr><td>Edicion conserva fecha y re-encola</td><td><code>fechaHora</code> original y <code>sincronizado = false</code>.</td></tr>
+    <tr><td>Reutilizar arquitectura para gestion</td><td>MVVM + Repository + Room + Compose como base del nuevo dominio documental.</td></tr>
+    <tr><td>Unificar los dos modulos (Opcion A)</td><td>Una app, un APK, dos bases Room, portal de entrada.</td></tr>
+    <tr><td>LemacApplication como contenedor unico</td><td>Android solo permite una <code>Application</code> por proceso.</td></tr>
+    <tr><td>Portal + UnifiedApp</td><td>NavHost raiz con rutas portal, bienestar y gestion.</td></tr>
+    <tr><td>Fusion de recursos y backup selectivo</td><td>Un solo FileProvider, temas y reglas de backup unificadas.</td></tr>
+    <tr><td>Refactor de testabilidad</td><td>Interfaz de perfil e inyeccion de foto, recordatorios, exportador y reloj.</td></tr>
+    <tr><td>PDF maestro de estudio y replicacion</td><td>Este documento: guia + catalogo de comandos + paso a paso.</td></tr>
+  </tbody>
+</table>
+
+<h2>Anexo B: PRDs y flujos del proyecto</h2>
+<table>
+  <thead><tr><th>PRD</th><th>Objetivo</th><th>Estado</th></tr></thead>
+  <tbody>
+    <tr><td>MVP Android Lemac DataLab</td><td>Autorregistro en 4 ambitos con Room, validacion y pruebas.</td><td>Completado</td></tr>
+    <tr><td>Mejoras pre-disertacion</td><td>Backup con Room, quitar CAMERA, I/O de foto y docs.</td><td>Completado</td></tr>
+    <tr><td>Exportacion CSV local</td><td>Boton, generador puro y prueba de 8 casos.</td><td>Completado</td></tr>
+    <tr><td>Revision tecnica y camara</td><td>Fix de rotacion, fecha de edicion y mensajes.</td><td>Completado</td></tr>
+    <tr><td>Revision de requisitos MVP</td><td>Comparar adjuntos con la app y generar informe PDF.</td><td>Completado</td></tr>
+    <tr><td>Integracion de los dos modulos</td><td>Portal unificado, 69 pruebas y build del APK unico.</td><td>Completado</td></tr>
+    <tr><td>Tests del RegistroViewModel</td><td>Refactor testable, 7 pruebas y PDF de 31 paginas.</td><td>Completado</td></tr>
+    <tr><td>PDF maestro de estudio y replicacion</td><td>Este documento, con comandos y paso a paso.</td><td>En cierre</td></tr>
+  </tbody>
+</table>
+
+<h2>Anexo C: commits relevantes</h2>
+<table>
+  <thead><tr><th style="width:12%">SHA</th><th>Mensaje</th><th>Rama</th></tr></thead>
+  <tbody>
+    <tr><td><code>8e87e82</code></td><td>docs: informe de arquitectura y guias a 76/33/43</td><td>entrega_hito2</td></tr>
+    <tr><td><code>ded8cde</code></td><td>test: refactor de testabilidad y RegistroViewModelTest</td><td>entrega_hito2</td></tr>
+    <tr><td><code>452b274</code></td><td>docs: flujo de camara y semantica de edicion</td><td>entrega_hito2</td></tr>
+    <tr><td><code>571ea69</code></td><td>docs: portal unificado y exportacion CSV</td><td>entrega_hito2</td></tr>
+    <tr><td><code>690359f</code></td><td>fix: suprimir advertencia de permisos en NotificacionHelper</td><td>entrega_hito2</td></tr>
+    <tr><td><code>13ef480</code></td><td>feat: integracion de portal unificado</td><td>entrega_hito2</td></tr>
+    <tr><td><code>769e20d</code></td><td>chore: checkpoint pre-integracion</td><td>entrega_hito2</td></tr>
+    <tr><td><code>2df1916</code></td><td>Actualizacion y estabilizacion del proyecto</td><td>entrega_hito2</td></tr>
+    <tr><td><code>033c8f7</code></td><td>docs: informe PDF de arquitectura</td><td>main</td></tr>
+    <tr><td><code>f7120c5</code></td><td>Initial commit: estabilizacion Compose, Room y ViewModels</td><td>entrega_hito2</td></tr>
+    <tr><td><code>5d88624</code></td><td>fix: backup Room, quitar CAMERA e I/O de foto</td><td>main</td></tr>
+    <tr><td><code>3867001</code></td><td>chore: version inicial de Lemac DataLab</td><td>main</td></tr>
+    <tr><td><code>a4d29c5</code></td><td>docs: actualizar estado del repositorio Git</td><td>main</td></tr>
+  </tbody>
+</table>
+
+<h2>Anexo D: prompts recomendados para agentes</h2>
+<h3>Orquestador</h3>
+<pre><code>Actua como orquestador SDD. Antes de empezar ejecuta `lemoria flow status &lt;PRD_ID&gt;`.
+Trabaja en este orden: PRD, tareas INVEST, implementacion, pruebas, revision, commit,
+documentacion, vault y consolidacion. No implementes codigo directamente: delega en
+implementation-agent, frontend-agent, db-agent, testing-agent, review-agent,
+documentation-agent y github-agent. Pasa siempre PROJECT_ID, PRD_ID, TASK_ID y CONV_ID.</code></pre>
+<h3>Implementacion backend</h3>
+<pre><code>Implementa la tarea &lt;TASK_ID&gt; del PRD &lt;PRD_ID&gt; en el proyecto &lt;PROJECT_ID&gt;.
+Lee el PRD y las decisiones relacionadas. Respeta la arquitectura MVVM + Repository + Room.
+No modifiques archivos fuera del alcance. Al terminar, reporta archivos tocados,
+comandos ejecutados y resultado de build/tests.</code></pre>
+<h3>Pruebas</h3>
+<pre><code>Escribe y ejecuta pruebas para &lt;TASK_ID&gt;. Cubre logica pura y casos borde.
+Usa JUnit 4 y kotlinx-coroutines-test. No uses Robolectric salvo necesidad justificada.
+Ejecuta ./gradlew :app:testDebugUnitTest y reporta pass/fail con el conteo exacto.</code></pre>
+<h3>Revision</h3>
+<pre><code>Revisa la implementacion de &lt;TASK_ID&gt; contra el PRD &lt;PRD_ID&gt;. Busca bugs, deuda tecnica,
+problemas de seguridad, permisos innecesarios y desalineacion con el PRD. Da un veredicto:
+APROBADO, APROBADO CON OBSERVACIONES o CAMBIOS REQUERIDOS, con archivo:linea.</code></pre>
+<h3>Documentacion</h3>
+<pre><code>Actualiza README y docs para &lt;TASK_ID&gt;. Manten el estilo y las versiones reales.
+No inventes funcionalidad. Al terminar, sincroniza el vault con
+`lemoria vault sync &lt;PROJECT_ID&gt;` y reporta que archivos cambiaron.</code></pre>
+
+<h2>Anexo E: plantilla de PRD y tareas</h2>
+<pre><code><span class="c"># 1. Crear conversacion y registrar solicitud</span>
+lemoria conv create "$PROJECT_ID" -t "Feature: &lt;titulo&gt;"
+lemoria conv add "$CONV_ID" user "&lt;solicitud textual&gt;"
+
+<span class="c"># 2. Contexto y decisiones</span>
+lemoria context set "$PROJECT_ID" -k tech_stack -v "&lt;stack&gt;" -l project
+lemoria decision log "$PROJECT_ID" -t "&lt;decision&gt;" -d "&lt;detalle&gt;" -r "&lt;alternativas&gt;"
+
+<span class="c"># 3. Flujo y PRD</span>
+lemoria flow start "$PROJECT_ID" "&lt;objetivo del feature&gt;"
+lemoria flow step "$PRD_ID" prd --status completed --output "&lt;alcance y criterios&gt;"
+
+<span class="c"># 4. Tareas INVEST (una por linea, con agente)</span>
+lemoria task create "$PROJECT_ID" "$PRD_ID" -t "&lt;tarea 1&gt;" -d "&lt;criterio de aceptacion&gt;" -a implementation-agent
+lemoria task create "$PROJECT_ID" "$PRD_ID" -t "&lt;tarea 2&gt;" -d "&lt;criterio de aceptacion&gt;" -a testing-agent
+lemoria task create "$PROJECT_ID" "$PRD_ID" -t "Documentar y commit" -d "README, ADR, commit y vault." -a documentation-agent
+
+<span class="c"># 5. Cierre</span>
+lemoria flow step "$PRD_ID" tasks --status completed --output "&lt;n&gt; tareas INVEST"
+lemoria flow step "$PRD_ID" implement --status completed --output "&lt;resumen&gt;"
+lemoria flow step "$PRD_ID" test --status completed --output "&lt;n&gt;/&lt;n&gt; pruebas OK"
+lemoria flow step "$PRD_ID" review --status completed --output "&lt;veredicto&gt;"
+lemoria flow step "$PRD_ID" commit --status completed --output "&lt;sha&gt; con task-id"
+lemoria flow step "$PRD_ID" document --status completed --output "&lt;docs actualizados&gt;"
+lemoria vault sync "$PROJECT_ID"
+lemoria flow step "$PRD_ID" vault_sync --status completed --output "Vault sincronizado"
+lemoria conv add "$CONV_ID" agent "&lt;resumen final&gt;"
+lemoria flow step "$PRD_ID" consolidate --status completed --output "Conversacion consolidada"
+lemoria flow step "$PRD_ID" complete --status completed --output "Flujo cerrado"</code></pre>
+
+<h2>Anexo F: checklist de cierre Lemoria</h2>
+<ul class="checklist">
+  <li>Todas las tareas estan en <code>completed</code> (<code>lemoria task list</code>).</li>
+  <li>Las decisiones importantes tienen ADR (<code>lemoria decision list</code>).</li>
+  <li>El codigo esta commiteado y empujado; el mensaje incluye el task-id.</li>
+  <li>La documentacion esta actualizada (README, guias, ADR).</li>
+  <li>El vault esta sincronizado (<code>lemoria vault sync</code>).</li>
+  <li>La conversacion tiene un mensaje <code>agent</code> con el resumen final.</li>
+  <li>El flujo tiene los pasos <code>prd</code>, <code>tasks</code>, <code>implement</code>, <code>test</code>, <code>review</code>, <code>commit</code>, <code>document</code>, <code>vault_sync</code>, <code>consolidate</code> y <code>complete</code>.</li>
+  <li>El entregable final existe en la ruta acordada.</li>
+</ul>
+
+<div class="footer-note">
+  Documento generado para el proyecto <b>Lemac DataLab + Gestion Documental</b>.
+  Fuentes: repositorio <code>limpio_model</code>, guias del proyecto (<code>README.md</code>,
+  <code>docs/GUIA_ESTUDIO.md</code>, <code>docs/DISERTACION.md</code>, <code>docs/INTEGRACION.md</code>),
+  base de datos Lemoria (PRDs, tareas, decisiones, commits) y verificacion de build del 12-11-2026.
+  El PDF final se entrega en <code>~/Descargas</code>.
+</div>
+
+</body>
+</html>

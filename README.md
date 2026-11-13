@@ -290,6 +290,21 @@ Documentacion detallada:
 - [Guion de disertacion](docs/DISERTACION.md): bloques de exposicion, demo en vivo, preguntas y checklist.
 - [Informe de integracion](docs/INTEGRACION.md): objetivo, decision (ADR), inventario, backup, build, pruebas y trazabilidad de la unificacion de los dos modulos.
 
+## Guía maestra de estudio y replicación
+
+La guía maestra reúne en un solo documento el estudio del proyecto y su replicación desde cero. Su fuente editable es [docs/GUIA_REPLICACION_COMANDOS.html](docs/GUIA_REPLICACION_COMANDOS.html) y la versión final para leer o imprimir es el PDF `~/Descargas/Guia_Estudio_y_Replicacion_Lemac_DataLab.pdf` (51 páginas).
+
+Contenido de la guía:
+
+- **Arquitectura y componentes**: vista de capas, app unificada con portal, núcleo de navegación y los dos módulos (Bienestar — Lemac DataLab y Gestión Documental RR.HH.), con sus componentes transversales.
+- **Modelo de datos y flujo de datos**: las 2 bases Room (`lemac_datalab.db` y `gestion_documental.db`), estados, 7 roles y el recorrido de extremo a extremo (crear y editar un registro, exportar CSV, foto de perfil, login y permisos, documento con solicitud y aprobación).
+- **Pruebas**: las 76 pruebas unitarias (33 de bienestar + 43 de gestión documental), cómo ejecutarlas y qué queda fuera de cobertura.
+- **Replicación paso a paso en 13 fases**: desde preparar el entorno y crear el proyecto hasta Room, repositorios, ViewModels, UI Compose, funciones transversales, pruebas, build, Git/GitHub, flujo SDD con Lemoria y checklist final.
+- **Catálogo completo de comandos**: Lemoria, Gradle, Git, ADB y Android SDK (más utilidades de Linux usadas), con el comando exacto y su propósito.
+- **Solución de errores comunes**: diagnósticos y correcciones para los fallos más frecuentes al compilar, instalar o replicar.
+
+Esta guía es **complementaria** a [docs/GUIA_ESTUDIO.md](docs/GUIA_ESTUDIO.md) y a [docs/INFORME_ARQUITECTURA.pdf](docs/INFORME_ARQUITECTURA.pdf), no un reemplazo: la guía de estudio profundiza en el módulo de bienestar y el informe de arquitectura documenta el diseño, mientras que la guía maestra integra el estudio completo con la replicación y el catálogo de comandos.
+
 ## Como subir este proyecto a Git
 
 El repositorio local **ya esta creado**. Para ver el estado real y el ultimo commit, ejecutar `git status` y `git log --oneline -1`; no conviene asumir un estado fijo, porque el arbol cambia a medida que se trabaja. La rama principal es `main`; la unificacion de los dos modulos se desarrollo en la rama `integracion` y, ya fusionada a `main`, el trabajo posterior (ajustes y Hito 2) sigue en la rama `entrega_hito2`, que contiene el commit de integracion (`13ef480`) y el ajuste del `NotificacionHelper` de gestion (`690359f`).
