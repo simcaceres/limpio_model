@@ -105,7 +105,7 @@ Todo el codigo de gestion documental se copio **dentro del mismo modulo `:app`**
 - `res/xml/file_paths.xml`: un solo `FileProvider` (authority `${applicationId}.fileprovider`) con `cache-path fotos/` (bienestar) y `files-path documentos/` (gestion). Android prohibe dos FileProvider con la misma authority.
 - `res/values/themes.xml`: solo queda el tema XML de bienestar; el estilo visual de gestion es Compose (`GestionTheme`), y el `Theme.GestionDocumental` sin referencias fue eliminado.
 - `res/xml/backup_rules.xml` y `res/xml/data_extraction_rules.xml`: reglas de respaldo selectivo por modulo (detalle en la seccion 6).
-- `AndroidManifest.xml`: sin cambios de estructura; ya declaraba `LemacApplication`, un unico `MainActivity`, `POST_NOTIFICATIONS`, `uses-feature android.hardware.camera required="false"` y ningun permiso `INTERNET`.
+- `AndroidManifest.xml`: sin cambios de estructura; ya declaraba `LemacApplication`, un unico `MainActivity`, `POST_NOTIFICATIONS`, `uses-feature android.hardware.camera required="false"` y ningun permiso `INTERNET` (antes de IT3; desde IT3 sí declara `INTERNET` para la API REST simulada de documentos, ver [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md)).
 
 ### 4.7 Pruebas
 
@@ -180,7 +180,7 @@ Las mismas reglas se aplican en tres lugares: `backup_rules.xml` (full backup, A
 - Se respalda la base de bienestar **sin consentimiento explicito** del usuario: es una decision de producto que conviene revisar (opt-in del usuario, cifrado con SQLCipher o exclusion del respaldo). Ver deuda tecnica.
 - La exclusion de `gestion_documental.db` del respaldo **no** la cifra en el dispositivo: solo evita que salga en backups y transferencias.
 - Credenciales demo en claro: los 7 usuarios de gestion comparten la clave `1234`, almacenada sin hash.
-- La app no declara `INTERNET`, asi que nada sale del dispositivo por red; el riesgo se limita al dispositivo, sus respaldos y el CSV exportado (texto plano con alias y notas).
+- La app no declaraba `INTERNET` (antes de IT3), asi que nada salia del dispositivo por red. Desde IT3 sí declara `INTERNET`, pero solo para la API REST **simulada y local** de documentos, con cleartext restringido a `10.0.2.2`, `localhost` y `127.0.0.1`; el riesgo sigue acotado al dispositivo, sus respaldos, el CSV exportado y ese servidor local.
 - Notificaciones con texto generico, sin contenido sensible, en ambos modulos.
 
 ## 7. Deuda tecnica y limitaciones conocidas
@@ -215,9 +215,9 @@ Comandos usados para verificar la integracion, desde la raiz del proyecto:
 Resultados verificados tras la integracion (actualizados el 12 de noviembre de 2026; el detalle historico de la integracion fue 69 pruebas):
 
 - `:app:assembleDebug`: **BUILD SUCCESSFUL**. APK unico en `app/build/outputs/apk/debug/app-debug.apk` (~62 MB; contiene portal + bienestar + gestion).
-- `:app:testDebugUnitTest`: **76 aprobadas, 0 fallidas**.
+- `:app:testDebugUnitTest`: **76 aprobadas, 0 fallidas** (antes de IT3). Tras IT3 (15 de noviembre de 2026), `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` dejo **90 aprobadas, 0 fallidas** (33 de bienestar + 57 de gestion documental).
   - Bienestar: 33 (validador 9, resumen 4, exportador CSV 8, repositorio con DAO falso 5, ViewModel en JVM 7).
-  - Gestion documental: 43 (validadores 4, permisos 7, carga de permisos 9, flujo de modificacion 6, reportes 9, MIME 8).
+  - Gestion documental: 57 (validadores 4, permisos 7, carga de permisos 9, flujo de modificacion 6, reportes 9, MIME 8, contrato JSON IT3 6, repositorio remoto IT3 4, ViewModel remoto IT3 4).
 - Reporte HTML: `app/build/reports/tests/testDebugUnitTest/index.html`.
 - Sin pruebas instrumentadas ni de interfaz (`app/src/androidTest` no existe).
 
@@ -289,3 +289,9 @@ Requisitos del video de avance:
 - **Nombre del archivo:** `VideoequipoX.mp4` (reemplazar la X por el numero de equipo).
 
 El video deberia recorrer el portal, el flujo de bienestar y el flujo de gestion documental con los usuarios demo, cuidando que no aparezcan datos reales.
+
+## 11. Actualización IT3: integración con API REST
+
+La actividad **IT3** agrega una integración de red real (Retrofit + OkHttp + Gson) sobre la funcionalidad Documentos: la pantalla "Documentos en línea" consume `GET /documentos` de una API REST simulada local. Esto introduce dos cambios respecto a lo descrito en este informe: (a) el manifiesto **sí declara `INTERNET`** desde IT3 (con cleartext restringido a `10.0.2.2`, `localhost` y `127.0.0.1`), y (b) la suite sube de 76 a **90 pruebas** (33 de bienestar + 57 de gestión documental). El detalle completo, el contrato del endpoint y el registro de comandos están en [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md).
+
+> Pendiente: regenerar `informe_arquitectura.html` y `INFORME_ARQUITECTURA.pdf` para reflejar IT3 (no se regeneraron en esta entrega).

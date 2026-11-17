@@ -47,8 +47,8 @@ En el estado actual del codigo:
 - La foto de perfil se guarda como un archivo PNG en el almacenamiento interno de la app. Su captura delega en la app de camara del sistema (Intent `ACTION_IMAGE_CAPTURE` con `EXTRA_OUTPUT` hacia un archivo temporal propio compartido con un `FileProvider`; no se pide permiso `CAMERA`). La imagen se decodifica en dos pasos con `inSampleSize` (hasta 1024 px por lado), se corrige la orientacion EXIF antes de mostrarla o guardarla (por eso la foto ya no sale rotada) y tanto la decodificacion como el guardado se ejecutan fuera del hilo principal, en `Dispatchers.IO`. El detalle completo del flujo esta en la seccion [Foto de perfil y edicion de registros](#foto-de-perfil-y-edicion-de-registros).
 - El modulo de gestion documental usa una segunda base Room local (`gestion_documental.db`) con usuarios, documentos y auditoria **ficticios**. Tampoco sale del dispositivo y, ademas, queda excluida del respaldo automatico.
 - La exportacion CSV es **local**: el archivo se genera en el dispositivo y se guarda donde el usuario elige con el selector de documentos del sistema (SAF). No hay subida a la nube ni permiso de almacenamiento.
-- No existe un backend real ni se envian datos a Internet. La sincronizacion de bienestar usa `FakeLemacApi`, que solo simula una espera de 700 ms, y la de gestion no existe: todo es local.
-- El manifiesto no declara el permiso `INTERNET`.
+- No existe un backend real ni se envian datos a Internet. La sincronizacion de bienestar usa `FakeLemacApi`, que solo simula una espera de 700 ms (no usa Retrofit ni OkHttp: antes de IT3). La integracion IT3 agrega una API REST **simulada y local** (solo `10.0.2.2`, `localhost` o `127.0.0.1`) para la pantalla "Documentos en línea" de gestión documental.
+- El manifiesto ahora **si declara el permiso `INTERNET`**, necesario para la API REST simulada de documentos. El trafico en claro (`http`) sigue restringido por `res/xml/network_security_config.xml` a `10.0.2.2`, `localhost` y `127.0.0.1`; el resto del trafico en claro queda deshabilitado. Antes de IT3 el permiso no se declaraba.
 - Las notificaciones tienen un texto generico, sin contenido sensible, tanto las de recordatorios de bienestar como las de vencimientos de gestion.
 - El CSV es **texto plano** e incluye el alias y las notas, asi que conviene tratarlo como informacion privada.
 
@@ -148,7 +148,7 @@ El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con p
 - `app/src/test/java/com/example/limpio_moviles/data/repository/RegistroRepositoryTest.kt` contiene 5 pruebas del repositorio con un DAO falsificado (insertar nuevo, actualizar conservando la `fechaHora` original, registro inexistente al editar, carga demo con base vacia y carga demo sin duplicar).
 - `app/src/test/java/com/example/limpio_moviles/viewmodel/RegistroViewModelTest.kt` contiene 7 pruebas del ViewModel en la JVM, sin Robolectric: crear con reloj inyectado y `sincronizado = false`, editar conservando la `fechaHora` original y reencolando, editar un registro inexistente sin insertar, validacion con errores que no llama al repositorio, y `cargarDemo` en sus tres ramas (exito, ya hay datos y fallo). Usa `kotlinx-coroutines-test` y `Dispatchers.setMain`.
 
-**Modulo de gestion documental** (43 pruebas):
+**Modulo de gestion documental** (57 pruebas):
 
 - `app/src/test/java/com/example/gestiondocumental/model/ValidadoresTest.kt`: 4 pruebas de validadores de entrada.
 - `app/src/test/java/com/example/gestiondocumental/model/PermisosTest.kt`: 7 pruebas de permisos por rol.
@@ -156,11 +156,23 @@ El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con p
 - `app/src/test/java/com/example/gestiondocumental/model/FlujoModificacionTest.kt`: 6 pruebas del flujo de modificacion y aprobacion.
 - `app/src/test/java/com/example/gestiondocumental/model/ReportesTest.kt`: 9 pruebas de reportes.
 - `app/src/test/java/com/example/gestiondocumental/util/ArchivosMimeTest.kt`: 8 pruebas de tipos MIME de archivos.
+- `app/src/test/java/com/example/gestiondocumental/data/remote/DocumentoDtoTest.kt`: 6 pruebas del contrato JSON `GET /documentos` (IT3).
+- `app/src/test/java/com/example/gestiondocumental/data/repository/DocumentosRemotosRepositoryTest.kt`: 4 pruebas del repositorio remoto con `MockWebServer` (IT3).
+- `app/src/test/java/com/example/gestiondocumental/viewmodel/DocumentosRemotosViewModelTest.kt`: 4 pruebas del ViewModel remoto con un fake de la API (IT3).
 
-En total son **76 pruebas unitarias** con JUnit 4 (33 de bienestar + 43 de gestion documental). La ejecucion de `./gradlew clean compileDebugKotlin testDebugUnitTest assembleDebug` el 12 de noviembre de 2026 termino con `BUILD SUCCESSFUL`, 76/76 aprobadas y 0 fallidas, y APK de debug de ~62 MB (64,915,563 bytes) en `app/build/outputs/apk/debug/app-debug.apk`. Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA`, con el `FileProvider` y su `file_paths`.
+En total son **90 pruebas unitarias** con JUnit 4 (33 de bienestar + 57 de gestion documental). La verificacion de IT3 con `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` el 15 de noviembre de 2026 termino con `BUILD SUCCESSFUL`, 90/90 aprobadas y 0 fallidas. La ejecucion previa de `./gradlew clean compileDebugKotlin testDebugUnitTest assembleDebug` (12 de noviembre de 2026, antes de IT3) dejo 76/76 y un APK de debug de ~62 MB (64,915,563 bytes) en `app/build/outputs/apk/debug/app-debug.apk`. Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA`, con el `FileProvider` y su `file_paths`; desde IT3 si declara `INTERNET` (ver la seccion [Integración con API REST (IT3)](#integración-con-api-rest-it3)).
 
 - **No hay pruebas instrumentadas ni pruebas de interfaz** (`app/src/androidTest` no existe).
 - **No hay pruebas de Room real, UI/navegacion ni WorkManager**; el repositorio de bienestar se prueba con un DAO falsificado y el ViewModel de bienestar ya se prueba en la JVM con dobles (7 pruebas, sin Robolectric). La escritura real SAF/`ContentResolver` tampoco se prueba: `ExportadorArchivo` se sustituye por un doble. La pantalla del portal y las pantallas de gestion no tienen cobertura.
+
+## Integración con API REST (IT3)
+
+La actividad **IT3** agrega una variante de **solo lectura** de la funcionalidad Documentos del módulo Gestión Documental RR.HH.: una pantalla "Documentos en línea" que consulta `GET /documentos` contra una API REST **simulada y local** (`tools/mock_api/server.py`), usando Retrofit 2.11.0 + Gson + OkHttp 4.12.0. Recorre la cadena `Compose → ViewModel (StateFlow) → Repository → ApiService (@GET) → Retrofit → OkHttp → API` y muestra los tres estados `Cargando`, `Datos` y `Error` (con botón Reintentar y refresh de la barra). Sobre los datos recibidos aplica el RBAC del dominio (`Permisos.puedeVerDocumento`).
+
+- Documento completo: [docs/INTEGRACION_API_IT3.md](docs/INTEGRACION_API_IT3.md).
+- El manifiesto declara `INTERNET`; el cleartext queda restringido a `10.0.2.2`, `localhost` y `127.0.0.1` (`res/xml/network_security_config.xml`).
+- Suite de pruebas: **90** (33 de bienestar + 57 de gestión documental); las 14 nuevas son JVM y usan `MockWebServer`.
+- Pendiente: regenerar `docs/informe_arquitectura.html` y `docs/INFORME_ARQUITECTURA.pdf`.
 
 ## Exportar los datos
 
@@ -258,7 +270,8 @@ limpio_model/
 │       │   │   └── viewmodel/            RegistroViewModel y su Factory
 │       │   ├── java/com/example/gestiondocumental/      Modulo de gestion documental RR.HH.
 │       │   │   ├── data/local/           Room de gestion (gestion_documental.db), DAOs y Sembrador
-│       │   │   ├── data/repository/      Sesion, Documento, Usuario y Auditoria
+│       │   │   ├── data/remote/          API REST simulada de documentos (IT3): DTO, ApiService, Retrofit
+│       │   │   ├── data/repository/      Sesion, Documento, Usuario, Auditoria y Documentos remotos
 │       │   │   ├── model/                Roles, permisos, flujo, validadores y reportes
 │       │   │   ├── navigation/           Grafo de gestion (GestionApp / AppNavigation)
 │       │   │   ├── ui/                   Pantallas de gestion, componentes y tema (GestionTheme)
@@ -267,7 +280,7 @@ limpio_model/
 │       │   └── res/                      Strings, colores, temas, iconos y reglas XML de backup
 │       └── test/java/com/example/
 │           ├── limpio_moviles/           33 pruebas unitarias de bienestar
-│           └── gestiondocumental/        43 pruebas unitarias de gestion documental
+│           └── gestiondocumental/        57 pruebas unitarias de gestion documental
 ├── docs/
 │   ├── GUIA_ESTUDIO.md                   Guia principal de estudio
 │   ├── DISERTACION.md                    Guion de exposicion y demo
@@ -289,6 +302,7 @@ Documentacion detallada:
 - [Guia de estudio](docs/GUIA_ESTUDIO.md): arquitectura, componentes, diagramas y flujos paso a paso del modulo de bienestar.
 - [Guion de disertacion](docs/DISERTACION.md): bloques de exposicion, demo en vivo, preguntas y checklist.
 - [Informe de integracion](docs/INTEGRACION.md): objetivo, decision (ADR), inventario, backup, build, pruebas y trazabilidad de la unificacion de los dos modulos.
+- [Integración con API REST (IT3)](docs/INTEGRACION_API_IT3.md): funcionalidad Documentos contra `GET /documentos`, contrato JSON, cadena Compose → ViewModel → Repository → Retrofit → API, estados, pruebas y registro de comandos.
 
 ## Guía maestra de estudio y replicación
 
@@ -298,7 +312,7 @@ Contenido de la guía:
 
 - **Arquitectura y componentes**: vista de capas, app unificada con portal, núcleo de navegación y los dos módulos (Bienestar — Lemac DataLab y Gestión Documental RR.HH.), con sus componentes transversales.
 - **Modelo de datos y flujo de datos**: las 2 bases Room (`lemac_datalab.db` y `gestion_documental.db`), estados, 7 roles y el recorrido de extremo a extremo (crear y editar un registro, exportar CSV, foto de perfil, login y permisos, documento con solicitud y aprobación).
-- **Pruebas**: las 76 pruebas unitarias (33 de bienestar + 43 de gestión documental), cómo ejecutarlas y qué queda fuera de cobertura.
+- **Pruebas**: las 90 pruebas unitarias (33 de bienestar + 57 de gestión documental), cómo ejecutarlas y qué queda fuera de cobertura.
 - **Replicación paso a paso en 13 fases**: desde preparar el entorno y crear el proyecto hasta Room, repositorios, ViewModels, UI Compose, funciones transversales, pruebas, build, Git/GitHub, flujo SDD con Lemoria y checklist final.
 - **Catálogo completo de comandos**: Lemoria, Gradle, Git, ADB y Android SDK (más utilidades de Linux usadas), con el comando exacto y su propósito.
 - **Solución de errores comunes**: diagnósticos y correcciones para los fallos más frecuentes al compilar, instalar o replicar.

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -103,7 +104,11 @@ fun EtiquetaCategoria(categoria: CategoriaDocumento, modifier: Modifier = Modifi
 /** Barra superior con botón de volver opcional. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarraSuperior(titulo: String, onVolver: (() -> Unit)? = null) {
+fun BarraSuperior(
+    titulo: String,
+    onVolver: (() -> Unit)? = null,
+    acciones: @Composable RowScope.() -> Unit = {}
+) {
     TopAppBar(
         title = { Text(titulo, fontWeight = FontWeight.SemiBold) },
         navigationIcon = {
@@ -116,10 +121,12 @@ fun BarraSuperior(titulo: String, onVolver: (() -> Unit)? = null) {
                 }
             }
         },
+        actions = acciones,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.primary,
             titleContentColor = Color.White,
-            navigationIconContentColor = Color.White
+            navigationIconContentColor = Color.White,
+            actionIconContentColor = Color.White
         )
     )
 }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Logout
@@ -41,6 +42,7 @@ fun HomeScreen(
     sesionVm: SesionViewModel,
     docsVm: DocumentosViewModel,
     onDocumentos: () -> Unit,
+    onDocumentosApi: () -> Unit,
     onBandeja: () -> Unit,
     onAuditoria: () -> Unit,
     onUsuarios: () -> Unit,
@@ -148,6 +150,12 @@ fun HomeScreen(
                 titulo = "Documentos",
                 subtitulo = "Consulta y gestiona expedientes",
                 onClick = onDocumentos
+            )
+            AccesoCard(
+                icono = Icons.Filled.CloudDownload,
+                titulo = "Documentos en línea",
+                subtitulo = "Consulta la API REST (GET /documentos)",
+                onClick = onDocumentosApi
             )
             if (Permisos.puedeAprobar(u.rol)) {
                 AccesoCard(

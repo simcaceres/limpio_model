@@ -16,8 +16,8 @@ Si se olvida todo lo demas, recordar estas cinco ideas:
 1. Es un MVP academico con datos ficticios o sinteticos; no es diagnostico ni tratamiento.
 2. La app es un **portal unificado** con dos modulos (bienestar y gestion documental), cada uno con su base Room propia; la arquitectura es UI Compose, un ViewModel compartido, repositorios y fuentes de datos locales.
 3. Room guarda los registros y emite `Flow`; el ViewModel lo convierte en `StateFlow` y la UI lo recolecta con `collectAsStateWithLifecycle`.
-4. La sincronizacion es simulada con `FakeLemacApi`; no hay backend ni permiso `INTERNET`. La salida real de datos es la **exportacion CSV local**, con el selector de documentos del sistema (SAF).
-5. Hay 76 pruebas unitarias (33 de bienestar y 43 de gestion documental); no hay pruebas de UI ni instrumentadas.
+4. La sincronizacion de bienestar es simulada con `FakeLemacApi` y no hay backend real. Antes de IT3 tampoco habia permiso `INTERNET`; desde IT3 el modulo de gestion documental consume `GET /documentos` de una API REST simulada local (ver [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md)). La salida real de datos de bienestar es la **exportacion CSV local**, con el selector de documentos del sistema (SAF).
+5. Hay 90 pruebas unitarias (33 de bienestar y 57 de gestion documental); no hay pruebas de UI ni instrumentadas.
 
 ## Guion por bloques
 
@@ -147,7 +147,7 @@ Puntos:
 
 - La app no tiene backend real, autenticacion en bienestar, cifrado ni migraciones de Room.
 - La sincronizacion solo marca una bandera local.
-- Hay 76 pruebas unitarias: 33 de bienestar (validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM sin Robolectric) y 43 de gestion documental (validadores, permisos, flujo de modificacion, reportes y tipos MIME).
+- Hay 90 pruebas unitarias: 33 de bienestar (validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM sin Robolectric) y 57 de gestion documental (validadores, permisos, flujo de modificacion, reportes, tipos MIME y las 14 de la integracion IT3).
 - No hay pruebas instrumentadas ni de interfaz.
 - El ViewModel de bienestar es unico y compartido; para una app mas grande convendria separar por pantalla.
 - `fallbackToDestructiveMigration` es aceptable en el MVP, no en produccion.
@@ -361,7 +361,7 @@ Esta seccion detalla como demostrar la exportacion de datos en la disertacion. E
 - El CSV es **texto plano** e incluye el alias y las notas: conviene tratarlo como informacion privada y guardar el archivo en un lugar seguro.
 - La exportacion no borra nada ni reemplaza a la sincronizacion (que sigue simulada con `FakeLemacApi`).
 - No hay cifrado ni exportacion parcial por ambito: siempre se exportan todos los registros guardados en el dispositivo.
-- No se sube nada a la nube: el archivo queda donde el usuario lo decida, y la app no declara `INTERNET`.
+- No se sube nada a la nube: el archivo queda donde el usuario lo decida. Antes de IT3 la app no declaraba `INTERNET`; desde IT3 sí lo declara, pero solo para la API REST simulada local de documentos.
 
 ## Puntos tecnicos que conviene mencionar
 
@@ -378,11 +378,11 @@ Esta seccion detalla como demostrar la exportacion de datos en la disertacion. E
 11. **Calculo puro.** `ResumenCalculator` no depende de Android y se prueba con JUnit.
 12. **Permisos en contexto.** Las notificaciones se piden cuando se necesitan, no al iniciar. La foto de perfil no requiere permiso `CAMERA` porque la captura delega en la app de camara del sistema (`ACTION_IMAGE_CAPTURE` + `EXTRA_OUTPUT` hacia un temporal propio compartido con `FileProvider`, mediante un contrato custom mas defensivo que el estandar); la orientacion EXIF se corrige antes de mostrar y guardar, y la decodificacion y el guardado van a `Dispatchers.IO`.
 13. **WorkManager para trabajo diferible.** Sobrevive a reinicios y no requiere la app abierta.
-14. **Privacidad por diseno y por omision.** Sin `INTERNET`, datos locales, notificaciones genericas y advertencias visibles.
+14. **Privacidad por diseno y por omision.** Sin `INTERNET` antes de IT3 (desde IT3 solo para la API simulada local), datos locales, notificaciones genericas y advertencias visibles.
 15. **Honestidad sobre limites.** No hay cifrado, migraciones ni pruebas de UI; decirlo suma criterio.
 16. **Catalogo de versiones.** `gradle/libs.versions.toml` centraliza versiones y evita numeros dispersos.
 17. **KSP.** Room genera codigo en compilacion; KSP es el procesador recomendado para Kotlin.
-18. **Pruebas unitarias.** 76 pruebas rapidas que no necesitan emulador: 33 de bienestar (incluye 7 del ViewModel en JVM) y 43 de gestion documental.
+18. **Pruebas unitarias.** 90 pruebas rapidas que no necesitan emulador: 33 de bienestar (incluye 7 del ViewModel en JVM) y 57 de gestion documental (incluye las 14 de IT3).
 19. **Exportacion CSV con SAF.** `CreateDocument("text/csv")` evita permisos de almacenamiento; BOM UTF-8 y CRLF para Excel; escapado RFC 4180 y neutralizacion de formulas; el generador (`RegistroCsvExporter`) es puro y testeable con JUnit.
 20. **Portal unificado sin mezclar dominios.** Un APK, dos paquetes (`com.example.limpio_moviles` y `com.example.gestiondocumental`), dos bases Room; `LemacApplication` como contenedor dual con dos canales de notificacion y siembra de datos demo de gestion en `Dispatchers.IO`.
 21. **Semantica de edicion explicita.** Al editar se conserva la `fechaHora` original y se fuerza `sincronizado = false`, de modo que el registro editado vuelve a la cola de sincronizacion simulada; el repositorio usa insert/update explicitos (sin upsert `REPLACE`, no resucita registros borrados) y `cargarDemo` es un `@Transaction` atomico que avisa cuando ya habia datos.
@@ -431,7 +431,7 @@ Porque el proyecto usa APIs modernas y simplifica el manejo del permiso de notif
 
 ### 11. Como se protege la privacidad
 
-Con alias en lugar de nombre real, datos locales, ausencia de permiso `INTERNET`, foto en almacenamiento interno, notificaciones genericas y advertencias visibles. El backup esta acotado a Room y preferencias, excluye explicitamente la foto y no incluye la cache (la plataforma la excluye automaticamente). Con honestidad: no hay cifrado; eso falta para produccion.
+Con alias en lugar de nombre real, datos locales, ausencia de permiso `INTERNET` antes de IT3 (desde IT3 solo para la API REST simulada local), foto en almacenamiento interno, notificaciones genericas y advertencias visibles. El backup esta acotado a Room y preferencias, excluye explicitamente la foto y no incluye la cache (la plataforma la excluye automaticamente). Con honestidad: no hay cifrado; eso falta para produccion.
 
 ### 12. Que pasa si no hay camara o se cancela la captura
 
@@ -465,9 +465,9 @@ Porque KSP es el procesador de simbolos nativo de Kotlin, mas rapido y alineado 
 
 No. Room y `SharedPreferences` guardan en el sandbox de la app, pero sin cifrado adicional. Para datos de salud reales habria que usar cifrado, gestion de claves y una revision de cumplimiento normativo.
 
-### 20. Por que no hay permiso de Internet
+### 20. Por que (antes de IT3) no habia permiso de Internet
 
-Porque no hay llamadas de red reales. `FakeLemacApi` solo espera 700 ms. Declarar `INTERNET` sin necesidad seria una mala practica de minimo privilegio.
+Porque en bienestar no hay llamadas de red reales: `FakeLemacApi` solo espera 700 ms. Declarar `INTERNET` sin necesidad seria una mala practica de minimo privilegio. Desde IT3 el modulo de gestion documental sí hace una llamada de red real contra `GET /documentos`, por lo que el permiso `INTERNET` se declara y el cleartext queda restringido a `10.0.2.2`, `localhost` y `127.0.0.1`.
 
 ### 21. Por que `fallbackToDestructiveMigration`
 
@@ -514,7 +514,7 @@ La fecha original se conserva. Al editar, `guardar()` relee el registro existent
 ### La noche anterior
 
 - [ ] Ejecutar `./gradlew :app:assembleDebug` y confirmar que compila.
-- [ ] Ejecutar `./gradlew :app:testDebugUnitTest` y confirmar las 76 pruebas.
+- [ ] Ejecutar `./gradlew :app:testDebugUnitTest` y confirmar las 90 pruebas.
 - [ ] Abrir el reporte de pruebas y verificar que no hay fallos.
 - [ ] Revisar que el emulador tenga Android 13 (API 33) o superior.
 - [ ] Probar la app de punta a punta una vez, incluido el portal con las dos tarjetas.
@@ -524,7 +524,7 @@ La fecha original se conserva. Al editar, `guardar()` relee el registro existent
 - [ ] Confirmar que `docs/GUIA_ESTUDIO.md` y `docs/DISERTACION.md` estan actualizados.
 - [ ] Verificar que el repositorio local este limpio y hacer el push cuando el repositorio remoto ya exista.
 
-Referencia de la verificacion del 12 de noviembre de 2026, con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, 76/76 pruebas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes). Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
+Referencia de la verificacion previa (12 de noviembre de 2026, antes de IT3), con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, 76/76 pruebas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes). Verificacion de IT3 (15 de noviembre de 2026): `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` con `BUILD SUCCESSFUL` y 90/90 pruebas (33 de bienestar + 57 de gestion documental). Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
 
 ### El dia de la presentacion
 

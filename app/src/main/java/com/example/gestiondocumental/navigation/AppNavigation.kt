@@ -1,6 +1,8 @@
 package com.example.gestiondocumental.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -9,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.gestiondocumental.ui.screens.AuditoriaScreen
 import com.example.gestiondocumental.ui.screens.BandejaAprobacionScreen
 import com.example.gestiondocumental.ui.screens.DetalleDocumentoScreen
+import com.example.gestiondocumental.ui.screens.DocumentosRemotosScreen
 import com.example.gestiondocumental.ui.screens.DocumentosScreen
 import com.example.gestiondocumental.ui.screens.HomeScreen
 import com.example.gestiondocumental.ui.screens.LoginScreen
@@ -16,6 +19,7 @@ import com.example.gestiondocumental.ui.screens.ReportesScreen
 import com.example.gestiondocumental.ui.screens.SplashScreen
 import com.example.gestiondocumental.ui.screens.UsuariosScreen
 import com.example.gestiondocumental.viewmodel.AuditoriaViewModel
+import com.example.gestiondocumental.viewmodel.DocumentosRemotosViewModel
 import com.example.gestiondocumental.viewmodel.DocumentosViewModel
 import com.example.gestiondocumental.viewmodel.SesionViewModel
 import com.example.gestiondocumental.viewmodel.SimpleFactory
@@ -26,6 +30,7 @@ object Rutas {
     const val LOGIN = "login"
     const val HOME = "home"
     const val DOCUMENTOS = "documentos"
+    const val DOCUMENTOS_API = "documentos_api"
     const val DETALLE = "detalle"
     const val BANDEJA = "bandeja"
     const val AUDITORIA = "auditoria"
@@ -90,6 +95,7 @@ fun GestionApp() {
                 sesionVm = sesionVm,
                 docsVm = docsVm,
                 onDocumentos = { nav.navigate(Rutas.DOCUMENTOS) },
+                onDocumentosApi = { nav.navigate(Rutas.DOCUMENTOS_API) },
                 onBandeja = { nav.navigate(Rutas.BANDEJA) },
                 onAuditoria = { nav.navigate(Rutas.AUDITORIA) },
                 onUsuarios = { nav.navigate(Rutas.USUARIOS) },
@@ -109,6 +115,20 @@ fun GestionApp() {
                     docsVm.seleccionar(documento)
                     nav.navigate(Rutas.DETALLE)
                 },
+                onVolver = { nav.popBackStack() }
+            )
+        }
+
+        composable(Rutas.DOCUMENTOS_API) {
+            val documentosApiVm: DocumentosRemotosViewModel = viewModel(
+                factory = SimpleFactory {
+                    DocumentosRemotosViewModel(app.documentosRemotosRepository)
+                }
+            )
+            val usuario by sesionVm.actual.collectAsState()
+            DocumentosRemotosScreen(
+                vm = documentosApiVm,
+                usuario = usuario,
                 onVolver = { nav.popBackStack() }
             )
         }

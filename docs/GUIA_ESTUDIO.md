@@ -14,7 +14,7 @@ El proyecto es un MVP academico:
 - No hay autenticacion ni cuentas.
 - Los datos se guardan localmente con Room y `SharedPreferences`.
 - Los registros se pueden exportar a un archivo CSV local mediante el selector de documentos del sistema (SAF); no se sube nada a la nube.
-- La app no declara el permiso `INTERNET` ni permisos de almacenamiento.
+- La app no declaraba el permiso `INTERNET` ni permisos de almacenamiento (antes de IT3). Desde IT3 sí declara `INTERNET` para la API REST simulada de documentos; el cleartext queda restringido a `10.0.2.2`, `localhost` y `127.0.0.1` (ver [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md)).
 - Los textos de la interfaz aclaran que se usan datos ficticios o sinteticos y que la app no es diagnostico ni tratamiento.
 
 La aplicacion tiene una sola `Activity` (`MainActivity`) y toda la interfaz se escribe con Jetpack Compose. La navegacion se resuelve con Navigation Compose dentro de un `NavHost`.
@@ -370,7 +370,7 @@ Base de datos Room:
 suspend fun sincronizar(registros: List<RegistroEntity>): Result<Unit>
 ```
 
-`FakeLemacApi` implementa ese contrato: espera 700 ms con `delay(700)` y devuelve `Result.success(Unit)`. No envia nada por la red, no usa Retrofit ni OkHttp y no necesita el permiso `INTERNET`.
+`FakeLemacApi` implementa ese contrato: espera 700 ms con `delay(700)` y devuelve `Result.success(Unit)`. No envia nada por la red, no usa Retrofit ni OkHttp y no necesita el permiso `INTERNET` (antes de IT3). Desde IT3 el módulo de gestión documental sí usa Retrofit/OkHttp contra `GET /documentos`; ver [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md).
 
 Para la defensa conviene decir: "La interfaz permite sustituir la simulacion por una implementacion real sin cambiar el repositorio ni el ViewModel". Es un ejemplo de inversion de dependencias aplicada de forma sencilla.
 
@@ -1140,13 +1140,15 @@ Detalles:
 - La app **no declara `CAMERA`**. La foto de perfil se captura delegando en la app de camara del sistema mediante un Intent `ACTION_IMAGE_CAPTURE` con `EXTRA_OUTPUT` hacia un archivo temporal propio, compartido con un `FileProvider` (`com.example.limpio_moviles.fileprovider`, `exported="false"`, `grantUriPermissions="true"`): la app externa accede al hardware con sus propios permisos y esta app solo recibe el resultado. Si la camara no esta disponible o la captura se cancela, se muestra "No se capturo la foto" y la app sigue funcionando.
 - El manifiesto declara `android.hardware.camera` con `required="false"`, por lo que la app puede instalarse en dispositivos sin camara.
 - No se pide permiso de almacenamiento: la foto se guarda en `filesDir`.
-- No se declara `INTERNET`; la sincronizacion es local y simulada.
+- No se declara `INTERNET` para el módulo de bienestar; su sincronizacion es local y simulada (antes de IT3). Desde IT3 el manifiesto sí declara `INTERNET`, pero solo para la API REST simulada de documentos del módulo de gestión documental (cleartext limitado a `10.0.2.2`, `localhost` y `127.0.0.1`).
 - No se usan alarmas exactas ni `SCHEDULE_EXACT_ALARM`; el recordatorio usa WorkManager.
 - Como `minSdk` es 33, todas las versiones soportadas son Android 13 o superior; los chequeos de version en `NotificacionHelper` son defensivos, pero no cambian el comportamiento en la practica.
 
 ## 10. Pruebas existentes
 
-La app unificada tiene **76 pruebas unitarias** con JUnit 4: 33 del modulo de bienestar, en `app/src/test/java/com/example/limpio_moviles/` (9 del validador, 4 del resumen, 8 del generador CSV, 5 del repositorio con DAO falsificado y 7 del ViewModel en JVM), y 43 del modulo de gestion documental, en `app/src/test/java/com/example/gestiondocumental/` (4 de validadores, 7 de permisos, 9 de carga de permisos, 6 del flujo de modificacion, 9 de reportes y 8 de tipos MIME). Esta seccion detalla las del modulo de bienestar; el desglose completo de gestion esta en el README y en [INTEGRACION.md](INTEGRACION.md).
+> Nota IT3: desde la actividad IT3 existe una integracion de red real contra `GET /documentos` con Retrofit, el manifiesto declara `INTERNET` y la suite subio a **90 pruebas** (33 de bienestar + 57 de gestion documental). El detalle completo esta en [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md).
+
+La app unificada tiene **90 pruebas unitarias** con JUnit 4: 33 del modulo de bienestar, en `app/src/test/java/com/example/limpio_moviles/` (9 del validador, 4 del resumen, 8 del generador CSV, 5 del repositorio con DAO falsificado y 7 del ViewModel en JVM), y 57 del modulo de gestion documental, en `app/src/test/java/com/example/gestiondocumental/` (4 de validadores, 7 de permisos, 9 de carga de permisos, 6 del flujo de modificacion, 9 de reportes, 8 de tipos MIME, 6 del contrato JSON de IT3, 4 del repositorio remoto con `MockWebServer` y 4 del ViewModel remoto). Esta seccion detalla las del modulo de bienestar; el desglose completo de gestion esta en el README, en [INTEGRACION.md](INTEGRACION.md) y en [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md).
 
 ### `RegistroValidatorTest` (9 pruebas)
 
@@ -1217,7 +1219,7 @@ Comando:
 ./gradlew :app:testDebugUnitTest
 ```
 
-Verificacion del 12 de noviembre de 2026, con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, `testDebugUnitTest` con 76/76 aprobadas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes) en `app/build/outputs/apk/debug/app-debug.apk`. Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`.
+Verificacion previa (12 de noviembre de 2026, antes de IT3), con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, `testDebugUnitTest` con 76/76 aprobadas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes) en `app/build/outputs/apk/debug/app-debug.apk`. Verificacion de IT3 (15 de noviembre de 2026): `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` con `BUILD SUCCESSFUL` y **90/90 aprobadas** (33 de bienestar + 57 de gestion documental). Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`; desde IT3 sí declara `INTERNET` para la API simulada.
 
 ## 11. Limitaciones reales del MVP
 
@@ -1261,7 +1263,7 @@ Porque el objetivo del MVP es demostrar el flujo de sincronizacion sin depender 
 
 - Se usa alias, no nombre real.
 - Los datos quedan en el dispositivo.
-- No hay permiso `INTERNET`.
+- No habia permiso `INTERNET` (antes de IT3). Desde IT3 sí existe, pero solo para la API REST simulada de documentos y con cleartext restringido al equipo local.
 - La foto se guarda en almacenamiento interno.
 - Las notificaciones no muestran datos del registro.
 - La app advierte que es un MVP con datos ficticios y que no debe usarse con datos reales de salud.
@@ -1345,4 +1347,4 @@ Si hubiera que resumir el proyecto en una frase por capa:
 - **Navegacion:** una Activity, un `NavHost`, rutas con ambito e id.
 - **Recordatorios:** WorkManager periodico, worker y notificacion generica.
 - **Privacidad:** datos locales, sin red real, con advertencias y limitaciones documentadas.
-- **Pruebas:** 76 pruebas unitarias en la app unificada (33 de bienestar: validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM; 43 de gestion documental).
+- **Pruebas:** 90 pruebas unitarias en la app unificada (33 de bienestar: validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM; 57 de gestion documental, incluidas las 14 de la integracion IT3).

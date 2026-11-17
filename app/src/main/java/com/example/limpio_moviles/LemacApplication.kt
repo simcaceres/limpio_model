@@ -3,8 +3,10 @@ package com.example.limpio_moviles
 import android.app.Application
 import com.example.gestiondocumental.data.local.GestionDatabase
 import com.example.gestiondocumental.data.local.Sembrador
+import com.example.gestiondocumental.data.remote.RedDocumentos
 import com.example.gestiondocumental.data.repository.AuditoriaRepository
 import com.example.gestiondocumental.data.repository.DocumentoRepository
+import com.example.gestiondocumental.data.repository.DocumentosRemotosRepository
 import com.example.gestiondocumental.data.repository.SesionRepository
 import com.example.gestiondocumental.data.repository.UsuarioRepository
 import com.example.limpio_moviles.data.local.LemacDatabase
@@ -56,6 +58,10 @@ class LemacApplication : Application() {
 
     val auditoriaRepository: AuditoriaRepository by lazy {
         AuditoriaRepository(gestionDatabase.auditoriaDao())
+    }
+
+    val documentosRemotosRepository: DocumentosRemotosRepository by lazy {
+        DocumentosRemotosRepository(RedDocumentos.api)
     }
 
     override fun onCreate() {

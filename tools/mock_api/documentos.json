@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "usuarioId": 1,
+    "propietario": "Ana Pérez",
+    "categoria": "CONTRATO",
+    "titulo": "Contrato de trabajo 2026",
+    "estado": "VIGENTE",
+    "versionActual": 1,
+    "fechaVencimiento": "2026-12-31",
+    "dependencia": "Atención Primaria",
+    "archivoNombre": "contrato_ana_perez_2026.pdf"
+  },
+  {
+    "id": 2,
+    "usuarioId": 1,
+    "propietario": "Ana Pérez",
+    "categoria": "LICENCIA_MEDICA",
+    "titulo": "Licencia médica marzo",
+    "estado": "VIGENTE",
+    "versionActual": 1,
+    "fechaVencimiento": "2027-03-20",
+    "dependencia": "Atención Primaria",
+    "archivoNombre": null
+  },
+  {
+    "id": 3,
+    "usuarioId": 2,
+    "propietario": "Bruno Díaz",
+    "categoria": "CERTIFICADO",
+    "titulo": "Certificado de antigüedad",
+    "estado": "APROBADO",
+    "versionActual": 2,
+    "fechaVencimiento": null,
+    "dependencia": "Atención Primaria",
+    "archivoNombre": "certificado_antiguedad_bruno_diaz.pdf"
+  },
+  {
+    "id": 4,
+    "usuarioId": 3,
+    "propietario": "Carla Soto",
+    "categoria": "PERMISO",
+    "titulo": "Solicitud de permiso administrativo",
+    "estado": "PENDIENTE_REVISION",
+    "versionActual": 1,
+    "fechaVencimiento": null,
+    "dependencia": "Recursos Humanos",
+    "archivoNombre": null
+  },
+  {
+    "id": 5,
+    "usuarioId": 1,
+    "propietario": "Ana Pérez",
+    "categoria": "ANTECEDENTE_SENSIBLE",
+    "titulo": "Antecedente personal reservado",
+    "estado": "VIGENTE",
+    "versionActual": 1,
+    "fechaVencimiento": null,
+    "dependencia": "Atención Primaria",
+    "archivoNombre": null
+  },
+  {
+    "id": 6,
+    "usuarioId": 7,
+    "propietario": "Gabriela Paz",
+    "categoria": "REPORTE",
+    "titulo": "Reporte de cumplimiento documental Q1",
+    "estado": "VIGENTE",
+    "versionActual": 1,
+    "fechaVencimiento": null,
+    "dependencia": "Hospital Base",
+    "archivoNombre": "reporte_cumplimiento_q1.pdf"
+  }
+]
