@@ -1,6 +1,7 @@
 package com.example.limpio_moviles
 
 import android.app.Application
+import android.util.Log
 import com.example.gestiondocumental.data.local.GestionDatabase
 import com.example.gestiondocumental.data.local.Sembrador
 import com.example.gestiondocumental.data.remote.RedDocumentos
@@ -14,6 +15,8 @@ import com.example.limpio_moviles.data.remote.FakeLemacApi
 import com.example.limpio_moviles.data.repository.PerfilRepository
 import com.example.limpio_moviles.data.repository.PerfilRepositorySharedPreferences
 import com.example.limpio_moviles.data.repository.RegistroRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,10 +30,24 @@ import kotlinx.coroutines.launch
  * crea los canales de notificación de ambos módulos y siembra los
  * datos de demostración de gestión documental la primera vez que se
  * abre la app.
+ *
+ * La siembra se ejecuta en segundo plano y es tolerante a fallos: un error
+ * nunca debe cerrar la aplicación. El último fallo queda disponible en
+ * [ultimoErrorSiembra] para diagnóstico.
  */
 class LemacApplication : Application() {
 
-    private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    /** Último error de siembra, disponible para diagnóstico. */
+    @Volatile
+    var ultimoErrorSiembra: Throwable? = null
+        private set
+
+    private val manejadorErrores = CoroutineExceptionHandler { _, error ->
+        ultimoErrorSiembra = error
+        Log.e(TAG, "Error no controlado durante la siembra de datos", error)
+    }
+
+    private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO + manejadorErrores)
 
     // Módulo Bienestar — Lemac DataLab
     val database: LemacDatabase by lazy { LemacDatabase.getDatabase(this) }
@@ -68,6 +85,17 @@ class LemacApplication : Application() {
         super.onCreate()
         com.example.limpio_moviles.util.NotificacionHelper.crearCanal(this)
         com.example.gestiondocumental.util.NotificacionHelper.crearCanal(this)
-        alcance.launch { Sembrador.sembrarSiVacio(gestionDatabase) }
+        alcance.launch {
+            runCatching { Sembrador.sembrarSiVacio(gestionDatabase) }
+                .onFailure { error ->
+                    if (error is CancellationException) throw error
+                    ultimoErrorSiembra = error
+                    Log.e(TAG, "No se pudo completar la siembra de datos de demostración", error)
+                }
+        }
+    }
+
+    private companion object {
+        private const val TAG = "LemacApplication"
     }
 }

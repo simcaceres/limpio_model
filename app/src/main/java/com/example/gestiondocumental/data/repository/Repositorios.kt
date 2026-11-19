@@ -24,6 +24,7 @@ import com.example.gestiondocumental.model.Usuario
 import com.example.gestiondocumental.model.Validadores
 import com.example.gestiondocumental.model.VersionDocumento
 import com.example.gestiondocumental.util.ahora
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,7 +48,15 @@ class SesionRepository(
 
     suspend fun iniciarSesion(correo: String, clave: String): Result<Usuario> {
         val correoNormalizado = correo.trim().lowercase()
-        val entidad = usuarioDao.buscarPorCorreo(correoNormalizado)
+        val entidad = try {
+            usuarioDao.buscarPorCorreo(correoNormalizado)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return Result.failure(
+                IllegalStateException("No se pudo acceder a los datos locales. Intenta nuevamente.")
+            )
+        }
         if (entidad == null) {
             registrarAuditoria(
                 usuario = correoNormalizado,
@@ -79,7 +88,6 @@ class SesionRepository(
             return Result.failure(IllegalArgumentException("Clave incorrecta."))
         }
         val usuario = entidad.aModelo()
-        _actual.value = usuario
         registrarAuditoria(
             usuario = usuario.nombre,
             entidad = "Sesion",
@@ -87,23 +95,32 @@ class SesionRepository(
             detalle = "Inicio de sesión como ${usuario.rol.etiqueta}",
             resultado = "OK"
         )
+        _actual.value = usuario
         return Result.success(usuario)
     }
 
     /** Cierra la sesión actual dejando registro en la auditoría antes de limpiarla. */
     suspend fun cerrarSesion() {
-        _actual.value?.let { usuario ->
-            registrarAuditoria(
-                usuario = usuario.nombre,
-                entidad = "Sesion",
-                accion = "LOGOUT",
-                detalle = "Cierre de sesión",
-                resultado = "OK"
-            )
+        try {
+            _actual.value?.let { usuario ->
+                registrarAuditoria(
+                    usuario = usuario.nombre,
+                    entidad = "Sesion",
+                    accion = "LOGOUT",
+                    detalle = "Cierre de sesión",
+                    resultado = "OK"
+                )
+            }
+        } finally {
+            // La sesión se limpia incluso si la auditoría falla.
+            _actual.value = null
         }
-        _actual.value = null
     }
 
+    /**
+     * La auditoría es best-effort: un fallo al registrarla nunca debe impedir
+     * el inicio/cierre de sesión. El error se descarta intencionalmente.
+     */
     private suspend fun registrarAuditoria(
         usuario: String,
         entidad: String,
@@ -111,16 +128,22 @@ class SesionRepository(
         detalle: String,
         resultado: String
     ) {
-        auditoriaDao.insertar(
-            AuditoriaEntity(
-                usuario = usuario,
-                fechaHora = ahora(),
-                entidad = entidad,
-                accion = accion,
-                detalle = detalle,
-                resultado = resultado
+        try {
+            auditoriaDao.insertar(
+                AuditoriaEntity(
+                    usuario = usuario,
+                    fechaHora = ahora(),
+                    entidad = entidad,
+                    accion = accion,
+                    detalle = detalle,
+                    resultado = resultado
+                )
             )
-        )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // best-effort: se descarta
+        }
     }
 }
 

@@ -42,6 +42,9 @@ interface DocumentoDao {
     @Query("SELECT * FROM documentos WHERE id = :id LIMIT 1")
     suspend fun porId(id: Long): DocumentoEntity?
 
+    @Query("SELECT * FROM documentos WHERE titulo = :titulo LIMIT 1")
+    suspend fun porTitulo(titulo: String): DocumentoEntity?
+
     @Insert
     suspend fun insertar(documento: DocumentoEntity): Long
 
@@ -75,6 +78,9 @@ interface SolicitudDao {
     @Query("SELECT * FROM solicitudes WHERE id = :id LIMIT 1")
     suspend fun porId(id: Long): SolicitudEntity?
 
+    @Query("SELECT COUNT(*) FROM solicitudes WHERE documentoTitulo = :titulo AND solicitante = :solicitante")
+    suspend fun contarPorTituloYSolicitante(titulo: String, solicitante: String): Int
+
     @Insert
     suspend fun insertar(solicitud: SolicitudEntity): Long
 
@@ -98,6 +104,9 @@ interface AuditoriaDao {
 interface DependenciaDao {
     @Query("SELECT * FROM dependencias ORDER BY nombre")
     fun observarTodas(): Flow<List<DependenciaEntity>>
+
+    @Query("SELECT COUNT(*) FROM dependencias WHERE id = :id")
+    suspend fun contarPorId(id: Long): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(dependencia: DependenciaEntity)

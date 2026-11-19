@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestiondocumental.data.repository.SesionRepository
 import com.example.gestiondocumental.model.Usuario
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,9 +28,16 @@ class SesionViewModel(private val sesion: SesionRepository) : ViewModel() {
         viewModelScope.launch {
             _cargando.value = true
             _error.value = null
-            sesion.iniciarSesion(correo, clave)
-                .onFailure { _error.value = it.message ?: "No se pudo iniciar sesión." }
-            _cargando.value = false
+            try {
+                sesion.iniciarSesion(correo, clave)
+                    .onFailure { _error.value = it.message ?: "No se pudo iniciar sesión." }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _error.value = "No se pudo iniciar sesión."
+            } finally {
+                _cargando.value = false
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.example.gestiondocumental.data.local
 
+import androidx.room.withTransaction
 import com.example.gestiondocumental.model.CategoriaDocumento
 import com.example.gestiondocumental.model.EstadoDocumento
 import com.example.gestiondocumental.model.EstadoSolicitud
@@ -9,18 +10,51 @@ import com.example.gestiondocumental.util.ahora
 
 /**
  * Datos de demostración para que la app sea navegable sin backend.
- * Se cargan sólo la primera vez (si la tabla de usuarios está vacía).
+ *
+ * La siembra es transaccional y convergente: si falla a la mitad, Room revierte
+ * todos los cambios y el siguiente arranque vuelve a intentarlo. Cada fila se
+ * inserta sólo si no existe (por id o por clave natural), de modo que también
+ * repara siembras parciales heredadas sin duplicar datos ni invalidar Flows
+ * cuando ya está todo completo.
  */
 object Sembrador {
 
+    private const val TITULO_CERTIFICADO = "Certificado de antigüedad"
+    private const val TITULO_CONTRATO = "Contrato de trabajo 2026"
+    private const val SOLICITANTE_DEMO = "Ana Pérez"
+
     suspend fun sembrarSiVacio(db: GestionDatabase) {
-        if (db.usuarioDao().contar() > 0) return
+        db.withTransaction {
+            // La auditoría SEED representa la carga inicial: sólo debe crearse
+            // si la tabla de documentos estaba vacía antes de esta pasada.
+            val habiaDocumentos = db.documentoDao().contar() > 0
 
-        db.dependenciaDao().insertar(DependenciaEntity(1, "Dirección de Salud"))
-        db.dependenciaDao().insertar(DependenciaEntity(2, "Recursos Humanos"))
-        db.dependenciaDao().insertar(DependenciaEntity(3, "Atención Primaria"))
-        db.dependenciaDao().insertar(DependenciaEntity(4, "Hospital Base"))
+            sembrarDependencias(db)
+            sembrarUsuarios(db)
+            val idPorTitulo = sembrarDocumentos(db)
+            sembrarVersiones(db, idPorTitulo)
+            sembrarSolicitud(db, idPorTitulo)
+            if (!habiaDocumentos) sembrarAuditoriaSeed(db)
+        }
+    }
 
+    /** Dependencias base: se insertan sólo si su id no existe. */
+    private suspend fun sembrarDependencias(db: GestionDatabase) {
+        val dependencias = listOf(
+            DependenciaEntity(1, "Dirección de Salud"),
+            DependenciaEntity(2, "Recursos Humanos"),
+            DependenciaEntity(3, "Atención Primaria"),
+            DependenciaEntity(4, "Hospital Base")
+        )
+        dependencias.forEach { dependencia ->
+            if (db.dependenciaDao().contarPorId(dependencia.id) == 0) {
+                db.dependenciaDao().insertar(dependencia)
+            }
+        }
+    }
+
+    /** Usuarios demo: completa los ids faltantes sin duplicar los existentes. */
+    private suspend fun sembrarUsuarios(db: GestionDatabase) {
         val usuarios = listOf(
             UsuarioEntity(1, "11111111-1", "Ana Pérez", "ana.perez@salud.cl", Rol.FUNCIONARIO.name, "Atención Primaria", "INDEFINIDO", true, "1234"),
             UsuarioEntity(2, "22222222-2", "Bruno Díaz", "bruno.diaz@salud.cl", Rol.JEFATURA.name, "Atención Primaria", "INDEFINIDO", true, "1234"),
@@ -30,12 +64,22 @@ object Sembrador {
             UsuarioEntity(6, "66666666-6", "Felipe Vega", "felipe.vega@salud.cl", Rol.TI_CIBERSEGURIDAD.name, "Dirección de Salud", "INDEFINIDO", true, "1234"),
             UsuarioEntity(7, "77777777-7", "Gabriela Paz", "gabriela.paz@salud.cl", Rol.SUPERVISOR.name, "Hospital Base", "INDEFINIDO", true, "1234")
         )
-        usuarios.forEach { db.usuarioDao().insertar(it) }
+        usuarios.forEach { usuario ->
+            if (db.usuarioDao().porId(usuario.id) == null) {
+                db.usuarioDao().insertar(usuario)
+            }
+        }
+    }
 
+    /**
+     * Documentos demo: se buscan por título (clave natural estable) y se usa el
+     * id real del documento, ya sea existente o recién insertado.
+     */
+    private suspend fun sembrarDocumentos(db: GestionDatabase): Map<String, Long> {
         val documentos = listOf(
             DocumentoEntity(
                 usuarioId = 1, propietario = "Ana Pérez",
-                categoria = CategoriaDocumento.CONTRATO.name, titulo = "Contrato de trabajo 2026",
+                categoria = CategoriaDocumento.CONTRATO.name, titulo = TITULO_CONTRATO,
                 estado = EstadoDocumento.VIGENTE.name, versionActual = 1,
                 fechaVencimiento = "2026-12-31", dependencia = "Atención Primaria"
             ),
@@ -47,7 +91,7 @@ object Sembrador {
             ),
             DocumentoEntity(
                 usuarioId = 2, propietario = "Bruno Díaz",
-                categoria = CategoriaDocumento.CERTIFICADO.name, titulo = "Certificado de antigüedad",
+                categoria = CategoriaDocumento.CERTIFICADO.name, titulo = TITULO_CERTIFICADO,
                 estado = EstadoDocumento.APROBADO.name, versionActual = 2,
                 fechaVencimiento = null, dependencia = "Atención Primaria"
             ),
@@ -70,36 +114,57 @@ object Sembrador {
                 fechaVencimiento = null, dependencia = "Hospital Base"
             )
         )
-        documentos.forEach { db.documentoDao().insertar(it) }
 
-        for (id in 1L..6L) {
-            db.versionDao().insertar(
-                VersionEntity(
-                    documentoId = id,
-                    numeroVersion = 1,
-                    autor = "Sistema",
-                    fecha = ahora(),
-                    comentario = "Versión inicial del documento"
-                )
-            )
+        return documentos.associate { documento ->
+            val existente = db.documentoDao().porTitulo(documento.titulo)
+            val id = existente?.id ?: db.documentoDao().insertar(documento)
+            documento.titulo to id
         }
+    }
 
-        // El documento 3 nace con versionActual = 2: se agrega su segunda versión.
-        db.versionDao().insertar(
-            VersionEntity(
-                documentoId = 3,
-                numeroVersion = 2,
-                autor = "Sistema",
-                fecha = ahora(),
-                comentario = "Actualización de certificado"
-            )
+    /** Versiones demo: se insertan sólo si ese número de versión no existe. */
+    private suspend fun sembrarVersiones(db: GestionDatabase, idPorTitulo: Map<String, Long>) {
+        val versiones = listOf(
+            Triple(TITULO_CONTRATO, 1, "Versión inicial del documento"),
+            Triple("Licencia médica marzo", 1, "Versión inicial del documento"),
+            Triple(TITULO_CERTIFICADO, 1, "Versión inicial del documento"),
+            Triple("Solicitud de permiso administrativo", 1, "Versión inicial del documento"),
+            Triple("Antecedente personal reservado", 1, "Versión inicial del documento"),
+            Triple("Reporte de cumplimiento documental Q1", 1, "Versión inicial del documento"),
+            // El certificado nace con versionActual = 2: se agrega su segunda versión.
+            Triple(TITULO_CERTIFICADO, 2, "Actualización de certificado")
         )
+
+        versiones.forEach { (titulo, numeroVersion, comentario) ->
+            val documentoId = idPorTitulo.getValue(titulo)
+            val yaExiste = db.versionDao()
+                .listarPorDocumento(documentoId)
+                .any { it.numeroVersion == numeroVersion }
+            if (!yaExiste) {
+                db.versionDao().insertar(
+                    VersionEntity(
+                        documentoId = documentoId,
+                        numeroVersion = numeroVersion,
+                        autor = "Sistema",
+                        fecha = ahora(),
+                        comentario = comentario
+                    )
+                )
+            }
+        }
+    }
+
+    /** Solicitud demo: se inserta sólo si no existe la misma combinación título/solicitante. */
+    private suspend fun sembrarSolicitud(db: GestionDatabase, idPorTitulo: Map<String, Long>) {
+        val yaExiste = db.solicitudDao()
+            .contarPorTituloYSolicitante(TITULO_CONTRATO, SOLICITANTE_DEMO) > 0
+        if (yaExiste) return
 
         db.solicitudDao().insertar(
             SolicitudEntity(
-                documentoId = 1,
-                documentoTitulo = "Contrato de trabajo 2026",
-                solicitante = "Ana Pérez",
+                documentoId = idPorTitulo.getValue(TITULO_CONTRATO),
+                documentoTitulo = TITULO_CONTRATO,
+                solicitante = SOLICITANTE_DEMO,
                 tipoCambio = TipoCambio.CON_REVISION.name,
                 datosPropuestos = "Actualizar dirección a Av. Siempre Viva 742",
                 estado = EstadoSolicitud.PENDIENTE.name,
@@ -108,7 +173,9 @@ object Sembrador {
                 fecha = ahora()
             )
         )
+    }
 
+    private suspend fun sembrarAuditoriaSeed(db: GestionDatabase) {
         db.auditoriaDao().insertar(
             AuditoriaEntity(
                 usuario = "Sistema",
