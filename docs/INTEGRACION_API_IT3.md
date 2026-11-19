@@ -213,10 +213,11 @@ adb reverse tcp:8000 tcp:8000
 
 ## 9. Pruebas
 
-Las pruebas nuevas son **JVM** (no instrumentadas) y las de red usan **`MockWebServer`** para no depender de la API real. Son 14 pruebas nuevas:
+Las pruebas nuevas son **JVM** (no instrumentadas) y las de red usan **`MockWebServer`** para no depender de la API real. Son **19 pruebas JVM** respecto al estado pre-IT3: 14 de la integración IT3 (6 de DTO, 4 de repositorio con `MockWebServer` y 4 de ViewModel) y 5 de regresión de `BASE_URL` (`ApiConfigTest`), todas incluidas en el commit `d648c7e`:
 
 | Archivo | Cantidad | Qué cubre |
 |---|---|---|
+| `ApiConfigTest.kt` | 5 | Regresión de la `BASE_URL`: valor exacto `http://10.0.2.2:8000/`, terminación en `/`, endpoint `documentos`, composición `http://10.0.2.2:8000/documentos` y rechazo de `127.0.0.1`/`localhost`. Añadidas en `d648c7e` junto con la corrección de la URL. |
 | `DocumentoDtoTest.kt` | 6 | Deserialización y mapeo de todos los campos; `archivoNombre` ausente → `null`; categoría desconocida, estado desconocido, `id` cero y título vacío lanzan `IllegalArgumentException`. |
 | `DocumentosRemotosRepositoryTest.kt` | 4 | Éxito ordenado por `id` y ruta `/documentos` correcta; `500` → `HttpException`; JSON malformado → `failure`; categoría inválida → `failure` con mensaje "Categoria desconocida". |
 | `DocumentosRemotosViewModelTest.kt` | 4 | Estado inicial `Cargando` y luego `Datos`; `IOException` → `Error` con mensaje de conexión; reintentar tras error vuelve a llamar la API y pasa a `Datos`; `HttpException` 503 → `Error` con el código. |
@@ -227,7 +228,9 @@ Comando:
 ./gradlew :app:testDebugUnitTest --console=plain --no-daemon
 ```
 
-Suite total tras IT3: **90 pruebas, 0 fallos** (antes 76; +14 nuevas). Bienestar 33 y Gestión Documental 57 (43 previas + 14 nuevas).
+**Recuento corregido:** la suite al cierre de IT3 (`d648c7e`) tenia **95 pruebas** (antes 76; +14 de IT3 y +5 de `ApiConfigTest`). Bienestar 33 y Gestión Documental 62 (43 previas + 14 de IT3 + 5 de regresión de `BASE_URL`). El informe original de IT3 cito 90/90 porque su inventario omitia `ApiConfigTest`, que se havia anadido en el mismo commit `d648c7e` que corrigio la URL (`git grep '@Test' d648c7e -- 'app/src/test/**/*.kt'` da 95). La suite JVM actual es de **105 pruebas, 0 fallos** (33 de bienestar + 72 de gestión documental) tras añadir las 10 de `SesionRepositoryTest` en el cierre de hardening (`8832145`, 19 de noviembre de 2026). Además hay 9 pruebas instrumentadas compiladas (8 de Room + 1 smoke Compose), no ejecutadas por falta de `adb`/dispositivo.
+
+> Configuración relacionada: `app/build.gradle.kts` declara `testOptions { unitTests.isReturnDefaultValues = true }` para que los tests JVM con `kotlinx-coroutines-test` corran sin `Looper` de Android; `androidx.test:core` y `androidx.test:runner` están alineados a `1.6.1` en `gradle/libs.versions.toml` (ADR `ab094bb8`).
 
 ## 10. Limitaciones y siguientes pasos
 
@@ -235,6 +238,7 @@ Suite total tras IT3: **90 pruebas, 0 fallos** (antes 76; +14 nuevas). Bienestar
 2. **Gson no respeta la nulabilidad estricta de Kotlin.** Un `null` en un campo marcado como no nulo (`String`, `Long`) puede colarse sin error de compilación; conviene `@Nullable`/validaciones o un `TypeAdapter`.
 3. **Aún no hay POST ni CRUD remoto.** La integración es de solo lectura (`GET`). Crear, editar o eliminar sigue siendo local (Room).
 4. **Pendiente regenerar HTML/PDF.** Este cambio documental no regeneró `docs/informe_arquitectura.html` ni `docs/INFORME_ARQUITECTURA.pdf` (ver nota al final de `docs/INTEGRACION.md`).
+5. **Pruebas instrumentadas sin ejecutar.** El cierre de hardening añadió 8 pruebas de siembra Room y 1 smoke Compose que compilan (`assembleDebugAndroidTest`), pero el entorno no tiene `adb`/dispositivo y no se ejecutaron. Tampoco hay tests instrumentados que exercise la pantalla "Documentos en línea" contra el mock.
 
 ## 11. Trazabilidad Lemoria
 
@@ -258,6 +262,25 @@ Tareas (9):
 | 7 | `983284b8-9c3e-4ff8-a1c0-d8fd47bf4468` |
 | 8 | `52f333f2-958d-4c5e-8689-3bef9ae3721a` |
 | 9 | `96f813b5-c430-4872-a2e9-fa8fe6869783` |
+
+### 11.1 Cierre de hardening (2026-11-19)
+
+El frente **a** (corrección de `BASE_URL` a `http://10.0.2.2:8000/` y su test de regresión `ApiConfigTest`) y el frente **a2** (integración IT3 con Retrofit/Gson/StateFlow) se cerraron en `d648c7e`. Los frentes **b**, **c** y **d** se cerraron en el commit `8832145`, con revisión **APROBADO CON OBSERVACIONES** (observaciones resueltas: M1, M2, m10 y re-lanzamiento de cancelación en el seed; versiones AndroidX test alineadas a 1.6.1).
+
+| Dato | Valor |
+|---|---|
+| Proyecto | `136316a2-36dd-43b5-aa80-05b9e97d3f22` |
+| PRD de hardening | `045a2de8-e11f-4286-930f-ed582728e411` |
+| Conversación | `9b337131-5f44-49d8-b4f1-8edad505507b` |
+| Task de documentación | `f8dfcced-828f-4140-8a27-3e350e295a43` |
+| Commit | `8832145` (pendiente de push: faltan credenciales HTTPS) |
+| ADR Fix M1 | `37d7d92c-c68b-46cd-971e-5583af38e655` |
+| ADR Fix M2 | `e32848b6-0f4c-42dd-8ac9-0eda3c3f558c` |
+| ADR Fix m10 | `b0bf8edc-6f6a-4a78-91d7-241a1359b318` |
+| ADR Tests JVM `isReturnDefaultValues` | `ab094bb8-1cae-453a-8cd3-260fe8cfe43e` |
+| ADRs de soporte | `42d32a6e-76c0-43c6-9a38-0f3488ac2176`, `4e2dd090-56e9-47fe-9f15-a40364cca5cb`, `30e5e778-2039-4732-9b0f-f5c5511d6e53`, `abaccc4f-2dc3-446d-98dc-cbbbe002979b` |
+
+El detalle del cierre está en [NOTAS_TECNICAS.md](NOTAS_TECNICAS.md) y en la sección [Hardening de gestion documental y arranque](../README.md#hardening-de-gestion-documental-y-arranque) del README.
 
 ## 12. Registro de comandos
 
@@ -304,7 +327,7 @@ Todos los comandos usados para investigar, implementar y verificar IT3, agrupado
 | `./gradlew :app:testDebugUnitTest --console=plain --no-daemon` | Ejecutar la suite unitaria de debug. |
 | `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` | Compilar y probar en un solo paso; terminó con `BUILD SUCCESSFUL`. |
 | `ls app/build/test-results/testDebugUnitTest/*.xml` | Listar los reportes XML por clase de test. |
-| `grep -c "<testcase" app/build/test-results/testDebugUnitTest/*.xml` | Contar pruebas por archivo para verificar el total (90). |
+| `grep -c "<testcase" app/build/test-results/testDebugUnitTest/*.xml` | Contar pruebas por archivo para verificar el total (95 al cierre de IT3; 105 tras el hardening). |
 
 ### 12.4 API simulada
 
@@ -323,7 +346,7 @@ Todos los comandos usados para investigar, implementar y verificar IT3, agrupado
 | `git diff` | Revisar el detalle de los archivos modificados. |
 | `git diff --stat` | Ver el resumen de líneas cambiadas por archivo. |
 | `git add ...` | Preparar los archivos que entrarían al commit. |
-| `git commit -m "..."` | **PENDIENTE de aprobación: no ejecutado.** El mensaje propuesto describe la integración IT3; el usuario decide cuándo commitear. |
+| `git commit -m "..."` | IT3 quedó registrado en `d648c7e` (`feat(IT3, d25a83c7): integrar GET /documentos con Retrofit y corregir BASE_URL`). El cierre de hardening se registró en `8832145`; **pendiente de push** por falta de credenciales HTTPS. |
 
 ### 12.6 Adb (dispositivo físico)
 

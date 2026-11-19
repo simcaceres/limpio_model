@@ -17,7 +17,7 @@ Si se olvida todo lo demas, recordar estas cinco ideas:
 2. La app es un **portal unificado** con dos modulos (bienestar y gestion documental), cada uno con su base Room propia; la arquitectura es UI Compose, un ViewModel compartido, repositorios y fuentes de datos locales.
 3. Room guarda los registros y emite `Flow`; el ViewModel lo convierte en `StateFlow` y la UI lo recolecta con `collectAsStateWithLifecycle`.
 4. La sincronizacion de bienestar es simulada con `FakeLemacApi` y no hay backend real. Antes de IT3 tampoco habia permiso `INTERNET`; desde IT3 el modulo de gestion documental consume `GET /documentos` de una API REST simulada local (ver [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md)). La salida real de datos de bienestar es la **exportacion CSV local**, con el selector de documentos del sistema (SAF).
-5. Hay 90 pruebas unitarias (33 de bienestar y 57 de gestion documental); no hay pruebas de UI ni instrumentadas.
+5. Hay 105 pruebas unitarias JVM (33 de bienestar y 72 de gestion documental) y 9 instrumentadas (8 de siembra Room y 1 smoke Compose), compiladas pero no ejecutadas aqui por falta de `adb`/dispositivo.
 
 ## Guion por bloques
 
@@ -57,7 +57,7 @@ Puntos:
 - El portal enruta sin mezclar dominios: bienestar entra a `LemacApp()` y gestion documental a `GestionTheme { GestionApp() }`, cada uno con su grafo interno.
 - `LemacApp()` crea un unico `RegistroViewModel` con una `Factory` y arma el `NavHost` de bienestar.
 - Capas: pantallas Compose, ViewModel, repositorios, Room / `SharedPreferences` / `FakeLemacApi`.
-- `LemacApplication` actua como contenedor **dual**: bases y repositorios de los dos modulos, dos canales de notificacion y siembra de los datos demo de gestion en `Dispatchers.IO`.
+- `LemacApplication` actua como contenedor **dual**: bases y repositorios de los dos modulos, dos canales de notificacion y siembra de los datos demo de gestion en `Dispatchers.IO`, con `CoroutineExceptionHandler` + `runCatching`: re-lanza cancelaciones, guarda `ultimoErrorSiembra` y un fallo de siembra no cierra la app.
 - Room guarda en la tabla `registros`; el DAO devuelve `Flow`; el ViewModel usa `stateIn` con `WhileSubscribed(5_000)`.
 - La UI recolecta con `collectAsStateWithLifecycle`.
 - El formulario usa `mutableStateOf` porque es estado de presentacion que cambia con cada tecla.
@@ -147,8 +147,9 @@ Puntos:
 
 - La app no tiene backend real, autenticacion en bienestar, cifrado ni migraciones de Room.
 - La sincronizacion solo marca una bandera local.
-- Hay 90 pruebas unitarias: 33 de bienestar (validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM sin Robolectric) y 57 de gestion documental (validadores, permisos, flujo de modificacion, reportes, tipos MIME y las 14 de la integracion IT3).
-- No hay pruebas instrumentadas ni de interfaz.
+- Hay 105 pruebas unitarias JVM: 33 de bienestar (validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM sin Robolectric) y 72 de gestion documental (validadores, permisos, flujo de modificacion, reportes, tipos MIME, las 14 de IT3, las 5 de regresion de `BASE_URL` y las 10 de `SesionRepositoryTest`).
+- Hay 9 pruebas instrumentadas: 8 de siembra Room sobre base real (transaccionalidad, ids reales, reparacion de siembras parciales) y 1 smoke Compose del portal. Compilan, pero no se ejecutaron en este entorno porque no hay `adb`/dispositivo; casi no hay pruebas de interfaz fuera del portal.
+- Hardening (19 de noviembre de 2026): siembra transaccional y convergente, auditoria best-effort con `CancellationException` propagada, sesion consistente ante cancelacion de auditoria y arranque tolerante a fallos. Review aprobado con observaciones resueltas; commit `8832145` aun no pusheado.
 - El ViewModel de bienestar es unico y compartido; para una app mas grande convendria separar por pantalla.
 - `fallbackToDestructiveMigration` es aceptable en el MVP, no en produccion.
 - `allowBackup="true"` se mantiene, pero el backup esta acotado: incluye la base y las preferencias de bienestar, excluye explicitamente la base y los documentos de gestion y la foto de perfil, y no incluye la cache (la plataforma la excluye automaticamente y la lista de `<include>` es una allowlist). Sigue faltando cifrado.
@@ -156,7 +157,7 @@ Puntos:
 
 Cierre sugerido:
 
-> "El proyecto demuestra un flujo completo y verificable: el usuario registra, la validacion protege la calidad del dato, Room lo persiste, el Flow actualiza la interfaz y el resumen agrega la informacion. Los datos solo salen del dispositivo cuando el usuario decide exportarlos: un CSV local, sin nube y sin permisos extra. Las limitaciones estan documentadas a proposito: reconocerlas es parte del diseno. Lo que falta para produccion es backend real, cifrado, migraciones y pruebas de integracion."
+> "El proyecto demuestra un flujo completo y verificable: el usuario registra, la validacion protege la calidad del dato, Room lo persiste, el Flow actualiza la interfaz y el resumen agrega la informacion. Los datos solo salen del dispositivo cuando el usuario decide exportarlos: un CSV local, sin nube y sin permisos extra. Las limitaciones estan documentadas a proposito: reconocerlas es parte del diseno. Lo que falta para produccion es backend real, cifrado, migraciones y ejecutar las pruebas instrumentadas en un dispositivo."
 
 ## Version corta de 10 minutos
 
@@ -382,9 +383,9 @@ Esta seccion detalla como demostrar la exportacion de datos en la disertacion. E
 15. **Honestidad sobre limites.** No hay cifrado, migraciones ni pruebas de UI; decirlo suma criterio.
 16. **Catalogo de versiones.** `gradle/libs.versions.toml` centraliza versiones y evita numeros dispersos.
 17. **KSP.** Room genera codigo en compilacion; KSP es el procesador recomendado para Kotlin.
-18. **Pruebas unitarias.** 90 pruebas rapidas que no necesitan emulador: 33 de bienestar (incluye 7 del ViewModel en JVM) y 57 de gestion documental (incluye las 14 de IT3).
+18. **Pruebas unitarias y de integracion local.** 105 pruebas rapidas que no necesitan emulador: 33 de bienestar (incluye 7 del ViewModel en JVM) y 72 de gestion documental (incluye las 14 de IT3, 5 de `BASE_URL` y 10 de sesion), mas 9 instrumentadas compiladas (8 de Room real y 1 smoke Compose) pendientes de ejecucion en dispositivo.
 19. **Exportacion CSV con SAF.** `CreateDocument("text/csv")` evita permisos de almacenamiento; BOM UTF-8 y CRLF para Excel; escapado RFC 4180 y neutralizacion de formulas; el generador (`RegistroCsvExporter`) es puro y testeable con JUnit.
-20. **Portal unificado sin mezclar dominios.** Un APK, dos paquetes (`com.example.limpio_moviles` y `com.example.gestiondocumental`), dos bases Room; `LemacApplication` como contenedor dual con dos canales de notificacion y siembra de datos demo de gestion en `Dispatchers.IO`.
+20. **Portal unificado sin mezclar dominios.** Un APK, dos paquetes (`com.example.limpio_moviles` y `com.example.gestiondocumental`), dos bases Room; `LemacApplication` como contenedor dual con dos canales de notificacion y siembra de datos demo de gestion en `Dispatchers.IO`. El hardening hizo esa siembra transaccional y convergente (SEED solo si no habia documentos, ids reales para las versiones) y tolerante a fallos en el arranque.
 21. **Semantica de edicion explicita.** Al editar se conserva la `fechaHora` original y se fuerza `sincronizado = false`, de modo que el registro editado vuelve a la cola de sincronizacion simulada; el repositorio usa insert/update explicitos (sin upsert `REPLACE`, no resucita registros borrados) y `cargarDemo` es un `@Transaction` atomico que avisa cuando ya habia datos.
 
 ## Posibles preguntas del profesor y respuestas sugeridas
@@ -514,7 +515,8 @@ La fecha original se conserva. Al editar, `guardar()` relee el registro existent
 ### La noche anterior
 
 - [ ] Ejecutar `./gradlew :app:assembleDebug` y confirmar que compila.
-- [ ] Ejecutar `./gradlew :app:testDebugUnitTest` y confirmar las 90 pruebas.
+- [ ] Ejecutar `./gradlew :app:testDebugUnitTest` y confirmar las 105 pruebas JVM.
+- [ ] Si hay emulador/dispositivo con `adb`, ejecutar `./gradlew :app:connectedDebugAndroidTest` y confirmar las 9 instrumentadas (aqui solo se compilaron con `assembleDebugAndroidTest`).
 - [ ] Abrir el reporte de pruebas y verificar que no hay fallos.
 - [ ] Revisar que el emulador tenga Android 13 (API 33) o superior.
 - [ ] Probar la app de punta a punta una vez, incluido el portal con las dos tarjetas.
@@ -524,7 +526,7 @@ La fecha original se conserva. Al editar, `guardar()` relee el registro existent
 - [ ] Confirmar que `docs/GUIA_ESTUDIO.md` y `docs/DISERTACION.md` estan actualizados.
 - [ ] Verificar que el repositorio local este limpio y hacer el push cuando el repositorio remoto ya exista.
 
-Referencia de la verificacion previa (12 de noviembre de 2026, antes de IT3), con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, 76/76 pruebas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes). Verificacion de IT3 (15 de noviembre de 2026): `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` con `BUILD SUCCESSFUL` y 90/90 pruebas (33 de bienestar + 57 de gestion documental). Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
+Referencia de la verificacion previa (12 de noviembre de 2026, antes de IT3), con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, 76/76 pruebas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes). Verificacion de IT3 (15 de noviembre de 2026): `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` con `BUILD SUCCESSFUL`; el arbol de `d648c7e` tenia 95 pruebas (33 de bienestar + 62 de gestion documental; el informe de IT3 documento 90 por omission de `ApiConfigTest`). **Verificacion del hardening (19 de noviembre de 2026, commit `8832145`): 105/105 pruebas JVM, 0 fallidas (33 de bienestar + 72 de gestion documental) y `assembleDebugAndroidTest` correcto con 9 instrumentadas compiladas, no ejecutadas por falta de `adb`/dispositivo.** Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
 
 ### El dia de la presentacion
 

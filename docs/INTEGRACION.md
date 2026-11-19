@@ -69,7 +69,7 @@ Todo el codigo de gestion documental se copio **dentro del mismo modulo `:app`**
 - `data/local/Entidades.kt`: entidades Room (usuario, dependencia, documento, version, solicitud, auditoria).
 - `data/local/Daos.kt`: DAOs por entidad, con `Flow` para observables.
 - `data/local/Mappers.kt`: conversion entidad <-> modelo de dominio.
-- `data/local/Sembrador.kt`: datos demo (4 dependencias, 7 usuarios, 6 documentos con versiones, 1 solicitud, 1 registro de auditoria) sembrados solo si la tabla de usuarios esta vacia.
+- `data/local/Sembrador.kt`: datos demo (4 dependencias, 7 usuarios, 6 documentos con 7 versiones, 1 solicitud, 1 auditoria SEED). Desde el hardening (19 de noviembre de 2026) la siembra es **transaccional** (`withTransaction`) y **convergente**: inserta solo las filas que faltan (dependencias/usuarios por id, documentos por titulo (clave natural), versiones por numero, solicitud por titulo+solicitante), usa los **ids reales** de los documentos para las versiones y repara siembras parciales sin duplicar. La auditoria `SEED` se inserta solo si no habia documentos antes de la pasada.
 - `data/repository/Repositorios.kt`: `SesionRepository`, `DocumentoRepository`, `UsuarioRepository` y `AuditoriaRepository`.
 
 ### 4.2 Dominio (gestion documental)
@@ -96,7 +96,7 @@ Todo el codigo de gestion documental se copio **dentro del mismo modulo `:app`**
 
 ### 4.5 Application, Activity y contenedor
 
-- `LemacApplication.kt` (**modificado**): contenedor dual. Expone lo existente de bienestar (`database`/`lemac_datalab.db`, `registroRepository`, `perfilRepository`) y lo nuevo de gestion (`gestionDatabase`/`gestion_documental.db`, `sesionRepository`, `documentoRepository`, `usuarioRepository`, `auditoriaRepository`). En `onCreate` crea los **dos canales de notificacion** (bienestar y gestion) y lanza `Sembrador.sembrarSiVacio(gestionDatabase)` en `CoroutineScope(SupervisorJob() + Dispatchers.IO)`.
+- `LemacApplication.kt` (**modificado**): contenedor dual. Expone lo existente de bienestar (`database`/`lemac_datalab.db`, `registroRepository`, `perfilRepository`) y lo nuevo de gestion (`gestionDatabase`/`gestion_documental.db`, `sesionRepository`, `documentoRepository`, `usuarioRepository`, `auditoriaRepository`, `documentosRemotosRepository`). En `onCreate` crea los **dos canales de notificacion** (bienestar y gestion) y lanza `Sembrador.sembrarSiVacio(gestionDatabase)` en `CoroutineScope(SupervisorJob() + Dispatchers.IO + manejadorErrores)`. Desde el hardening, `runCatching` + `CoroutineExceptionHandler` guardan el fallo en `@Volatile var ultimoErrorSiembra`, re-lanzan `CancellationException` y evitan que un error de siembra cierre la app.
 - `MainActivity.kt` (**modificado**): unico punto de entrada; `setContent { LemacTheme { UnifiedApp() } }`.
 
 ### 4.6 Recursos y manifiesto
@@ -155,7 +155,7 @@ Lectura del diagrama:
 2. El portal no mezcla nada: cada tarjeta navega al grafo interno de su modulo, con su tema (gestion añade `GestionTheme`; bienestar hereda el de la Activity).
 3. Cada modulo habla con sus propios repositorios; ambos conjuntos cuelgan del mismo contenedor `LemacApplication`.
 4. Cada dominio persiste en su propia base Room: bienestar en `lemac_datalab.db` (con alias en `SharedPreferences` `perfil_lemac.xml` y foto `perfil.png`), gestion en `gestion_documental.db` (con documentos adjuntos en `files/documentos/`).
-5. `LemacApplication.onCreate` crea los dos canales de notificacion y siembra la base de gestion la primera vez.
+5. `LemacApplication.onCreate` crea los dos canales de notificacion y siembra la base de gestion de forma asincrona. Desde el hardening esa siembra es transaccional y convergente (repara estados parciales en cada arranque) y su fallo queda aislado en `ultimoErrorSiembra` sin cerrar la app.
 
 ## 6. Recursos y respaldo (backup)
 
@@ -189,13 +189,13 @@ Las mismas reglas se aplican en tres lugares: `backup_rules.xml` (full backup, A
 
 2. **Literales de interfaz sin externalizar.** Casi todos los textos de ambos modulos (incluido `PortalScreen.kt`) estan hardcodeados en Kotlin; `strings.xml` solo tiene `app_name` y las 4 strings del canal/recordatorio de bienestar. Falta externalizar a recursos para consistencia, accesibilidad y futura localizacion.
 
-3. **Siembra en IO sin bloquear el login.** `Sembrador.sembrarSiVacio(gestionDatabase)` corre en `CoroutineScope(SupervisorJob() + Dispatchers.IO)` lanzado desde `onCreate`, sin await ni reintento. Si el usuario abre el login de gestion antes de que termine la siembra, el primer intento puede fallar con "usuario no encontrado" y hay que reintentar. No bloquea la app (ventaja), pero falta un indicador o un reintento automatico.
+3. **Siembra en IO sin bloquear el login (mitigada).** `Sembrador.sembrarSiVacio(gestionDatabase)` corre en `CoroutineScope(SupervisorJob() + Dispatchers.IO + manejadorErrores)` lanzado desde `onCreate`, sin await. Sigue sin indicador de progreso ni reintento automatico, asi que si el usuario abre el login antes de que termine, puede ver "No existe una cuenta con ese correo." y tener que reintentar. El hardening mitigó el impacto: la siembra es transaccional y convergente (no deja estados parciales), re-lanza cancelaciones y guarda el ultimo fallo en `ultimoErrorSiembra` sin cerrar la app; ademas, los fallos de acceso a datos en el login devuelven el mensaje "No se pudo acceder a los datos locales. Intenta nuevamente."
 
 4. **Credenciales demo en claro y seed en release.** La clave `1234` se guarda sin hash en Room y la siembra corre tambien en builds de **release** (no esta condicionada a `BuildConfig.DEBUG`). Aceptable para un MVP academico con datos ficticios; inaceptable para produccion (hash de claves, siembra solo en debug).
 
 5. **Respaldo de la base de bienestar como decision de producto pendiente.** Se respalda `lemac_datalab.db` sin cifrar y sin consentimiento explicito. Si la app fuera real, habria que decidir: opt-in del usuario, cifrado de la base (por ejemplo SQLCipher) o exclusion del respaldo. Hoy la decision favorece la continuidad de datos sobre el maximo resguardo.
 
-6. **Otras limitaciones.** Dos bases Room duplican la infraestructura de persistencia; los ViewModels de gestion dependen del contenedor via FQN (acoplamiento aceptado para no refactorizar); no hay pruebas de UI, instrumentadas, de navegacion ni de Room real (unitarias de logica pura, repositorio con DAO falsificado y ViewModel de bienestar en JVM); el APK de debug ronda los 62 MB (build de debug sin minificar); y las pruebas del portal y de las pantallas de gestion no existen.
+6. **Otras limitaciones.** Dos bases Room duplican la infraestructura de persistencia; los ViewModels de gestion dependen del contenedor via FQN (acoplamiento aceptado para no refactorizar); casi no hay pruebas de UI ni de navegacion (solo 1 smoke Compose del portal), y faltan pruebas de Room del modulo de bienestar y de los ViewModels de gestion; el APK de debug ronda los 62 MB (build de debug sin minificar). **Novedad:** desde el hardening si hay 8 pruebas instrumentadas de Room real sobre `Sembrador` y 1 smoke del portal (9 en total), pero estan compiladas y **no ejecutadas** en este entorno por falta de `adb`/dispositivo.
 
 ## 8. Build y pruebas
 
@@ -205,8 +205,14 @@ Comandos usados para verificar la integracion, desde la raiz del proyecto:
 # Compilar el APK unico de debug (verificado con --offline)
 ./gradlew :app:assembleDebug --offline
 
-# Ejecutar todas las pruebas unitarias
+# Ejecutar todas las pruebas unitarias JVM (105)
 ./gradlew :app:testDebugUnitTest
+
+# Compilar las pruebas instrumentadas (sin dispositivo)
+./gradlew :app:assembleDebugAndroidTest
+
+# Ejecutar las 9 pruebas instrumentadas (requiere adb + emulador/dispositivo)
+./gradlew :app:connectedDebugAndroidTest
 
 # Instalar en emulador o dispositivo conectado
 ./gradlew :app:installDebug
@@ -215,11 +221,12 @@ Comandos usados para verificar la integracion, desde la raiz del proyecto:
 Resultados verificados tras la integracion (actualizados el 12 de noviembre de 2026; el detalle historico de la integracion fue 69 pruebas):
 
 - `:app:assembleDebug`: **BUILD SUCCESSFUL**. APK unico en `app/build/outputs/apk/debug/app-debug.apk` (~62 MB; contiene portal + bienestar + gestion).
-- `:app:testDebugUnitTest`: **76 aprobadas, 0 fallidas** (antes de IT3). Tras IT3 (15 de noviembre de 2026), `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` dejo **90 aprobadas, 0 fallidas** (33 de bienestar + 57 de gestion documental).
+- `:app:testDebugUnitTest`: **76 aprobadas, 0 fallidas** (antes de IT3). Tras IT3 (15 de noviembre de 2026), el arbol tenia **95 pruebas** (33 de bienestar + 62 de gestion documental: 43 previas + 14 de red + 5 de `ApiConfigTest`); el informe de IT3 documento 90 por omission de este ultimo archivo en el inventario. Tras el cierre de hardening (19 de noviembre de 2026, commit `8832145`), **105 aprobadas, 0 fallidas** (33 de bienestar + 72 de gestion documental).
   - Bienestar: 33 (validador 9, resumen 4, exportador CSV 8, repositorio con DAO falso 5, ViewModel en JVM 7).
-  - Gestion documental: 57 (validadores 4, permisos 7, carga de permisos 9, flujo de modificacion 6, reportes 9, MIME 8, contrato JSON IT3 6, repositorio remoto IT3 4, ViewModel remoto IT3 4).
+  - Gestion documental: 72 (regresion `BASE_URL` 5, sesion 10, validadores 4, permisos 7, carga de permisos 9, flujo de modificacion 6, reportes 9, MIME 8, contrato JSON IT3 6, repositorio remoto IT3 4, ViewModel remoto IT3 4).
+- `:app:assembleDebugAndroidTest`: **BUILD SUCCESSFUL**. Hay **9 pruebas instrumentadas** en `app/src/androidTest`: 8 de siembra Room (`SembradorInstrumentedTest`) y 1 smoke Compose del portal (`PortalSmokeTest`). **No se ejecutaron** porque el entorno no tiene `adb` ni dispositivo/emulador; con uno disponible: `./gradlew :app:connectedDebugAndroidTest`.
+- Configuracion de tests: `unitTests.isReturnDefaultValues = true` en `app/build.gradle.kts` (necesario para `kotlinx-coroutines-test` sin `Looper` de Android); `androidx.test:core` y `androidx.test:runner` alineados a `1.6.1` en `gradle/libs.versions.toml`.
 - Reporte HTML: `app/build/reports/tests/testDebugUnitTest/index.html`.
-- Sin pruebas instrumentadas ni de interfaz (`app/src/androidTest` no existe).
 
 ## 9. Trazabilidad
 
@@ -292,6 +299,22 @@ El video deberia recorrer el portal, el flujo de bienestar y el flujo de gestion
 
 ## 11. Actualización IT3: integración con API REST
 
-La actividad **IT3** agrega una integración de red real (Retrofit + OkHttp + Gson) sobre la funcionalidad Documentos: la pantalla "Documentos en línea" consume `GET /documentos` de una API REST simulada local. Esto introduce dos cambios respecto a lo descrito en este informe: (a) el manifiesto **sí declara `INTERNET`** desde IT3 (con cleartext restringido a `10.0.2.2`, `localhost` y `127.0.0.1`), y (b) la suite sube de 76 a **90 pruebas** (33 de bienestar + 57 de gestión documental). El detalle completo, el contrato del endpoint y el registro de comandos están en [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md).
+La actividad **IT3** agrega una integración de red real (Retrofit + OkHttp + Gson) sobre la funcionalidad Documentos: la pantalla "Documentos en línea" consume `GET /documentos` de una API REST simulada local. Esto introduce dos cambios respecto a lo descrito en este informe: (a) el manifiesto **sí declara `INTERNET`** desde IT3 (con cleartext restringido a `10.0.2.2`, `localhost` y `127.0.0.1`), y (b) la suite sube de 76 a **95 pruebas en el arbol** (33 de bienestar + 62 de gestión documental); el informe original de IT3 cito 90 al omitir `ApiConfigTest` en el inventario. El detalle completo, el contrato del endpoint y el registro de comandos están en [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md). Con el cierre de hardening (19 de noviembre de 2026) la suite JVM es de **105 pruebas** (33 + 72) y se añadieron 9 instrumentadas; ver la sección 12.
 
-> Pendiente: regenerar `informe_arquitectura.html` y `INFORME_ARQUITECTURA.pdf` para reflejar IT3 (no se regeneraron en esta entrega).
+> Pendiente: regenerar `informe_arquitectura.html` y `INFORME_ARQUITECTURA.pdf` para reflejar IT3 y el hardening (no se regeneraron en estas entregas).
+
+## 12. Actualización hardening (19 de noviembre de 2026)
+
+Cierre documentado de los cuatro frentes del PRD `045a2de8-e11f-4286-930f-ed582728e411`:
+
+| Frente | Resultado | Commit |
+|---|---|---|
+| a) `BASE_URL` corregida a `http://10.0.2.2:8000/` + test de regresión | `ApiConfigTest` (5 pruebas) blinda la URL, el endpoint y el rechazo de loopback. | `d648c7e` |
+| a2) Integración IT3 (Retrofit/Gson/StateFlow) | Cadena Compose → ViewModel → Repository → Retrofit → API simulada, 14 pruebas de red. | `d648c7e` |
+| b) Siembra Room transaccional y arranque tolerante a fallos | `Sembrador` con `withTransaction`, convergente por clave estable e ids reales; `LemacApplication` con `CoroutineExceptionHandler`, `runCatching` y `ultimoErrorSiembra`. | `8832145` |
+| c) Login robusto con auditoría best-effort | `CancellationException` propagada (M1), `_actual` asignado tras auditar LOGIN y limpiado en `finally` (m10), mensaje de error de acceso a datos. | `8832145` |
+| d) Tests unitarios e instrumentados | 105 JVM (0 fallos) + 9 instrumentadas compiladas (8 Room + 1 smoke), sin ejecutar por falta de `adb`. | `8832145` |
+
+Hallazgos de revisión resueltos: **M1** (propagar cancelación en login/auditoría), **M2** (siembra convergente por clave estable con ids reales), **m10** (sesión consistente ante cancelación de auditoría) y el ajuste post-review (re-lanzar cancelación en el seed; AndroidX test alineado a 1.6.1). Review final: **APROBADO CON OBSERVACIONES** (observaciones resueltas).
+
+Trazabilidad Lemoria: proyecto `136316a2-36dd-43b5-aa80-05b9e97d3f22`, PRD `045a2de8-e11f-4286-930f-ed582728e411`, conversación `9b337131-5f44-49d8-b4f1-8edad505507b`, task de documentación `f8dfcced-828f-4140-8a27-3e350e295a43`. ADRs: `37d7d92c` (M1), `e32848b6` (M2), `b0bf8edc` (m10), `ab094bb8` (`isReturnDefaultValues`), más `42d32a6e`, `4e2dd090`, `30e5e778` y `abaccc4f` de soporte. El commit `8832145` **no está pusheado** aún por falta de credenciales HTTPS. Detalle cronológico en [NOTAS_TECNICAS.md](NOTAS_TECNICAS.md) y comportamiento explicado en el README, sección [Hardening de gestion documental y arranque](../README.md#hardening-de-gestion-documental-y-arranque).

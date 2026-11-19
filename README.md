@@ -21,7 +21,7 @@ La app arranca en un portal (`PortalScreen.kt`, montado por `UnifiedApp.kt`) con
 
 Como se resolvio la unificacion:
 
-- Hay **un solo modulo Gradle** (`:app`), **una sola Activity** (`MainActivity`) y **una sola clase Application** (`LemacApplication`), que actua como contenedor dual: expone las bases y repositorios de los dos modulos, crea los dos canales de notificacion y siembra la base documental con datos demo la primera vez que se abre la app.
+- Hay **un solo modulo Gradle** (`:app`), **una sola Activity** (`MainActivity`) y **una sola clase Application** (`LemacApplication`), que actua como contenedor dual: expone las bases y repositorios de los dos modulos, crea los dos canales de notificacion y siembra la base documental con datos demo. Desde el cierre de hardening (19 de noviembre de 2026) esa siembra es **transaccional y convergente** (repara siembras parciales en cada arranque sin duplicar datos) y el arranque es **tolerante a fallos**; el detalle esta en [Hardening de gestion documental y arranque](#hardening-de-gestion-documental-y-arranque).
 - Cada modulo tiene su **base Room separada** (`lemac_datalab.db` y `gestion_documental.db`), por lo que los registros de bienestar y los datos laborales simulados nunca se mezclan.
 - El paquete de gestion documental se copio dentro de `:app` conservando su nombre original (`com.example.gestiondocumental`), para evitar choques de nombres con el paquete de bienestar.
 - La navegacion raiz (`UnifiedApp.kt`) arranca en el portal; la ruta de bienestar monta `LemacApp()` (hereda el `LemacTheme` que aplica `MainActivity`) y la ruta de gestion monta `GestionTheme { GestionApp() }`.
@@ -74,6 +74,9 @@ Las versiones se toman de `gradle/libs.versions.toml`, `app/build.gradle.kts` y 
 | Activity Compose | 1.8.0 |
 | AndroidX Core KTX | 1.10.1 |
 | JUnit | 4.13.2 |
+| AndroidX Test (core / runner) | 1.6.1 (alineadas desde el cierre de hardening) |
+| `kotlinx-coroutines-test` | 1.9.0 |
+| MockWebServer / OkHttp | 4.12.0 / 4.12.0 |
 | compileSdk | 37 |
 | targetSdk | 37 |
 | minSdk | 33 (Android 13 o superior) |
@@ -82,6 +85,8 @@ Las versiones se toman de `gradle/libs.versions.toml`, `app/build.gradle.kts` y 
 | Nombre del proyecto Gradle | `limpio_moviles` |
 
 Nota de configuracion: el modulo `app` aplica los plugins `com.android.application`, `org.jetbrains.kotlin.plugin.compose` y `com.google.devtools.ksp`. No hay una linea explicita de `org.jetbrains.kotlin.android` en `app/build.gradle.kts`, porque AGP 9 incorpora el soporte de Kotlin en el propio plugin de Android.
+
+Desde el cierre de hardening, `app/build.gradle.kts` declara `testOptions { unitTests.isReturnDefaultValues = true }`. Eso permite ejecutar los tests JVM con `kotlinx-coroutines-test` aunque el classpath incluya clases de Android (por ejemplo `android.os.Looper`) que no existen en la JVM local: los metodos de esas clases devuelven valores por defecto en lugar de lanzar `Stub!`. Es una decision de testabilidad, no de produccion (ADR `ab094bb8-1cae-453a-8cd3-260fe8cfe43e`).
 
 ## Requisitos
 
@@ -110,8 +115,14 @@ Desde la raiz del proyecto, en una terminal:
 # Instalar en el emulador o dispositivo conectado
 ./gradlew :app:installDebug
 
-# Ejecutar las pruebas unitarias de debug
+# Ejecutar las pruebas unitarias de debug (JVM)
 ./gradlew :app:testDebugUnitTest
+
+# Compilar las pruebas instrumentadas (no necesita dispositivo)
+./gradlew :app:assembleDebugAndroidTest
+
+# Ejecutar las pruebas instrumentadas (SI necesita adb y dispositivo/emulador)
+./gradlew :app:connectedDebugAndroidTest
 ```
 
 El APK de debug queda en:
@@ -148,8 +159,10 @@ El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con p
 - `app/src/test/java/com/example/limpio_moviles/data/repository/RegistroRepositoryTest.kt` contiene 5 pruebas del repositorio con un DAO falsificado (insertar nuevo, actualizar conservando la `fechaHora` original, registro inexistente al editar, carga demo con base vacia y carga demo sin duplicar).
 - `app/src/test/java/com/example/limpio_moviles/viewmodel/RegistroViewModelTest.kt` contiene 7 pruebas del ViewModel en la JVM, sin Robolectric: crear con reloj inyectado y `sincronizado = false`, editar conservando la `fechaHora` original y reencolando, editar un registro inexistente sin insertar, validacion con errores que no llama al repositorio, y `cargarDemo` en sus tres ramas (exito, ya hay datos y fallo). Usa `kotlinx-coroutines-test` y `Dispatchers.setMain`.
 
-**Modulo de gestion documental** (57 pruebas):
+**Modulo de gestion documental** (72 pruebas):
 
+- `app/src/test/java/com/example/gestiondocumental/data/remote/ApiConfigTest.kt`: 5 pruebas de regresion de la `BASE_URL` (`http://10.0.2.2:8000/`, termina en `/`, endpoint `documentos`, composicion `http://10.0.2.2:8000/documentos` y rechazo de `127.0.0.1`/`localhost`). Anadidas en `d648c7e`.
+- `app/src/test/java/com/example/gestiondocumental/data/repository/SesionRepositoryTest.kt`: 10 pruebas del login robusto con DAOs falsos y `kotlinx-coroutines-test` (exito, correo inexistente, cuenta inactiva, clave incorrecta, auditoria que falla sin romper el login, fallo de acceso a datos, propagacion de `CancellationException` al buscar usuario, al auditar el login y al cerrar sesion, y logout exitoso). Anadidas en `8832145`.
 - `app/src/test/java/com/example/gestiondocumental/model/ValidadoresTest.kt`: 4 pruebas de validadores de entrada.
 - `app/src/test/java/com/example/gestiondocumental/model/PermisosTest.kt`: 7 pruebas de permisos por rol.
 - `app/src/test/java/com/example/gestiondocumental/model/PermisosCargaTest.kt`: 9 pruebas de carga de permisos.
@@ -160,10 +173,16 @@ El proyecto incluye pruebas unitarias de los dos modulos; conviene decirlo con p
 - `app/src/test/java/com/example/gestiondocumental/data/repository/DocumentosRemotosRepositoryTest.kt`: 4 pruebas del repositorio remoto con `MockWebServer` (IT3).
 - `app/src/test/java/com/example/gestiondocumental/viewmodel/DocumentosRemotosViewModelTest.kt`: 4 pruebas del ViewModel remoto con un fake de la API (IT3).
 
-En total son **90 pruebas unitarias** con JUnit 4 (33 de bienestar + 57 de gestion documental). La verificacion de IT3 con `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` el 15 de noviembre de 2026 termino con `BUILD SUCCESSFUL`, 90/90 aprobadas y 0 fallidas. La ejecucion previa de `./gradlew clean compileDebugKotlin testDebugUnitTest assembleDebug` (12 de noviembre de 2026, antes de IT3) dejo 76/76 y un APK de debug de ~62 MB (64,915,563 bytes) en `app/build/outputs/apk/debug/app-debug.apk`. Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA`, con el `FileProvider` y su `file_paths`; desde IT3 si declara `INTERNET` (ver la seccion [Integración con API REST (IT3)](#integración-con-api-rest-it3)).
+En total son **105 pruebas unitarias JVM** con JUnit 4 (33 de bienestar + 72 de gestion documental). La verificacion final del hardening (19 de noviembre de 2026, commit `8832145`) termino con **105/105 aprobadas y 0 fallidas**. Historial real de `@Test` en el arbol: 76 antes de IT3 (12 de noviembre), **95** tras IT3 (15 de noviembre; +14 de red y +5 de regresion de `BASE_URL`, todas en `d648c7e`) y 105 tras el hardening (19 de noviembre; +10 de `SesionRepositoryTest`). El informe de IT3 documento 90 por omission de `ApiConfigTest` en su inventario; la documentacion actual corrige ese recuento a 95. El APK de debug ronda los 62 MB (64,915,563 bytes) en `app/build/outputs/apk/debug/app-debug.apk`. Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA`, con el `FileProvider` y su `file_paths`; desde IT3 si declara `INTERNET` (ver la seccion [Integración con API REST (IT3)](#integración-con-api-rest-it3)).
 
-- **No hay pruebas instrumentadas ni pruebas de interfaz** (`app/src/androidTest` no existe).
-- **No hay pruebas de Room real, UI/navegacion ni WorkManager**; el repositorio de bienestar se prueba con un DAO falsificado y el ViewModel de bienestar ya se prueba en la JVM con dobles (7 pruebas, sin Robolectric). La escritura real SAF/`ContentResolver` tampoco se prueba: `ExportadorArchivo` se sustituye por un doble. La pantalla del portal y las pantallas de gestion no tienen cobertura.
+**Pruebas instrumentadas** (`app/src/androidTest`, **9** en total, anadidas en `8832145`):
+
+- `app/src/androidTest/java/com/example/gestiondocumental/data/local/SembradorInstrumentedTest.kt`: **8 pruebas** sobre una base Room real en memoria (`Room.inMemoryDatabaseBuilder`). Cubren conteos de una siembra vacia, idempotencia al sembrar dos veces, reparacion de siembras parciales (3 o 7 usuarios preexistentes), uso de **ids reales** de documentos aunque `sqlite_sequence` este adelantado, **reversion transaccional** ante un trigger que falla al insertar versiones, e integridad referencial de las versiones.
+- `app/src/androidTest/java/com/example/limpio_moviles/PortalSmokeTest.kt`: **1 prueba de humo Compose** (`createAndroidComposeRule<MainActivity>()`) que verifica las dos tarjetas del portal sin depender de que la siembra asincrona haya terminado.
+
+> **Limitacion de entorno verificada:** los 9 tests instrumentados **compilan** (`./gradlew :app:assembleDebugAndroidTest` → `BUILD SUCCESSFUL`) pero **no se han ejecutado**, porque en el entorno de verificacion no hay `adb` ni dispositivo/emulador conectado. Para ejecutarlos hace falta un emulador con API 33 o superior y `./gradlew :app:connectedDebugAndroidTest` (o `./adb devices` / `adb devices` previo).
+
+Sigue sin haber cobertura de Room del modulo de bienestar (su repositorio se prueba con DAO falsificado), de WorkManager, de la escritura real SAF/`ContentResolver` (`ExportadorArchivo` se sustituye por un doble) ni del flujo completo de gestion mas alla del smoke del portal y de las pruebas de sus modelos/repositorios.
 
 ## Integración con API REST (IT3)
 
@@ -171,8 +190,68 @@ La actividad **IT3** agrega una variante de **solo lectura** de la funcionalidad
 
 - Documento completo: [docs/INTEGRACION_API_IT3.md](docs/INTEGRACION_API_IT3.md).
 - El manifiesto declara `INTERNET`; el cleartext queda restringido a `10.0.2.2`, `localhost` y `127.0.0.1` (`res/xml/network_security_config.xml`).
-- Suite de pruebas: **90** (33 de bienestar + 57 de gestión documental); las 14 nuevas son JVM y usan `MockWebServer`.
+- Suite de pruebas al cierre de IT3: **95 en el arbol** (33 de bienestar + 62 de gestión documental: 43 previas + 14 de red con `MockWebServer` + 5 de regresión de `BASE_URL`). El informe original de IT3 citaba 90 porque omitía `ApiConfigTest` del inventario; el recuento corregido es 95. Tras el cierre de hardening la suite JVM es de **105** (33 + 72), con +10 de `SesionRepositoryTest`.
 - Pendiente: regenerar `docs/informe_arquitectura.html` y `docs/INFORME_ARQUITECTURA.pdf`.
+
+## Hardening de gestion documental y arranque
+
+Cierre del **19 de noviembre de 2026**. Cubre cuatro frentes: correccion de `BASE_URL` con test de regresion (**a**, commit `d648c7e`), integracion IT3 con Retrofit/Gson/StateFlow (**a2**, commit `d648c7e`), siembra Room transaccional y arranque tolerante (**b**), login robusto con auditoria best-effort (**c**) y pruebas unitarias/instrumentadas (**d**). Todo el hardening (**b**/**c**/**d**) quedo en el commit `8832145`, **aun no pusheado** por falta de credenciales HTTPS. El detalle cronologico esta en [NOTAS_TECNICAS.md](docs/NOTAS_TECNICAS.md).
+
+### Siembra transaccional, convergente y con ids reales
+
+`Sembrador.sembrarSiVacio(db)` (`gestiondocumental/data/local/Sembrador.kt`) ya no es un "insertar solo si la tabla esta vacia": ejecuta **todo** dentro de `db.withTransaction { }` y convergen a un estado conocido:
+
+- Antes de insertar, captura `habiaDocumentos = documentoDao().contar() > 0`. El registro de auditoria `accion = "SEED"` se inserta **solo si no habia documentos**, asi que una siembra parcial heredada no genera un SEED duplicado.
+- Cada fila se inserta **solo si falta**: dependencias por `id`, usuarios por `id`, documentos por **clave natural estable** (`titulo`, con `porTitulo`), versiones por `(documentoId, numeroVersion)` y la solicitud demo por `(titulo, solicitante)`.
+- `sembrarDocumentos` devuelve `Map<String, Long>` con el **id real** del documento (el existente o el recien insertado). Versiones y solicitud usan ese mapa, por lo que apuntan a filas existentes aunque `sqlite_sequence` este adelantado (fallo **M2**).
+- Si cualquier insercion falla, Room **revierte toda la transaccion** y el siguiente arranque vuelve a intentarlo; si ya estaba completa, no escribe nada y no invalida los `Flow`.
+
+Resultado tras una siembra limpia: 4 dependencias, 7 usuarios, 6 documentos, 7 versiones, 1 solicitud y 1 auditoria SEED.
+
+### Login robusto, auditoria best-effort y sesion consistente
+
+`SesionRepository` (`gestiondocumental/data/repository/Repositorios.kt`) y `SesionViewModel` (`viewmodel/SesionViewModel.kt`):
+
+- La busqueda del usuario distingue `CancellationException` (se **re-lanza**, fallo **M1**) de cualquier otro fallo del DAO (se convierte en `Result.failure(IllegalStateException("No se pudo acceder a los datos locales. Intenta nuevamente."))`, sin auditar).
+- `registrarAuditoria` es **best-effort**: un error ordinario se descarta y no rompe el flujo, pero una `CancellationException` se propaga (M1). Por eso es una auditoria "de intento", no una barrera de exito.
+- `_actual.value = usuario` se asigna **despues** de auditar `LOGIN`: si la auditoria se cancela, la sesion no queda iniciada (fallo **m10**). `cerrarSesion()` audita `LOGOUT` y limpia `_actual` en un `finally`, asi que la sesion se cierra incluso si la auditoria falla o se cancela.
+- `SesionViewModel` expone `actual`, `error` y `cargando` como `StateFlow`; re-lanza cancelaciones y usa un mensaje generico de "No se pudo iniciar sesión." solo como ultimo recurso.
+
+```mermaid
+flowchart TD
+    A[iniciarSesion correo, clave] --> B[buscarPorCorreo]
+    B -->|CancellationException| Z[re-lanzar]
+    B -->|otro error| E[Result.failure: No se pudo acceder a los datos locales]
+    B -->|no existe / inactivo / clave mala| F[auditar LOGIN_FALLIDO y Result.failure]
+    B -->|usuario valido| G[registrarAuditoria LOGIN]
+    G -->|CancellationException| Z
+    G -->|error ordinario| H[descartar error: best-effort]
+    G -->|ok| I[_actual = usuario]
+    H --> I
+    I --> J[Result.success]
+```
+
+### Arranque tolerante a fallos (`LemacApplication`)
+
+`LemacApplication.kt` crea un `CoroutineExceptionHandler` y un `CoroutineScope(SupervisorJob() + Dispatchers.IO + manejadorErrores)`. En `onCreate()` lanza la siembra con `runCatching { Sembrador.sembrarSiVacio(...) }.onFailure { ... }`: re-lanza `CancellationException`, guarda cualquier otro error en `@Volatile var ultimoErrorSiembra` y lo registra con `Log.e`. Un fallo de Room **no cierra la app** y queda un campo publico para diagnostico.
+
+### Configuracion Gradle del hardening
+
+- `app/build.gradle.kts`: `testOptions { unitTests.isReturnDefaultValues = true }` para correr tests JVM con `kotlinx-coroutines-test` sin `Looper` de Android (ADR `ab094bb8`).
+- `gradle/libs.versions.toml`: `androidx.test:core` y `androidx.test:runner` **alineados a 1.6.1** (antes habia un desajuste entre versiones de test). `androidx.test.ext:junit` 1.1.5 y `espresso-core` 3.5.1 se mantienen.
+- Dependencias de test ya presentes: `kotlinx-coroutines-test` 1.9.0 y `okhttp3:mockwebserver` 4.12.0.
+
+### Trazabilidad del cierre
+
+| Dato | Valor |
+|---|---|
+|Proyecto | `136316a2-36dd-43b5-aa80-05b9e97d3f22` |
+|PRD | `045a2de8-e11f-4286-930f-ed582728e411` |
+|Conversacion | `9b337131-5f44-49d8-b4f1-8edad505507b` |
+|Task de documentacion | `f8dfcced-828f-4140-8a27-3e350e295a43` |
+|Commit | `8832145` (no pusheado aun; faltan credenciales HTTPS) |
+|Review | APROBADO CON OBSERVACIONES (observaciones resueltas) |
+|ADRs (Lemoria) | `37d7d92c` Fix M1, `e32848b6` Fix M2, `b0bf8edc` Fix m10, `ab094bb8` Tests JVM `isReturnDefaultValues`; de soporte: `42d32a6e` auditoria best-effort, `4e2dd090` sesion tras auditar LOGIN, `30e5e778` siembra transaccional/idempotente, `abaccc4f` arranque tolerante |
 
 ## Exportar los datos
 
@@ -278,13 +357,19 @@ limpio_model/
 │       │   │   ├── util/                 Archivos, fechas y notificaciones
 │       │   │   └── viewmodel/            Sesion, Documentos, Usuarios y Auditoria
 │       │   └── res/                      Strings, colores, temas, iconos y reglas XML de backup
-│       └── test/java/com/example/
-│           ├── limpio_moviles/           33 pruebas unitarias de bienestar
-│           └── gestiondocumental/        57 pruebas unitarias de gestion documental
+│       ├── test/java/com/example/        105 pruebas unitarias JVM
+│       │   ├── limpio_moviles/           33 de bienestar
+│       │   └── gestiondocumental/        72 de gestion documental
+│       └── androidTest/java/com/example/  9 pruebas instrumentadas (compiladas, no ejecutadas sin adb)
+│           ├── gestiondocumental/        8 de siembra Room
+│           └── limpio_moviles/           1 smoke Compose del portal
 ├── docs/
 │   ├── GUIA_ESTUDIO.md                   Guia principal de estudio
 │   ├── DISERTACION.md                    Guion de exposicion y demo
 │   ├── INTEGRACION.md                    Informe de la fusion de los dos modulos
+│   ├── INTEGRACION_API_IT3.md            Integracion REST (IT3) y BASE_URL
+│   ├── NOTAS_TECNICAS.md                 Notas tecnicas y cierre de hardening (2026-11-19)
+│   ├── GUIA_REPLICACION_COMANDOS.html    Guia maestra de estudio y replicacion
 │   ├── informe_arquitectura.html         Informe de arquitectura (version web)
 │   └── INFORME_ARQUITECTURA.pdf          Informe de arquitectura (version PDF)
 ├── gradle/
@@ -303,6 +388,7 @@ Documentacion detallada:
 - [Guion de disertacion](docs/DISERTACION.md): bloques de exposicion, demo en vivo, preguntas y checklist.
 - [Informe de integracion](docs/INTEGRACION.md): objetivo, decision (ADR), inventario, backup, build, pruebas y trazabilidad de la unificacion de los dos modulos.
 - [Integración con API REST (IT3)](docs/INTEGRACION_API_IT3.md): funcionalidad Documentos contra `GET /documentos`, contrato JSON, cadena Compose → ViewModel → Repository → Retrofit → API, estados, pruebas y registro de comandos.
+- [Notas técnicas y cierre de hardening](docs/NOTAS_TECNICAS.md): entrada fechada del 19 de noviembre de 2026 con siembra transaccional, login robusto, arranque tolerante, inventario de tests, configuracion Gradle y trazabilidad Lemoria.
 
 ## Guía maestra de estudio y replicación
 
@@ -312,7 +398,7 @@ Contenido de la guía:
 
 - **Arquitectura y componentes**: vista de capas, app unificada con portal, núcleo de navegación y los dos módulos (Bienestar — Lemac DataLab y Gestión Documental RR.HH.), con sus componentes transversales.
 - **Modelo de datos y flujo de datos**: las 2 bases Room (`lemac_datalab.db` y `gestion_documental.db`), estados, 7 roles y el recorrido de extremo a extremo (crear y editar un registro, exportar CSV, foto de perfil, login y permisos, documento con solicitud y aprobación).
-- **Pruebas**: las 90 pruebas unitarias (33 de bienestar + 57 de gestión documental), cómo ejecutarlas y qué queda fuera de cobertura.
+- **Pruebas**: las 105 pruebas unitarias JVM (33 de bienestar + 72 de gestión documental), las 9 instrumentadas (8 de siembra Room + 1 smoke Compose), cómo ejecutarlas, la limitación de entorno (sin `adb`) y qué queda fuera de cobertura.
 - **Replicación paso a paso en 13 fases**: desde preparar el entorno y crear el proyecto hasta Room, repositorios, ViewModels, UI Compose, funciones transversales, pruebas, build, Git/GitHub, flujo SDD con Lemoria y checklist final.
 - **Catálogo completo de comandos**: Lemoria, Gradle, Git, ADB y Android SDK (más utilidades de Linux usadas), con el comando exacto y su propósito.
 - **Solución de errores comunes**: diagnósticos y correcciones para los fallos más frecuentes al compilar, instalar o replicar.
