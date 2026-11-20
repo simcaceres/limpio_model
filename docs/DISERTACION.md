@@ -4,6 +4,8 @@ Este documento propone una exposicion de 10 a 15 minutos sobre el proyecto Andro
 
 ## Datos de la presentacion
 
+- **Material de traspaso para principiantes (complementario):** ver [README](../README.md#traspaso-y-replicación-para-principiantes), [GUIA_ESTUDIO](GUIA_ESTUDIO.md) (glosario, mapa de carpetas y recorrido por capas) y [NOTAS_TECNICAS](NOTAS_TECNICAS.md) (flujo SDD con Lemoria y trazabilidad).
+
 - **Titulo:** Lemac DataLab + Gestion Documental: dos modulos academicos en una sola app Android con Kotlin y Jetpack Compose.
 - **Duracion objetivo:** 13 minutos, con margen para 15.
 - **Idea central:** una app local, simple y honesta sobre sus limites, que demuestra un flujo completo de datos (formulario, validacion, Room, historial, resumen, recordatorio y exportacion CSV local) y que, detras del mismo portal, integra un segundo dominio: el flujo documental de RR.HH. con roles, aprobaciones y auditoria, sin mezclar los datos de ambos.
@@ -17,7 +19,7 @@ Si se olvida todo lo demas, recordar estas cinco ideas:
 2. La app es un **portal unificado** con dos modulos (bienestar y gestion documental), cada uno con su base Room propia; la arquitectura es UI Compose, un ViewModel compartido, repositorios y fuentes de datos locales.
 3. Room guarda los registros y emite `Flow`; el ViewModel lo convierte en `StateFlow` y la UI lo recolecta con `collectAsStateWithLifecycle`.
 4. La sincronizacion de bienestar es simulada con `FakeLemacApi` y no hay backend real. Antes de IT3 tampoco habia permiso `INTERNET`; desde IT3 el modulo de gestion documental consume `GET /documentos` de una API REST simulada local (ver [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md)). La salida real de datos de bienestar es la **exportacion CSV local**, con el selector de documentos del sistema (SAF).
-5. Hay 105 pruebas unitarias JVM (33 de bienestar y 72 de gestion documental) y 9 instrumentadas (8 de siembra Room y 1 smoke Compose), compiladas pero no ejecutadas aqui por falta de `adb`/dispositivo.
+5. Hay 105 pruebas unitarias JVM (33 de bienestar y 72 de gestion documental) y 9 instrumentadas (8 de siembra Room y 1 smoke Compose), compiladas pero no ejecutadas aqui porque `adb` no está en el PATH y no hay dispositivo/emulador conectado.
 
 ## Guion por bloques
 
@@ -452,7 +454,7 @@ No. Se programa con retraso inicial hasta las 20:00, pero WorkManager puede retr
 
 ### 16. Que se prueba y que no
 
-Se prueban con JUnit 76 casos: del modulo de bienestar, el validador (9), el calculador de resumen (4), el generador CSV (8), el repositorio con un DAO falsificado (5) y el ViewModel en la JVM sin Robolectric (7); del modulo de gestion documental, validadores, permisos, flujo de modificacion, reportes y tipos MIME (43). El ViewModel ya no es deuda: se cubren creacion, edicion, edicion inexistente, validacion y carga demo con dobles de las interfaces y un reloj fijo. Siguen sin cubrirse Room real, UI instrumentada, WorkManager y la escritura real SAF/ContentResolver. Es una deuda tecnica reconocida y acotada.
+Se prueban con JUnit **105 casos JVM**: 33 del modulo de bienestar (el validador (9), el calculador de resumen (4), el generador CSV (8), el repositorio con un DAO falsificado (5) y el ViewModel en la JVM sin Robolectric (7)) y 72 de gestion documental —el modulo Lemac DataLab— (validadores, permisos, flujo de modificacion, reportes y tipos MIME, mas las 14 de IT3, las 5 de regresion de `BASE_URL` y las 10 de `SesionRepositoryTest`). El ViewModel ya no es deuda: se cubren creacion, edicion, edicion inexistente, validacion y carga demo con dobles de las interfaces y un reloj fijo. Siguen sin cubrirse Room real, UI instrumentada, WorkManager y la escritura real SAF/ContentResolver. Es una deuda tecnica reconocida y acotada.
 
 ### 17. Por que no se uso Hilt
 
@@ -526,7 +528,7 @@ La fecha original se conserva. Al editar, `guardar()` relee el registro existent
 - [ ] Confirmar que `docs/GUIA_ESTUDIO.md` y `docs/DISERTACION.md` estan actualizados.
 - [ ] Verificar que el repositorio local este limpio y hacer el push cuando el repositorio remoto ya exista.
 
-Referencia de la verificacion previa (12 de noviembre de 2026, antes de IT3), con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, 76/76 pruebas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes). Verificacion de IT3 (15 de noviembre de 2026): `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` con `BUILD SUCCESSFUL`; el arbol de `d648c7e` tenia 95 pruebas (33 de bienestar + 62 de gestion documental; el informe de IT3 documento 90 por omission de `ApiConfigTest`). **Verificacion del hardening (19 de noviembre de 2026, commit `8832145`): 105/105 pruebas JVM, 0 fallidas (33 de bienestar + 72 de gestion documental) y `assembleDebugAndroidTest` correcto con 9 instrumentadas compiladas, no ejecutadas por falta de `adb`/dispositivo.** Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
+Referencia de la verificacion previa (12 de noviembre de 2026, antes de IT3), con clean build: `clean compileDebugKotlin testDebugUnitTest assembleDebug` con `BUILD SUCCESSFUL`, 76/76 pruebas (33 de bienestar + 43 de gestion documental), y APK de debug de ~62 MB (64,915,563 bytes). Verificacion de IT3 (15 de noviembre de 2026): `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --console=plain --no-daemon` con `BUILD SUCCESSFUL`; el arbol de `d648c7e` tenia 95 pruebas (33 de bienestar + 62 de gestion documental; el informe de IT3 documento 90 por omission de `ApiConfigTest`). **Verificacion del hardening (19 de noviembre de 2026, commit `8832145`): 105/105 pruebas JVM, 0 fallidas (33 de bienestar + 72 de gestion documental) y `assembleDebugAndroidTest` correcto con 9 instrumentadas compiladas, no ejecutadas porque `adb` no está en el PATH y no hay dispositivo/emulador conectado.** Entorno: JVM 21, Android SDK en `/home/simon/Android/Sdk` y `google-chrome` en `/usr/bin/google-chrome`. Se mantiene el manifest fusionado sin `uses-permission` de `CAMERA` y con el `FileProvider` y su `file_paths`. Repetir esta verificacion si se vuelve a tocar codigo.
 
 ### El dia de la presentacion
 

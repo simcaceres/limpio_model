@@ -10,6 +10,101 @@ El proyecto se presenta como un **MVP academico**. Su objetivo es demostrar un f
 
 > Nota historica: en una etapa previa se decidio mantener ambos dominios como proyectos separados (decision `d7c47dc1`). Esa decision quedo **reemplazada** por la instruccion del supervisor de entregar los dos trabajos como una sola app funcional (decision `06db8960`, "Opcion A"). El detalle completo de la integracion esta en [docs/INTEGRACION.md](docs/INTEGRACION.md).
 
+
+## Traspaso y replicación para principiantes
+
+Esta sección es un "manual de relevo" para que una persona que **no sabe nada** de Android, Kotlin ni de este proyecto pueda entenderlo, ejecutarlo y continuar el trabajo. Está escrita en español claro y con ejemplos concretos.
+
+### Identificadores de trazabilidad (Lemoria / SDD)
+
+Incluye estos identificadores cuando hables del trabajo documentado o de su seguimiento:
+
+| Identificador | Valor | Uso |
+|---|---|---|
+| `project-id` | `136316a2-36dd-43b5-aa80-05b9e97d3f22` | Proyecto en Lemoria |
+| `prd-id` | `c46eb0c9-d681-40b3-99fb-c2336db498d6` | PRD/alcance de este manual de traspaso |
+| `conv-id` | `46c48af9-f33b-4546-a4b0-96393bcf6eeb` | Conversación de trabajo |
+| `task-id` (auditoría) | `f4b1d51e-13e2-4878-9164-38b2bda8b9f6` | Auditoría documental |
+| `task-id` (GUIA_ESTUDIO) | `4ad8e55f-e7bd-46bc-925e-f75f64593621` | Actualización de guía de estudio |
+| `task-id` (NOTAS_TECNICAS) | `815d9c90-62b7-4737-82e7-c2e85026aafc` | Actualización de notas técnicas |
+| `task-id` (README) | `c20ea3bb-cc8c-4ab2-8734-64bf7fefa54f` | Actualización de este README |
+| `task-id` (mock API README) | `bf4cb5cc-f359-4aa5-bcda-86c2e5ea772d` | Actualización de README de API simulada |
+
+> Nota: las notas técnicas del cierre de hardening (2026-11-19) registran además otro PRD/conversación/task (`045a2de8-e11f-4286-930f-ed582728e411`, `9b337131-5f44-49d8-b4f1-8edad505507b`, `f8dfcced-828f-4140-8a27-3e350e295a43`). Ambos conjuntos son válidos: uno corresponde al hardening previo y otro a este manual de traspaso.
+
+**Placeholders de los comandos SDD** (los textos entre `<...>` se sustituyen por valores reales): `<project-id>` = identificador del proyecto en Lemoria (ej. `136316a2-...`), `<prd-id>` = identificador del PRD/flujo (ej. `c46eb0c9-...`), `<task-id>` = identificador de una tarea, `<sha>` = hash corto del commit.
+
+### Índice de guías (enlaces)
+
+| Documento | Para qué sirve | Ruta |
+|---|---|---|
+| Guía de estudio (principiantes + técnica) | Glosario, mapa de carpetas, arquitectura por capas, recorrido pantalla a pantalla y detalle de componentes | [docs/GUIA_ESTUDIO.md](docs/GUIA_ESTUDIO.md) |
+| Notas técnicas y SDD | Flujo SDD con Lemoria (pasos y comandos), ADRs, trazabilidad de commits y estado del hardening | [docs/NOTAS_TECNICAS.md](docs/NOTAS_TECNICAS.md) |
+| API simulada (mock) | Cómo arrancar el servidor local en Linux/Windows, URLs por contexto y solución de problemas | [tools/mock_api/README.md](tools/mock_api/README.md) |
+| Guion de disertación | Apoyo para exposición; complementa (no reemplaza) las guías de traspaso | [docs/DISERTACION.md](docs/DISERTACION.md) |
+| Integración de los dos módulos | Cómo se unificaron bienestar y gestión documental en un solo APK | [docs/INTEGRACION.md](docs/INTEGRACION.md) |
+| Integración API REST (IT3) | Detalle técnico de `GET /documentos` con Retrofit | [docs/INTEGRACION_API_IT3.md](docs/INTEGRACION_API_IT3.md) |
+
+### Dónde está el PDF
+
+- **En el repositorio:** [docs/INFORME_ARQUITECTURA.pdf](docs/INFORME_ARQUITECTURA.pdf) (informe de arquitectura, versión PDF).
+- **Guía maestra de estudio y replicación (PDF, si está generado en tu equipo):** `~/Descargas/Guia_Estudio_y_Replicacion_Lemac_DataLab.pdf` (fuente editable: [docs/GUIA_REPLICACION_COMANDOS.html](docs/GUIA_REPLICACION_COMANDOS.html)). Si ese archivo no existe en tu máquina, puedes abrir la fuente HTML o regenerar el PDF desde ella.
+
+### Requisitos previos (lo que debes tener instalado)
+
+- **Android Studio** (entorno de desarrollo para Android; incluye herramientas para compilar y probar). Debe soportar AGP 9.2.1.
+- **JDK 17 o superior** (Java Development Kit: herramientas para compilar código Java/Kotlin). Android Studio suele traer uno compatible.
+- **Android SDK 37** (paquete de herramientas y librerías de Android; se instala desde el SDK Manager de Android Studio).
+- **Python 3** (lenguaje usado aquí solo para levantar la API simulada local). Comprueba con `python3 --version` en Linux o `python --version` en Windows.
+- Un **emulador** (teléfono virtual dentro del PC) o un **dispositivo físico** con Android 13 (API 33) o superior.
+- Conexión a Internet la primera vez para que **Gradle** (herramienta que compila el proyecto) descargue dependencias.
+
+#### Instalar las herramientas desde cero (si tu equipo está vacío)
+
+Si tu computador no tiene nada instalado, sigue estos pasos en orden:
+
+1. **Python 3.** Descárgalo de https://www.python.org/downloads/ y ejecuta el instalador. **En Windows marca la casilla «Add Python to PATH»** antes de terminar. Comprueba que funcionó con `python3 --version` (en Windows, `python --version`).
+2. **Android Studio.** Descárgalo de https://developer.android.com/studio e instálalo: ya incluye el **JDK** (Java) y el **Android SDK**. Después crea un **emulador con API 33 o superior (Android 13)**. Comprueba que en la raíz del repositorio existe el archivo `gradlew` (en Windows, `gradlew.bat`).
+3. **adb.** Viene dentro del Android SDK, en la carpeta `platform-tools`. Agrega esa carpeta al **PATH** del sistema y comprueba con `adb devices`. Si no quieres tocar el PATH, usa la ruta absoluta del SDK (por ejemplo `/home/simon/Android/Sdk/platform-tools/adb devices`). Si no conectaste ningún dispositivo, la lista aparece vacía: es normal.
+4. **Lemoria CLI.** Es la herramienta que registra el flujo SDD; **no es necesario para compilar la app**, solo para seguir el flujo de trabajo. Está en https://github.com/devcristianlopez/lemoria: clona ese repositorio y ejecuta `./install.sh` desde él (consulta su `INSTALL.md` si algo falla). Comprueba con `lemoria --version` (en este entorno da `0.3.0`).
+5. **Git.** Indispensable para clonar este repositorio y hacer commits. Comprueba con `git --version`.
+
+### Primeros comandos (desde la carpeta raíz del proyecto)
+
+Abre una terminal en la carpeta del proyecto (por ejemplo `limpio_model`) y ejecuta:
+
+```bash
+# 1) Verificar que el wrapper de Gradle funciona (compila el APK de depuración)
+./gradlew :app:assembleDebug
+
+# 2) Ejecutar las pruebas unitarias (no necesitan emulador)
+./gradlew :app:testDebugUnitTest
+
+# 3) (Opcional) Instalar en emulador/dispositivo conectado
+./gradlew :app:installDebug
+```
+
+En Windows (PowerShell o CMD), usa `gradlew.bat` en lugar de `./gradlew`, por ejemplo:
+
+```powershell
+.\gradlew.bat :app:assembleDebug
+```
+
+El APK generado queda en: `app/build/outputs/apk/debug/app-debug.apk`.
+
+### Si vas a probar "Documentos en línea" (API simulada)
+
+La pantalla de documentos remotos necesita un servidor local encendido. Pasos mínimos:
+
+1. En una terminal, inicia la API simulada: `python3 tools/mock_api/server.py` (Linux) o `python tools\mock_api\server.py` (Windows). Ver detalles en [tools/mock_api/README.md](tools/mock_api/README.md).
+2. Abre la app en un **emulador**: la app usa `http://10.0.2.2:8000/` para llegar al PC (configurado en `app/src/main/java/com/example/gestiondocumental/data/remote/ApiConfig.kt`).
+3. Si abres `http://10.0.2.2:8000/documentos` en el **navegador del PC**, dará timeout: esa dirección especial solo funciona **desde el emulador**. En el navegador del PC usa `http://localhost:8000/documentos`.
+4. Si el servidor está apagado, la app mostrará error y ofrecerá reintentar.
+
+> Siguiente lectura recomendada: empieza por el **Glosario para principiantes** y el **Mapa de carpetas** en [docs/GUIA_ESTUDIO.md](docs/GUIA_ESTUDIO.md).
+
+
+
 ## Aplicacion unificada: dos modulos
 
 La app arranca en un portal (`PortalScreen.kt`, montado por `UnifiedApp.kt`) con dos tarjetas: **Bienestar — Lemac DataLab** y **Gestión Documental RR.HH.**, mas un aviso de que ambos modulos operan con datos ficticios. Cada modulo conserva su propio grafo de navegacion, sus ViewModels, su tema visual y sus datos; el portal solo elige a cual se entra y no mezcla nada.
@@ -180,7 +275,7 @@ En total son **105 pruebas unitarias JVM** con JUnit 4 (33 de bienestar + 72 de 
 - `app/src/androidTest/java/com/example/gestiondocumental/data/local/SembradorInstrumentedTest.kt`: **8 pruebas** sobre una base Room real en memoria (`Room.inMemoryDatabaseBuilder`). Cubren conteos de una siembra vacia, idempotencia al sembrar dos veces, reparacion de siembras parciales (3 o 7 usuarios preexistentes), uso de **ids reales** de documentos aunque `sqlite_sequence` este adelantado, **reversion transaccional** ante un trigger que falla al insertar versiones, e integridad referencial de las versiones.
 - `app/src/androidTest/java/com/example/limpio_moviles/PortalSmokeTest.kt`: **1 prueba de humo Compose** (`createAndroidComposeRule<MainActivity>()`) que verifica las dos tarjetas del portal sin depender de que la siembra asincrona haya terminado.
 
-> **Limitacion de entorno verificada:** los 9 tests instrumentados **compilan** (`./gradlew :app:assembleDebugAndroidTest` → `BUILD SUCCESSFUL`) pero **no se han ejecutado**, porque en el entorno de verificacion no hay `adb` ni dispositivo/emulador conectado. Para ejecutarlos hace falta un emulador con API 33 o superior y `./gradlew :app:connectedDebugAndroidTest` (o `./adb devices` / `adb devices` previo).
+> **Limitacion de entorno verificada:** los 9 tests instrumentados **compilan** (`./gradlew :app:assembleDebugAndroidTest` → `BUILD SUCCESSFUL`) pero **no se han ejecutado**, porque `adb` no está en el PATH y no hay dispositivo/emulador conectado. Para ejecutarlos hace falta un emulador con API 33 o superior y `./gradlew :app:connectedDebugAndroidTest`; comprueba antes la conexion con `adb devices` (o con `/home/simon/Android/Sdk/platform-tools/adb devices` si `adb` no está en el PATH).
 
 Sigue sin haber cobertura de Room del modulo de bienestar (su repositorio se prueba con DAO falsificado), de WorkManager, de la escritura real SAF/`ContentResolver` (`ExportadorArchivo` se sustituye por un doble) ni del flujo completo de gestion mas alla del smoke del portal y de las pruebas de sus modelos/repositorios.
 
@@ -398,7 +493,7 @@ Contenido de la guía:
 
 - **Arquitectura y componentes**: vista de capas, app unificada con portal, núcleo de navegación y los dos módulos (Bienestar — Lemac DataLab y Gestión Documental RR.HH.), con sus componentes transversales.
 - **Modelo de datos y flujo de datos**: las 2 bases Room (`lemac_datalab.db` y `gestion_documental.db`), estados, 7 roles y el recorrido de extremo a extremo (crear y editar un registro, exportar CSV, foto de perfil, login y permisos, documento con solicitud y aprobación).
-- **Pruebas**: las 105 pruebas unitarias JVM (33 de bienestar + 72 de gestión documental), las 9 instrumentadas (8 de siembra Room + 1 smoke Compose), cómo ejecutarlas, la limitación de entorno (sin `adb`) y qué queda fuera de cobertura.
+- **Pruebas**: las 105 pruebas unitarias JVM (33 de bienestar + 72 de gestión documental), las 9 instrumentadas (8 de siembra Room + 1 smoke Compose), cómo ejecutarlas, la limitación de entorno (`adb` no está en el PATH y no hay dispositivo/emulador conectado) y qué queda fuera de cobertura.
 - **Replicación paso a paso en 13 fases**: desde preparar el entorno y crear el proyecto hasta Room, repositorios, ViewModels, UI Compose, funciones transversales, pruebas, build, Git/GitHub, flujo SDD con Lemoria y checklist final.
 - **Catálogo completo de comandos**: Lemoria, Gradle, Git, ADB y Android SDK (más utilidades de Linux usadas), con el comando exacto y su propósito.
 - **Solución de errores comunes**: diagnósticos y correcciones para los fallos más frecuentes al compilar, instalar o replicar.

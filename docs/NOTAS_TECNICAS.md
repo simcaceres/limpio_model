@@ -4,6 +4,56 @@ Registro cronológico de decisiones técnicas, verificación y trazabilidad del 
 
 ---
 
+## Flujo de trabajo SDD con Lemoria (manual de traspaso)
+
+Esta sección explica, paso a paso y con comandos reales, cómo se trabaja con **SDD** (Specification/Software Design Driven Development, desarrollo guiado por especificación/diseño) usando la herramienta **Lemoria** (`lemoria`, CLI instalada en el entorno). Está pensada para quien no conoce el flujo.
+
+### Identificadores de este trabajo de documentación
+
+Inclúyelos en reportes y trazabilidad cuando corresponda:
+
+| Identificador | Valor |
+|---|---|
+| `project-id` | `136316a2-36dd-43b5-aa80-05b9e97d3f22` |
+| `prd-id` | `c46eb0c9-d681-40b3-99fb-c2336db498d6` |
+| `conv-id` | `46c48af9-f33b-4546-a4b0-96393bcf6eeb` |
+| `task-id` (auditoría) | `f4b1d51e-13e2-4878-9164-38b2bda8b9f6` |
+| `task-id` (GUIA_ESTUDIO) | `4ad8e55f-e7bd-46bc-925e-f75f64593621` |
+| `task-id` (NOTAS_TECNICAS) | `815d9c90-62b7-4737-82e7-c2e85026aafc` |
+| `task-id` (README) | `c20ea3bb-cc8c-4ab2-8734-64bf7fefa54f` |
+| `task-id` (mock API README) | `bf4cb5cc-f359-4aa5-bcda-86c2e5ea772d` |
+
+> Nota: el cierre de hardening de 2026-11-19 se registró con otro conjunto de identificadores (`prd-id 045a2de8-e11f-4286-930f-ed582728e411`, `conv-id 9b337131-5f44-49d8-b4f1-8edad505507b`, `task-id f8dfcced-828f-4140-8a27-3e350e295a43`). Cada ciclo SDD puede tener sus propios IDs; todos forman parte de la trazabilidad del proyecto.
+
+### Pasos del flujo SDD (de principio a fin)
+
+| Paso | Qué significa | Responsable típico | Comandos reales (ejemplos) |
+|---|---|---|---|
+| 1. User request | El usuario pide algo (bug, mejora, documentación). | Usuario / Orquestador | (conversación; se registra en el sistema) |
+| 2. Conversación | Se aclara el alcance y se crea/usa una conversación de trabajo. | Orquestador | `lemoria conv create <project-id> -t "Manual de traspaso"` · `lemoria conv add <conv-id> user "Actualizar docs..."` · `lemoria conv list <project-id>` |
+| 3. PRD | Se define el **PRD** (Product Requirements Document: documento de requisitos/alcance). | Orquestador / flujo | `lemoria flow start <project-id> "Crear manual de traspaso para principiantes"` · `lemoria flow list <project-id>` · `lemoria flow status <flow-id>` |
+| 4. Tareas (INVEST) | Se descompone en tareas pequeñas, independientes y verificables. | Orquestador | `lemoria task create <project-id> <prd-id> -t "Actualizar README con traspaso"` · `lemoria task list <project-id>` · `lemoria task status <task-id> in_progress` |
+| 5. Implement | Se hacen los cambios (código o documentación) según la tarea. | Agente/autor | (editar archivos; en código se usarían herramientas de build; en docs, editar Markdown) |
+| 6. Test | Se verifica: en código, compilar y correr pruebas; en docs, revisar enlaces, rutas y que no se invente nada. | Agente/autor | `./gradlew :app:testDebugUnitTest` · `./gradlew :app:assembleDebug` · (revisión manual de Markdown y enlaces relativos) |
+| 7. Review | Revisión de calidad y alineación con el PRD/alcance. | Revisor | (revisión; registrar resultado en conversación/tarea) |
+| 8. Commit | Se registra el commit en el control de versiones y en la trazabilidad. | Autor | `git add <archivos>` · `git commit -m "docs: manual de traspaso para principiantes"` · `lemoria commit add <sha> --task <task-id>` · `lemoria commit list --task <task-id>` |
+| 9. Document | Se actualiza documentación (README, `docs/`, guías) en el mismo ciclo del cambio. | Agente doc | (este paso: actualizar los 5 archivos solicitados) |
+| 10. `vault_sync` | Se sincroniza la bóveda/exportación de conocimiento del proyecto. | Sistema/orquestador | `lemoria vault sync <project-id>` (ej.: `lemoria vault sync 136316a2-36dd-43b5-aa80-05b9e97d3f22`) |
+| 11. Consolidate | Se consolidan resultados, decisiones y estado final de tareas/flujo. | Orquestador | `lemoria flow step <flow-id> consolidate -s completed -o "Docs actualizadas"` · `lemoria task status <task-id> completed` · `lemoria decision log <project-id> -t "..." -d "..."` · `lemoria decision list <project-id>` |
+| 12. Complete | Se cierra el flujo/ciclo. | Orquestador | `lemoria flow complete <flow-id>` · `lemoria flow status <flow-id>` |
+
+> Los comandos anteriores son los reales de la CLI Lemoria disponible (`lemoria flow`, `task`, `conv`, `decision`, `commit`, `vault sync`, etc.). Los argumentos `<...>` son IDs reales del proyecto/flujo/tarea/conversación según corresponda. Algunos pasos los ejecuta el orquestador; este cambio de documentación **no** ejecuta commit ni `vault_sync` por sí mismo.
+
+### Cómo se registró este proyecto (resumen de trazabilidad)
+
+- **Proyecto Lemoria:** `136316a2-36dd-43b5-aa80-05b9e97d3f22` (este repositorio/app).
+- **PRD de este manual:** `c46eb0c9-d681-40b3-99fb-c2336db498d6`, conversación `46c48af9-f33b-4546-a4b0-96393bcf6eeb`.
+- **Tareas de esta entrega documental:** auditoría `f4b1d51e-13e2-4878-9164-38b2bda8b9f6`, guía de estudio `4ad8e55f-e7bd-46bc-925e-f75f64593621`, notas técnicas `815d9c90-62b7-4737-82e7-c2e85026aafc`, README `c20ea3bb-cc8c-4ab2-8734-64bf7fefa54f`, mock API README `bf4cb5cc-f359-4aa5-bcda-86c2e5ea772d`.
+- **Cierre de hardening previo (registrado):** PRD `045a2de8-e11f-4286-930f-ed582728e411`, conversación `9b337131-5f44-49d8-b4f1-8edad505507b`, flujo SDD con pasos `prd`, `tasks`, `implement`, `test`, `review`, `commit` completados; commit `8832145` (hardening b/c/d) y `8595fb9` (docs del hardening) aún **sin push** por falta de credenciales HTTPS. Detalle en la sección fechada más abajo.
+
+
+---
+
 ## [2026-11-19] Hardening: siembra transaccional, login robusto y tests de regresión
 
 **Estado:** implementado, testeado, revisado y commiteado. Review: **APROBADO CON OBSERVACIONES** (observaciones resueltas). Commit `8832145` — **no pusheado aún** por falta de credenciales HTTPS.
@@ -103,6 +153,7 @@ Otros datos del entorno de verificación: JVM 21, Android SDK en `/home/simon/An
 ./gradlew :app:assembleDebugAndroidTest --console=plain --no-daemon
 
 # Solo con adb + emulador/dispositivo API 33+
+# En este entorno adb no está en el PATH y no hay dispositivo/emulador conectado
 adb devices
 ./gradlew :app:connectedDebugAndroidTest --console=plain --no-daemon
 

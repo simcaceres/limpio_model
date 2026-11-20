@@ -1,29 +1,136 @@
-# Guia de estudio de Lemac DataLab
+# Guía de estudio de Lemac DataLab (manual para principiantes)
 
-Esta guia explica el proyecto Android `limpio_moviles` tal como esta escrito en el codigo. Sirve para estudiar los componentes, entender el flujo de los datos y preparar una defensa oral.
+Esta guía explica el proyecto tal como está escrito en el código. Está pensada como **material de traspaso y replicación** para alguien que no sabe nada de Android, Kotlin ni de este repositorio: primero explica lo básico y después entra al detalle técnico.
 
-La regla de lectura es simple: **primero se identifica la capa, despues el archivo, despues la responsabilidad**. No hace falta memorizar cada linea, pero si poder explicar que hace cada pieza y por que esta separada de las demas.
+**Identificadores de trazabilidad (Lemoria / SDD):**
+- `project-id`: `136316a2-36dd-43b5-aa80-05b9e97d3f22`
+- `prd-id`: `c46eb0c9-d681-40b3-99fb-c2336db498d6`
+- `conv-id`: `46c48af9-f33b-4546-a4b0-96393bcf6eeb`
+- `task-id` (esta guía): `4ad8e55f-e7bd-46bc-925e-f75f64593621`
 
-## 1. Vision general
+> Regla de lectura: **primero identifica la capa, después el archivo, después la responsabilidad**. No hace falta memorizar cada línea, pero sí poder explicar qué hace cada pieza y por qué está separada de las demás.
 
-Lemac DataLab es una aplicacion de autorregistro. La persona elige uno de cuatro ambitos, completa un formulario breve, guarda el registro y luego puede verlo en un historial, consultar un resumen por ambito, activar un recordatorio diario y cambiar su alias o foto.
+## 0. Glosario para principiantes
 
-El proyecto es un MVP academico:
+Términos que aparecen en esta guía (y en el proyecto). La primera vez que veas uno en el texto, puedes volver aquí.
 
-- No hay backend real: la sincronizacion es simulada con `FakeLemacApi`.
-- No hay autenticacion ni cuentas.
+| Término | Qué es (explicación sencilla) |
+|---|---|
+| **Android** | Sistema operativo (el "programa principal") que usan muchos teléfonos y tablets. |
+| **Android Studio** | Programa en el PC para crear, compilar y probar apps Android (un IDE: editor + herramientas). |
+| **APK** | Archivo instalable de una app Android (como un "paquete" que se instala en el teléfono/emulador). |
+| **Kotlin** | Lenguaje de programación moderno que se usa para escribir esta app. |
+| **Gradle** | Herramienta que compila el proyecto, descarga librerías y genera el APK (usa los scripts `build.gradle.kts`, `settings.gradle.kts` y el *wrapper* `./gradlew`). |
+| **Jetpack Compose** (Compose) | Forma moderna de dibujar la interfaz en Android usando funciones de Kotlin (en vez de archivos XML de pantallas). |
+| **Activity** | Punto de entrada de una pantalla/app en Android. Aquí hay una sola: `MainActivity`, que monta toda la interfaz con Compose. |
+| **ViewModel** | Componente que guarda el estado de la pantalla y la lógica de presentación; sobrevive a cambios como rotar el teléfono. |
+| **Repository** (repositorio) | Capa intermedia que decide de dónde vienen los datos (base local, API, preferencias) y ofrece operaciones simples al ViewModel. |
+| **Room** | Librería de Android para guardar datos en una base de datos local (SQLite) de forma más segura y con menos código manual. |
+| **DAO** | *Data Access Object* (objeto de acceso a datos): interfaz donde se definen las consultas y operaciones de la base (leer, insertar, actualizar, borrar). |
+| **Entity** (entidad) | Clase que representa una tabla/fila en la base de datos Room. |
+| **Retrofit** | Librería para hacer llamadas HTTP (peticiones web) a una API de forma declarada en Kotlin. |
+| **API / REST / HTTP GET / JSON** | Una **API** es una interfaz para pedir datos a un servicio. **REST** es un estilo común de APIs web. **HTTP GET** es una petición para "leer" datos. **JSON** es el formato de texto usado para enviarlos (listas y objetos con llaves/valores). |
+| **Notificación** | Mensaje que el sistema Android muestra al usuario (por ejemplo, un recordatorio). Requiere un canal en Android moderno. |
+| **WorkManager** | Librería para programar trabajos diferidos/ periódicos (aquí, el recordatorio diario aproximado). |
+| **Siembra de datos** (*seed*) | Insertar datos iniciales de ejemplo en la base de datos la primera vez (o reparar si faltan), para poder probar la app. |
+| **Emulador** | Teléfono virtual que corre en tu PC para probar la app sin un dispositivo físico. |
+| **`10.0.2.2`** | Dirección especial: desde el **emulador** Android apunta al PC anfitrión. No funciona igual desde el navegador del PC. |
+| **localhost / 127.0.0.1** | "Este mismo equipo". Úsalo en el navegador del PC para hablar con un servidor que corre en tu PC. |
+| **SAF** (Storage Access Framework) | Selector de documentos del sistema Android: permite guardar/abrir archivos donde el usuario elija sin pedir permisos de almacenamiento. |
+| **`<project-id>`** | Identificador del proyecto en Lemoria (ej. `136316a2-...`); se sustituye en los comandos SDD. |
+| **`<prd-id>`** | Identificador del PRD/flujo (ej. `c46eb0c9-...`). |
+| **`<task-id>`** | Identificador de una tarea del flujo SDD. |
+| **`<sha>`** | Hash corto del commit, usado para enlazarlo a una tarea en Lemoria. |
+
+## 0.1 Mapa de carpetas comentado (estructura real)
+
+```text
+limpio_model/                         ← Raíz del repositorio (proyecto Android + docs + herramientas)
+├── app/                              ← Módulo Android principal (:app). Aquí vive casi todo el código.
+│   ├── build.gradle.kts              ← Configuración de compilación del módulo (plugins, SDK, dependencias).
+│   └── src/
+│       ├── main/                     ← Código y recursos que van dentro de la app instalada.
+│       │   ├── AndroidManifest.xml   ← "DNI" de la app: permisos, Activity, Application, providers, tema.
+│       │   ├── java/com/example/
+│       │   │   ├── limpio_moviles/   ← Módulo BIENESTAR + raíz unificada (portal, Activity, Application).
+│       │   │   │   ├── LemacApplication.kt   ← Contenedor de dependencias y siembra al iniciar.
+│       │   │   │   ├── MainActivity.kt       ← Única Activity; monta el tema y UnifiedApp().
+│       │   │   │   ├── data/local/           ← Room bienestar: base `lemac_datalab.db`, DAO, entidad, CSV.
+│       │   │   │   ├── data/remote/          ← API simulada en memoria (FakeLemacApi) para bienestar.
+│       │   │   │   ├── data/repository/      ← Repositorios de registros y perfil.
+│       │   │   │   ├── model/                ← Modelos, catálogos, validación y cálculo de resumen.
+│       │   │   │   ├── navigation/           ← Navegación: `UnifiedApp` (portal) y `AppNavigation` (bienestar).
+│       │   │   │   ├── ui/screens/           ← Pantallas Compose (Portal, Onboarding, Home, Registro, etc.).
+│       │   │   │   ├── ui/components/        ← Componentes reutilizables (botones, selectores, tarjetas).
+│       │   │   │   ├── ui/theme/             ← Colores, tipografía y tema Material 3.
+│       │   │   │   ├── util/                 ← Foto, notificaciones, recordatorios, exportación de archivos.
+│       │   │   │   └── viewmodel/            ← ViewModel y Factory (estado y lógica de presentación).
+│       │   │   └── gestiondocumental/        ← Módulo GESTIÓN DOCUMENTAL RR.HH. (paquete separado).
+│       │   │       ├── data/local/           ← Room gestión: `gestion_documental.db`, DAOs, entidades, Sembrador.
+│       │   │       ├── data/remote/          ← Cliente REST real (Retrofit): ApiConfig, DTO, ApiService, Red.
+│       │   │       ├── data/repository/      ← Repositorios (sesión, documentos, usuarios, auditoría, remotos).
+│       │   │       ├── model/                ← Roles, permisos, validadores, flujo, reportes.
+│       │   │       ├── navigation/           ← Grafo de navegación del módulo de gestión.
+│       │   │       ├── ui/                   ← Pantallas, componentes y tema del módulo de gestión.
+│       │   │       ├── util/                 ← Archivos, fechas, notificaciones.
+│       │   │       └── viewmodel/            ← ViewModels de sesión, documentos, usuarios, auditoría.
+│       │   └── res/                          ← Recursos: textos (`values/strings.xml`), temas, iconos,
+│       │                                     ←   y XML de backup/red/paths (`xml/*.xml`).
+│       ├── test/java/com/example/            ← Pruebas unitarias JVM (105): `limpio_moviles` + `gestiondocumental`.
+│       └── androidTest/java/com/example/     ← Pruebas instrumentadas (9, requieren emulador/adb para correr).
+├── docs/                                     ← Documentación del proyecto (guías, notas, informes, ADRs en texto).
+│   ├── GUIA_ESTUDIO.md                       ← Esta guía (estudio + traspaso para principiantes).
+│   ├── NOTAS_TECNICAS.md                     ← Flujo SDD con Lemoria, ADRs y trazabilidad.
+│   ├── DISERTACION.md                        ← Guion de exposición.
+│   ├── INTEGRACION.md                        ← Cómo se unificaron los dos módulos.
+│   ├── INTEGRACION_API_IT3.md                ← Detalle de la integración REST (IT3).
+│   └── INFORME_ARQUITECTURA.pdf              ← Informe de arquitectura en PDF.
+├── tools/
+│   └── mock_api/                             ← API simulada local (Python): `server.py`, `documentos.json`, README.
+├── gradle/                                   ← Versiones y wrapper de Gradle (`libs.versions.toml`, wrapper).
+├── build.gradle.kts                          ← Configuración raíz de Gradle.
+├── settings.gradle.kts                       ← Nombre del proyecto y módulos incluidos (`:app`).
+├── gradlew / gradlew.bat                     ← Scripts para ejecutar Gradle sin instalarlo aparte (wrapper).
+└── README.md                                 ← Portada del repositorio y punto de entrada al traspaso.
+```
+
+> Importante: hay **un solo módulo Gradle** (`:app`) y **una sola app/Activity** (`MainActivity`), pero dentro conviven dos paquetes/módulos funcionales (bienestar y gestión documental) con **dos bases Room separadas**.
+
+## 0.2 Cómo se recorre una pantalla (paso a paso, de punta a punta)
+
+Ejemplo real: **abrir un ámbito en Bienestar y guardar un registro**. Así viaja un dato por las capas:
+
+1. **UI (Compose)** — `ui/screens/HomeScreen.kt`: el usuario toca una tarjeta de ámbito. La pantalla llama a la navegación (`Rutas.registro(ambito)` definida en `navigation/AppNavigation.kt`).
+2. **Navegación** — `AppNavigation.kt` (dentro de `navigation/`) resuelve la ruta `registro/{ambito}` y muestra `ui/screens/RegistroScreen.kt`.
+3. **UI → ViewModel** — `RegistroScreen` muestra campos y, al pulsar "Guardar", llama a `viewmodel/RegistroViewModel.guardar()`.
+4. **ViewModel (lógica de presentación)** — `RegistroViewModel` valida con `model/RegistroValidator.kt` (reglas puras, sin Android). Si hay errores, actualiza el estado (`RegistroUiState`) y la UI los muestra. Si está bien, crea una entidad.
+5. **ViewModel → Repository** — el ViewModel llama a `data/repository/RegistroRepository.guardar(...)` (no habla directo con la base).
+6. **Repository → DAO/Room** — el repositorio decide insertar o actualizar y usa `data/local/RegistroDao.kt` sobre la entidad `RegistroEntity.kt`.
+7. **Room (base local)** — Room escribe en la base `lemac_datalab.db` (configurada en `data/local/LemacDatabase.kt`). Room expone los datos como `Flow` (flujo reactivo).
+8. **Vuelta a la UI** — el `Flow` emite la lista actualizada → el ViewModel la expone como `StateFlow`/estado → Compose se recompone y las pantallas (Historial, Resumen, Home) muestran el nuevo dato automáticamente.
+
+Piensa en capas como una cadena: **Pantalla → ViewModel → Repository → (DAO/Room o API o Preferences) → y de regreso**. La UI nunca toca la base directamente.
+
+## 1. Visión general
+
+Lemac DataLab es una aplicación de autorregistro. La persona elige uno de cuatro ámbitos, completa un formulario breve, guarda el registro y luego puede verlo en un historial, consultar un resumen por ámbito, activar un recordatorio diario y cambiar su alias o foto.
+
+El proyecto es un MVP académico:
+
+- No hay backend real: la sincronización es simulada con `FakeLemacApi`.
+- No hay autenticación ni cuentas.
 - Los datos se guardan localmente con Room y `SharedPreferences`.
 - Los registros se pueden exportar a un archivo CSV local mediante el selector de documentos del sistema (SAF); no se sube nada a la nube.
 - La app no declaraba el permiso `INTERNET` ni permisos de almacenamiento (antes de IT3). Desde IT3 sí declara `INTERNET` para la API REST simulada de documentos; el cleartext queda restringido a `10.0.2.2`, `localhost` y `127.0.0.1` (ver [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md)).
-- Los textos de la interfaz aclaran que se usan datos ficticios o sinteticos y que la app no es diagnostico ni tratamiento.
+- Los textos de la interfaz aclaran que se usan datos ficticios o sintéticos y que la app no es diagnóstico ni tratamiento.
 
-La aplicacion tiene una sola `Activity` (`MainActivity`) y toda la interfaz se escribe con Jetpack Compose. La navegacion se resuelve con Navigation Compose dentro de un `NavHost`.
+La aplicación tiene una sola `Activity` (`MainActivity`) y toda la interfaz se escribe con Jetpack Compose. La navegación se resuelve con Navigation Compose dentro de un `NavHost`.
 
-> Contexto de la app unificada: el proyecto entrega dos trabajos academicos en un solo APK. Al abrir la app aparece un portal (`PortalScreen`, "Centro de aplicaciones") con las tarjetas **Bienestar — Lemac DataLab** y **Gestión Documental RR.HH.**, mas un aviso de datos ficticios. La navegacion raiz (`UnifiedApp.kt`) monta este grafo de bienestar (`LemacApp()`, paquete `com.example.limpio_moviles`) o el de gestion documental (`GestionTheme { GestionApp() }`, paquete `com.example.gestiondocumental`), cada uno con su base Room propia (`lemac_datalab.db` y `gestion_documental.db`). Esta guia estudia el modulo de bienestar; la fusion completa se documenta en [INTEGRACION.md](INTEGRACION.md).
+> Contexto de la app unificada: el proyecto entrega dos trabajos académicos en un solo APK. Al abrir la app aparece un portal (`PortalScreen`, "Centro de aplicaciones") con las tarjetas **Bienestar — Lemac DataLab** y **Gestión Documental RR.HH.**, más un aviso de datos ficticios. La navegación raíz (`UnifiedApp.kt`) monta este grafo de bienestar (`LemacApp()`, paquete `com.example.limpio_moviles`) o el de gestión documental (`GestionTheme { GestionApp() }`, paquete `com.example.gestiondocumental`), cada uno con su base Room propia (`lemac_datalab.db` y `gestion_documental.db`). Esta guía estudia con detalle el módulo de bienestar; la fusión completa se documenta en [INTEGRACION.md](INTEGRACION.md).
 
 ## 2. Arquitectura por capas
 
-El proyecto sigue una separacion en capas inspirada en MVVM con un repositorio por fuente de datos. La dependencia va en un solo sentido: la interfaz conoce al ViewModel, el ViewModel conoce a los repositorios y los repositorios conocen las fuentes de datos. Por encima de estas capas, la navegacion raiz de la app unificada (`UnifiedApp.kt`) arranca en el portal y decide si se monta `LemacApp()` o el grafo de gestion documental; el diagrama y las capas que siguen describen el modulo de bienestar.
+El proyecto sigue una separación en capas inspirada en MVVM con un repositorio por fuente de datos. La dependencia va en un solo sentido: la interfaz conoce al ViewModel, el ViewModel conoce a los repositorios y los repositorios conocen las fuentes de datos. Por encima de estas capas, la navegación raíz de la app unificada (`UnifiedApp.kt`) arranca en el portal y decide si se monta `LemacApp()` o el grafo de gestión documental; el diagrama y las capas que siguen describen el módulo de bienestar.
 
 ```mermaid
 flowchart LR
@@ -67,6 +174,25 @@ flowchart LR
     CSV -. "texto CSV" .-> SAF["Selector de documentos (SAF)"]
     API -. "simula 700 ms, no usa red" .-> RR
 ```
+
+
+### Explicación de cada capa para principiantes
+
+Si eres nuevo, piensa en la app como un restaurante:
+
+| Capa (en esta app) | Símil | Archivos/rutas reales | Qué hace |
+|---|---|---|---|
+| **UI / Compose** (pantallas y componentes) | El salón y el menú: lo que el usuario ve y toca | `app/src/main/java/com/example/limpio_moviles/ui/screens/*.kt`, `.../ui/components/*.kt`, `.../ui/theme/*.kt` | Dibuja botones, formularios, listas. No guarda datos ni hace consultas; solo muestra estado y avisa eventos (clics). |
+| **ViewModel** | El jefe de sala: coordina pedidos y recuerda el estado | `app/src/main/java/com/example/limpio_moviles/viewmodel/RegistroViewModel.kt` (y su Factory) | Guarda el estado de la pantalla, valida, llama a repositorios y lanza tareas en segundo plano (`viewModelScope`). |
+| **Repository** (repositorio) | La despensa organizada: decide de dónde sacar/guardar cada cosa | `app/src/main/java/com/example/limpio_moviles/data/repository/RegistroRepository.kt`, `PerfilRepository.kt` (+ implementación `PerfilRepositorySharedPreferences.kt`) | Ofrece operaciones simples ("guardar registro", "cargar perfil") y oculta si el dato viene de Room, de un archivo o de una API. |
+| **Room / DAO / Entity** (base local) | El archivo/caja fuerte del local | `app/src/main/java/com/example/limpio_moviles/data/local/LemacDatabase.kt` (base `lemac_datalab.db`), `RegistroDao.kt` (consultas), `RegistroEntity.kt` (tabla `registros`) | Guarda y lee datos persistentes en el dispositivo con SQLite a través de Room. |
+| **Red / Retrofit (y API simulada)** | El mensajero que pide datos afuera | Bienestar: `data/remote/LemacApi.kt` / `FakeLemacApi` (simulada en memoria, sin red). Gestión: `app/src/main/java/com/example/gestiondocumental/data/remote/ApiConfig.kt`, `DocumentosApiService.kt` (`@GET("documentos")`), `DocumentoDto.kt`, `RedDocumentos.kt` (Retrofit+Gson+OkHttp) contra `tools/mock_api/server.py` | Bienestar simula sincronización (700 ms). Gestión consume `GET /documentos` de una API REST local y muestra Cargando/Datos/Error. |
+| **Application** (punto de arranque global) | El encargado que abre el local y prepara todo | `app/src/main/java/com/example/limpio_moviles/LemacApplication.kt` (declarada en `app/src/main/AndroidManifest.xml`) | Crea canales de notificación, bases y repositorios de ambos módulos, y lanza la siembra de datos demo de gestión (en segundo plano, tolerante a fallos). |
+| **Notificaciones y recordatorios** | El timbre que avisa al usuario | `app/src/main/java/com/example/limpio_moviles/util/NotificacionHelper.kt`, `RecordatorioScheduler.kt`, `RecordatorioWorker.kt` (y canal creado en `LemacApplication`) | Programan y muestran recordatorios (WorkManager). Texto genérico, sin datos sensibles. |
+| **Mock API (servidor simulado)** | Un "servidor de mentira" en tu PC para practicar | `tools/mock_api/server.py` y `tools/mock_api/documentos.json` (ver [tools/mock_api/README.md](../tools/mock_api/README.md)) | Sirve `GET /documentos` con datos ficticios para la pantalla "Documentos en línea". No es un backend real en Internet. |
+
+> El módulo de **Gestión Documental** repite el mismo patrón en su propio paquete `com.example.gestiondocumental` con su base `gestion_documental.db` (DAOs/entidades en `data/local`, `Sembrador.kt` para datos demo, repositorios y ViewModels propios).
+
 
 ### Responsabilidad de cada capa
 
@@ -1163,7 +1289,7 @@ Detalles:
 
 > Nota IT3: desde la actividad IT3 existe una integracion de red real contra `GET /documentos` con Retrofit, el manifiesto declara `INTERNET` y la suite subio a **95 pruebas en el arbol** (33 de bienestar + 62 de gestion documental: 14 de red y 5 de regresion de `BASE_URL` mas las 43 previas). El informe original cito 90 por omission de `ApiConfigTest`; aqui se corrige. El detalle completo esta en [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md).
 
-> Nota de hardening (19 de noviembre de 2026): la suite JVM quedo en **105 pruebas** (33 de bienestar + 72 de gestion documental; +5 de `ApiConfigTest` y +10 de `SesionRepositoryTest`) y se agregaron **9 pruebas instrumentadas** (8 de siembra Room + 1 smoke Compose), compiladas pero no ejecutadas por falta de `adb`/dispositivo. Detalle en [NOTAS_TECNICAS.md](NOTAS_TECNICAS.md).
+> Nota de hardening (19 de noviembre de 2026): la suite JVM quedo en **105 pruebas** (33 de bienestar + 72 de gestion documental; +5 de `ApiConfigTest` y +10 de `SesionRepositoryTest`) y se agregaron **9 pruebas instrumentadas** (8 de siembra Room + 1 smoke Compose), compiladas pero no ejecutadas porque `adb` no está en el PATH y no hay dispositivo/emulador conectado. Detalle en [NOTAS_TECNICAS.md](NOTAS_TECNICAS.md).
 
 La app unificada tiene **105 pruebas unitarias JVM** con JUnit 4: 33 del modulo de bienestar, en `app/src/test/java/com/example/limpio_moviles/` (9 del validador, 4 del resumen, 8 del generador CSV, 5 del repositorio con DAO falsificado y 7 del ViewModel en JVM), y 72 del modulo de gestion documental, en `app/src/test/java/com/example/gestiondocumental/` (5 de regresion de `BASE_URL`, 10 de sesion, 4 de validadores, 7 de permisos, 9 de carga de permisos, 6 del flujo de modificacion, 9 de reportes, 8 de tipos MIME, 6 del contrato JSON de IT3, 4 del repositorio remoto con `MockWebServer` y 4 del ViewModel remoto). Esta seccion detalla las del modulo de bienestar y las nuevas de hardening; el desglose completo de gestion esta en el README, en [INTEGRACION.md](INTEGRACION.md), en [INTEGRACION_API_IT3.md](INTEGRACION_API_IT3.md) y en [NOTAS_TECNICAS.md](NOTAS_TECNICAS.md).
 
@@ -1260,7 +1386,7 @@ Se compilan con `./gradlew :app:assembleDebugAndroidTest` (verificado `BUILD SUC
 
 El ViewModel de bienestar ya no es deuda: `RegistroViewModelTest` cubre creacion, edicion, edicion inexistente, validacion y carga demo (7 pruebas) en la JVM, sin `Robolectric`.
 
-La carpeta `app/src/androidTest` **si existe** desde el cierre de hardening: contiene 8 pruebas de siembra Room y 1 smoke Compose del portal. Estan compiladas, pero aun no ejecutadas en este entorno por falta de `adb`/dispositivo.
+La carpeta `app/src/androidTest` **si existe** desde el cierre de hardening: contiene 8 pruebas de siembra Room y 1 smoke Compose del portal. Estan compiladas, pero aun no ejecutadas en este entorno porque `adb` no está en el PATH y no hay dispositivo/emulador conectado.
 
 Comandos:
 
@@ -1283,7 +1409,7 @@ Conviene decirlas con claridad en la disertacion, porque demuestran criterio:
 2. **No hay cifrado.** Room y `SharedPreferences` guardan en claro dentro del sandbox de la app.
 3. **El backup esta acotado, pero la base sigue sin cifrar.** `allowBackup="true"` se mantiene. Las reglas incluyen explicitamente Room (`database`) y las `SharedPreferences` (`sharedpref`: alias/seudonimo y ruta de foto), y excluyen explicitamente la foto (`file/perfil.png`). La cache no se incluye porque la plataforma la excluye siempre de forma automatica y, al usar `<include>`, la lista de respaldo es una allowlist limitada a Room y `SharedPreferences`; el XML no declara una exclusion de cache. Se aplican igual en `backup_rules.xml` (API 30 o inferior) y en `data_extraction_rules.xml` para `<cloud-backup>` y `<device-transfer>` (API 31 o superior). Falta cifrar la base de datos.
 4. **No hay migraciones.** `fallbackToDestructiveMigration()` puede borrar datos al cambiar la version de la base.
-5. **Hay pocas pruebas instrumentadas y casi ninguna de UI.** Desde el hardening existen 8 de siembra Room sobre base real y 1 smoke Compose del portal, pero estan compiladas y **no ejecutadas** en este entorno (sin `adb`/dispositivo); las demas pantallas no tienen cobertura de interfaz.
+5. **Hay pocas pruebas instrumentadas y casi ninguna de UI.** Desde el hardening existen 8 de siembra Room sobre base real y 1 smoke Compose del portal, pero estan compiladas y **no ejecutadas** en este entorno (`adb` no está en el PATH y no hay dispositivo/emulador conectado); las demas pantallas no tienen cobertura de interfaz.
 6. **El ViewModel es unico y compartido.** Para una app mas grande convendria separar ViewModels por pantalla o por flujo.
 7. **La sincronizacion no resuelve conflictos.** Solo marca pendientes como sincronizados.
 8. **La edicion re-encola el registro para sincronizar.** Editar conserva la fecha original pero fuerza `sincronizado = false`, asi que el registro editado se reenvia completo en la siguiente sincronizacion simulada. Es intencional (el cambio debe llegar al "servidor"), pero una API real necesitaria manejo de conflictos o idempotencia.
@@ -1401,4 +1527,4 @@ Si hubiera que resumir el proyecto en una frase por capa:
 - **Navegacion:** una Activity, un `NavHost`, rutas con ambito e id.
 - **Recordatorios:** WorkManager periodico, worker y notificacion generica.
 - **Privacidad:** datos locales, sin red real, con advertencias y limitaciones documentadas.
-- **Pruebas:** 105 pruebas unitarias JVM en la app unificada (33 de bienestar: validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM; 72 de gestion documental, incluidas las 14 de IT3, las 5 de regresion de `BASE_URL` y las 10 de `SesionRepositoryTest`) mas 9 instrumentadas (8 de siembra Room y 1 smoke Compose), compiladas pero no ejecutadas sin `adb`.
+- **Pruebas:** 105 pruebas unitarias JVM en la app unificada (33 de bienestar: validador, resumen, generador CSV, repositorio con DAO falsificado y ViewModel en JVM; 72 de gestion documental, incluidas las 14 de IT3, las 5 de regresion de `BASE_URL` y las 10 de `SesionRepositoryTest`) mas 9 instrumentadas (8 de siembra Room y 1 smoke Compose), compiladas pero no ejecutadas porque `adb` no está en el PATH y no hay dispositivo/emulador conectado.

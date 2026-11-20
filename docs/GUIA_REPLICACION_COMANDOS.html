@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guia maestra de estudio y replicacion - Lemac DataLab + Gestion Documental</title>
+<title>Guía de traspaso, estudio y replicación — Lemac DataLab + Gestión Documental</title>
 <style>
   @page { size: A4; margin: 17mm 15mm 16mm 15mm; }
   * { box-sizing: border-box; }
@@ -90,31 +90,36 @@
 <!-- ============================ PORTADA ============================ -->
 <section class="cover">
   <div>
-    <div class="kicker">Guia maestra &middot; Estudio + Replicacion</div>
-    <h1>Lemac DataLab<br>+ Gestion Documental</h1>
-    <p class="sub">Arquitectura, componentes, flujo de datos, comandos y paso a paso para replicar el proyecto</p>
+    <div class="kicker">Manual de traspaso &middot; Principiantes &middot; Estudio + Replicaci&oacute;n</div>
+    <h1>Gu&iacute;a de traspaso,<br>estudio y replicaci&oacute;n</h1>
+    <p class="sub">Lemac DataLab + Gesti&oacute;n Documental</p>
     <p class="desc">
-      Documento unico de estudio y transferencia. Explica como esta construida la aplicacion Android
-      unificada (Kotlin + Jetpack Compose + Room + MVVM), como fluye la informacion de la UI a la base
-      de datos y viceversa, y entrega el catalogo completo de comandos usados en el proyecto junto a
-      una guia secuencial para reconstruirlo en otro repositorio y repetir el flujo SDD con Lemoria.
+      Gu&iacute;a de traspaso, estudio y replicaci&oacute;n &mdash; Lemac DataLab + Gesti&oacute;n Documental.
+      Documento &uacute;nico para una <b>audiencia principiante sin conocimientos previos</b>: explica desde cero
+      qu&eacute; es Android Studio, Kotlin, Gradle, Compose, Room o Retrofit; recorre el c&oacute;digo carpeta por
+      carpeta y pantalla por pantalla; detalla la arquitectura por capas con rutas reales; documenta el flujo
+      SDD con Lemoria y sus doce pasos; y entrega los comandos de build, test, instalaci&oacute;n y de la API
+      simulada, junto con el estado verificado del proyecto al 19 de noviembre de 2026.
     </p>
     <div class="chips">
+      <span class="chip">Audiencia: principiante sin conocimientos previos</span>
       <span class="chip">Kotlin 2.0.21</span>
       <span class="chip">Jetpack Compose</span>
       <span class="chip">Room 2.8.5</span>
       <span class="chip">MVVM + Repository</span>
-      <span class="chip">76 pruebas JVM</span>
-      <span class="chip">Lemoria SDD</span>
+      <span class="chip">105 pruebas JVM + 9 instrumentadas</span>
+      <span class="chip">API mock local</span>
+      <span class="chip">Lemoria SDD (12 pasos)</span>
     </div>
   </div>
   <div class="meta">
     <b>Proyecto:</b> limpio_model (Gradle: limpio_moviles) &nbsp;&middot;&nbsp;
-    <b>Paquete:</b> com.example.limpio_moviles &nbsp;&middot;&nbsp;
+    <b>Paquete:</b> com.example.limpio_moviles + com.example.gestiondocumental &nbsp;&middot;&nbsp;
     <b>Rama:</b> entrega_hito2<br>
-    <b>Entregable:</b> Guia de estudio y replicacion en PDF &nbsp;&middot;&nbsp;
-    <b>Fecha:</b> 12 de noviembre de 2026 &nbsp;&middot;&nbsp;
-    <b>Version:</b> 1.0
+    <b>Entregable:</b> Gu&iacute;a de traspaso, estudio y replicaci&oacute;n en PDF &nbsp;&middot;&nbsp;
+    <b>Audiencia:</b> principiante sin conocimientos previos &nbsp;&middot;&nbsp;
+    <b>Fecha:</b> 19 de noviembre de 2026 &nbsp;&middot;&nbsp;
+    <b>Versi&oacute;n:</b> 2.0
   </div>
 </section>
 
@@ -123,6 +128,18 @@
   <h1 class="nobreak">Contenido</h1>
   <div class="two-col">
   <ol>
+    <li>0. Gu&iacute;a de traspaso para principiantes (empieza aqu&iacute;)
+      <ol>
+        <li>0.1 Glosario para principiantes</li>
+        <li>0.2 Mapa de carpetas comentado</li>
+        <li>0.3 Recorrido de una pantalla, paso a paso</li>
+        <li>0.4 Arquitectura por capas y componentes (rutas reales)</li>
+        <li>0.5 Flujo de trabajo SDD con Lemoria: los 12 pasos</li>
+        <li>0.6 Comandos de build, test e instalaci&oacute;n y estado actual</li>
+        <li>0.7 API mock: puesta en marcha y soluci&oacute;n de problemas</li>
+        <li>0.8 Enlaces y referencias del repositorio</li>
+      </ol>
+    </li>
     <li>Como usar esta guia
       <ol><li>Ruta A: estudiar</li><li>Ruta B: replicar</li><li>Ruta C: exponer</li></ol>
     </li>
@@ -151,7 +168,7 @@
       <ol><li>Matriz RBAC</li><li>Manifest y backup</li><li>Privacidad de datos</li></ol>
     </li>
     <li>Pruebas y calidad
-      <ol><li>Las 76 pruebas</li><li>Como ejecutarlas</li><li>Cobertura y deuda</li></ol>
+      <ol><li>Las 105 pruebas JVM y las 9 instrumentadas</li><li>Como ejecutarlas</li><li>Cobertura y deuda</li></ol>
     </li>
     <li>Replicacion paso a paso en otro proyecto
       <ol>
@@ -183,9 +200,330 @@
   </div>
 </section>
 
+<!-- ============================ 0: TRASPASO PARA PRINCIPIANTES ============================ -->
+<h1>0. Guía de traspaso para principiantes (empieza aquí)</h1>
+<p>Esta parte está escrita para una persona <b>sin conocimientos previos</b> de Android, Kotlin ni de este repositorio: no supone que sabes programar y explica primero el vocabulario, después el mapa del proyecto y por último los comandos. Las secciones <b>1 a 15</b> que siguen son la referencia técnica detallada y siguen siendo válidas; aquí solo se anticipa lo imprescindible para que puedas entenderlas y continuar el trabajo.</p>
+<div class="callout info">
+  <b>Regla de lectura</b>
+  Primero identifica la <b>capa</b>, después el <b>archivo</b> y después la <b>responsabilidad</b>. No hace falta memorizar cada línea, pero sí poder explicar qué hace cada pieza y por qué está separada de las demás.
+</div>
+
+<h2>0.1 Glosario para principiantes</h2>
+<p>Términos que aparecen en el proyecto y en esta guía. Vuelve aquí cada vez que encuentres uno que no conozcas.</p>
+<table>
+  <thead><tr><th style="width:24%">Término</th><th>Qué es (explicación sencilla)</th></tr></thead>
+  <tbody>
+    <tr><td><b>Android</b></td><td>Sistema operativo (el &laquo;programa principal&raquo;) que usan muchos teléfonos y tablets.</td></tr>
+    <tr><td><b>Android Studio</b></td><td>Programa en el PC para crear, compilar y probar apps Android (un IDE: editor + herramientas). Se abre la carpeta <code>limpio_model</code> y se espera la sincronización de Gradle.</td></tr>
+    <tr><td><b>APK</b></td><td>Archivo instalable de una app Android (un &laquo;paquete&raquo; que se instala en el teléfono o en el emulador). Aquí: <code>app/build/outputs/apk/debug/app-debug.apk</code>.</td></tr>
+    <tr><td><b>Kotlin</b></td><td>Lenguaje de programación moderno con el que está escrita esta app (versión 2.0.21).</td></tr>
+    <tr><td><b>Gradle</b></td><td>Herramienta que compila el proyecto, descarga librerías y genera el APK. Usa <code>build.gradle.kts</code>, <code>settings.gradle.kts</code>, <code>gradle/libs.versions.toml</code> y el <i>wrapper</i> <code>./gradlew</code> (en Windows, <code>gradlew.bat</code>).</td></tr>
+    <tr><td><b>Jetpack Compose (Compose)</b></td><td>Forma moderna de dibujar la interfaz con funciones de Kotlin, en vez de archivos XML de pantallas.</td></tr>
+    <tr><td><b>Activity</b></td><td>Punto de entrada de una pantalla/app en Android. Aquí hay una sola: <code>MainActivity</code>, que monta toda la interfaz con Compose.</td></tr>
+    <tr><td><b>ViewModel</b></td><td>Componente que guarda el estado de la pantalla y la lógica de presentación; sobrevive a cambios como rotar el teléfono. Ej.: <code>RegistroViewModel.kt</code>, <code>SesionViewModel.kt</code>.</td></tr>
+    <tr><td><b>Repository (repositorio)</b></td><td>Capa intermedia que decide de dónde vienen los datos (base local, API, preferencias) y ofrece operaciones simples al ViewModel.</td></tr>
+    <tr><td><b>Room</b></td><td>Librería de Android para guardar datos en una base de datos local (SQLite) con menos código manual. Aquí hay dos bases: <code>lemac_datalab.db</code> y <code>gestion_documental.db</code>.</td></tr>
+    <tr><td><b>DAO</b></td><td><i>Data Access Object</i> (objeto de acceso a datos): interfaz donde se definen las consultas y operaciones de la base (leer, insertar, actualizar, borrar). Ej.: <code>RegistroDao.kt</code>, <code>DocumentoDao.kt</code>.</td></tr>
+    <tr><td><b>Entity (entidad)</b></td><td>Clase que representa una tabla/fila en la base Room. Ej.: <code>RegistroEntity.kt</code>.</td></tr>
+    <tr><td><b>Retrofit</b></td><td>Librería para hacer llamadas HTTP a una API de forma declarativa en Kotlin. La usa el módulo de gestión para <code>GET /documentos</code>.</td></tr>
+    <tr><td><b>API / REST / HTTP GET / JSON</b></td><td>Una <b>API</b> es una interfaz para pedir datos a un servicio; <b>REST</b> es un estilo común de APIs web; <b>HTTP GET</b> es una petición para &laquo;leer&raquo; datos; <b>JSON</b> es el formato de texto (listas y objetos con llaves/valores) usado para enviarlos.</td></tr>
+    <tr><td><b>Emulador</b></td><td>Teléfono virtual que corre en tu PC para probar la app sin un dispositivo físico (API 33 o superior).</td></tr>
+    <tr><td><b>10.0.2.2</b></td><td>Dirección especial: <b>desde el emulador Android</b> apunta al PC anfitrión. La app la usa por defecto en <code>ApiConfig.kt</code> (<code>BASE_URL = "http://10.0.2.2:8000/"</code>). <b>No funciona igual desde el navegador del PC</b>.</td></tr>
+    <tr><td><b>localhost / 127.0.0.1</b></td><td>&laquo;Este mismo equipo&raquo;. Úsalo en el navegador del PC para hablar con un servidor que corre en tu PC: <code>http://localhost:8000/documentos</code>.</td></tr>
+    <tr><td><b>Notificación</b></td><td>Mensaje que Android muestra al usuario (por ejemplo, un recordatorio). Requiere un canal en Android moderno.</td></tr>
+    <tr><td><b>WorkManager</b></td><td>Librería para programar trabajos diferidos/periódicos (aquí, el recordatorio diario aproximado).</td></tr>
+    <tr><td><b>Siembra de datos (<i>seed</i>)</b></td><td>Insertar datos iniciales de ejemplo la primera vez (o reparar si faltan), para poder probar la app. En gestión es <code>Sembrador.kt</code>.</td></tr>
+    <tr><td><b>SAF (Storage Access Framework)</b></td><td>Selector de documentos del sistema: permite guardar/abrir archivos donde el usuario elija sin pedir permisos de almacenamiento.</td></tr>
+  </tbody>
+</table>
+<div class="callout tip">
+  <b>La frase que resume toda la arquitectura</b>
+  <b>Pantalla (Compose) &rarr; ViewModel &rarr; Repository &rarr; (DAO/Room, API o Preferences) &rarr; y de regreso a la pantalla.</b>
+  La interfaz nunca toca la base de datos directamente.
+</div>
+
+<h2>0.2 Mapa de carpetas comentado (estructura real)</h2>
+<pre class="ascii"><span class="c">limpio_model/                         ← Raíz del repositorio (proyecto Android + docs + herramientas)
+├── app/                              ← Módulo Android principal (:app). Aquí vive casi todo el código.
+│   ├── build.gradle.kts              ← Configuración de compilación del módulo (plugins, SDK, dependencias).
+│   └── src/
+│       ├── main/                     ← Código y recursos que van dentro de la app instalada.
+│       │   ├── AndroidManifest.xml   ← "DNI" de la app: permisos, Activity, Application, providers, tema.
+│       │   ├── java/com/example/
+│       │   │   ├── limpio_moviles/   ← Módulo BIENESTAR + raíz unificada (portal, Activity, Application).
+│       │   │   │   ├── LemacApplication.kt   ← Contenedor de dependencias y siembra al iniciar.
+│       │   │   │   ├── MainActivity.kt       ← Única Activity; monta el tema y UnifiedApp().
+│       │   │   │   ├── data/local/           ← Room bienestar: base lemac_datalab.db, DAO, entidad, CSV.
+│       │   │   │   ├── data/remote/          ← API simulada en memoria (FakeLemacApi) para bienestar.
+│       │   │   │   ├── data/repository/      ← Repositorios de registros y perfil.
+│       │   │   │   ├── model/                ← Modelos, catálogos, validación y cálculo de resumen.
+│       │   │   │   ├── navigation/           ← UnifiedApp (portal) y AppNavigation (bienestar).
+│       │   │   │   ├── ui/screens/           ← Pantallas Compose (Portal, Onboarding, Home, Registro...).
+│       │   │   │   ├── ui/components/        ← Componentes reutilizables (botones, selectores, tarjetas).
+│       │   │   │   ├── ui/theme/             ← Colores, tipografía y tema Material 3.
+│       │   │   │   ├── util/                 ← Foto, notificaciones, recordatorios, exportación de archivos.
+│       │   │   │   └── viewmodel/            ← ViewModel y Factory (estado y lógica de presentación).
+│       │   │   └── gestiondocumental/        ← Módulo GESTIÓN DOCUMENTAL RR.HH. (paquete separado).
+│       │   │       ├── data/local/           ← Room gestión: gestion_documental.db, DAOs, Sembrador.
+│       │   │       ├── data/remote/          ← Cliente REST (Retrofit): ApiConfig, DTO, ApiService, Red.
+│       │   │       ├── data/repository/      ← Repositorios (sesión, documentos, usuarios, auditoría, remotos).
+│       │   │       ├── model/                ← Roles, permisos, validadores, flujo, reportes.
+│       │   │       ├── navigation/           ← Grafo de navegación del módulo de gestión.
+│       │   │       ├── ui/                   ← Pantallas, componentes y tema del módulo de gestión.
+│       │   │       └── viewmodel/            ← ViewModels de sesión, documentos, usuarios, auditoría.
+│       │   └── res/                          ← Recursos: textos, temas, iconos y XML de backup/red/paths.
+│       ├── test/java/com/example/            ← Pruebas unitarias JVM (105): ambos paquetes.
+│       └── androidTest/java/com/example/     ← Pruebas instrumentadas (9; requieren emulador/adb para correr).
+├── docs/                                     ← Documentación (guías, notas, informes, guion de disertación).
+│   ├── GUIA_ESTUDIO.md                       ← Glosario, mapa de carpetas, arquitectura, componentes.
+│   ├── NOTAS_TECNICAS.md                     ← Flujo SDD con Lemoria, ADRs y trazabilidad.
+│   ├── DISERTACION.md                        ← Guion de exposición y demo en vivo.
+│   ├── INTEGRACION.md / INTEGRACION_API_IT3.md← Unificación de módulos e integración REST (IT3).
+│   ├── GUIA_REPLICACION_COMANDOS.html        ← Fuente editable de esta guía.
+│   └── INFORME_ARQUITECTURA.pdf              ← Informe de arquitectura en PDF.
+├── tools/mock_api/                           ← API simulada local (Python): server.py, documentos.json, README.
+├── gradle/                                   ← Versiones y wrapper de Gradle (libs.versions.toml, wrapper).
+├── build.gradle.kts / settings.gradle.kts    ← Configuración raíz; nombre del proyecto y módulos (:app).
+├── gradlew / gradlew.bat                     ← Scripts para ejecutar Gradle sin instalarlo aparte.
+└── README.md                                 ← Portada del repositorio y punto de entrada al traspaso.</span></pre>
+<div class="callout info">
+  <b>Dato importante</b>
+  Hay <b>un solo módulo Gradle</b> (<code>:app</code>) y <b>una sola app/Activity</b> (<code>MainActivity</code>), pero dentro conviven dos paquetes funcionales (bienestar y gestión documental) con <b>dos bases Room separadas</b>.
+</div>
+
+<h2>0.3 Cómo se recorre una pantalla (paso a paso, de punta a punta)</h2>
+<p>Ejemplo real: <b>abrir un ámbito en Bienestar y guardar un registro</b>. Así viaja un dato por las capas:</p>
+<ol>
+  <li><b>UI (Compose)</b> &mdash; <code>ui/screens/HomeScreen.kt</code>: el usuario toca una tarjeta de ámbito. La pantalla llama a la navegación (<code>Rutas.registro(ambito)</code> en <code>navigation/AppNavigation.kt</code>).</li>
+  <li><b>Navegación</b> &mdash; <code>AppNavigation.kt</code> resuelve la ruta <code>registro/{ambito}</code> y muestra <code>ui/screens/RegistroScreen.kt</code>.</li>
+  <li><b>UI &rarr; ViewModel</b> &mdash; <code>RegistroScreen</code> muestra campos y, al pulsar &laquo;Guardar&raquo;, llama a <code>viewmodel/RegistroViewModel.guardar()</code>.</li>
+  <li><b>ViewModel</b> &mdash; valida con <code>model/RegistroValidator.kt</code> (reglas puras, sin Android). Si hay errores actualiza <code>RegistroUiState</code> y la UI los muestra; si está bien, crea una entidad.</li>
+  <li><b>ViewModel &rarr; Repository</b> &mdash; llama a <code>data/repository/RegistroRepository.guardar(...)</code> (no habla directo con la base).</li>
+  <li><b>Repository &rarr; DAO/Room</b> &mdash; decide insertar o actualizar y usa <code>data/local/RegistroDao.kt</code> sobre <code>RegistroEntity.kt</code>.</li>
+  <li><b>Room</b> &mdash; escribe en <code>lemac_datalab.db</code> (configurada en <code>data/local/LemacDatabase.kt</code>) y expone los datos como <code>Flow</code>.</li>
+  <li><b>Vuelta a la UI</b> &mdash; el <code>Flow</code> emite la lista actualizada, el ViewModel la expone como <code>StateFlow</code> y Compose se recompone: Historial, Resumen y Home muestran el dato nuevo automáticamente.</li>
+</ol>
+<div class="callout tip">
+  <b>Otro recorrido que conviene conocer</b>
+  En gestión documental, la pantalla &laquo;Documentos en línea&raquo; sigue la cadena <code>Compose &rarr; DocumentosRemotosViewModel (StateFlow) &rarr; Repositorio &rarr; ApiService (@GET) &rarr; Retrofit &rarr; OkHttp &rarr; API mock</code> y muestra tres estados: <b>Cargando</b>, <b>Datos</b> y <b>Error</b> (con botón Reintentar).
+</div>
+
+<h2>0.4 Arquitectura por capas y explicación de cada componente (rutas reales)</h2>
+<p>El proyecto sigue una separación inspirada en <b>MVVM con un repositorio por fuente de datos</b>. La dependencia va en un solo sentido: la interfaz conoce al ViewModel, el ViewModel a los repositorios y los repositorios a las fuentes. Por encima, <code>navigation/UnifiedApp.kt</code> arranca en el portal y decide si monta <code>LemacApp()</code> (bienestar) o <code>GestionTheme { GestionApp() }</code> (gestión).</p>
+<div class="ascii"><pre><span class="c">   USUARIO
+      │ toca / escribe
+      ▼
+┌─────────────────────────── UI / COMPOSE ───────────────────────────┐
+│ ui/screens/*.kt  · ui/components/*.kt  · ui/theme/*.kt             │
+└───────────────────────────┬────────────────────────────────────────┘
+                            ▼
+┌─────────────────────── VIEWMODEL (estado) ─────────────────────────┐
+│ RegistroViewModel.kt  · SesionViewModel.kt  · DocumentosRemotosVM  │
+└───────────────────────────┬────────────────────────────────────────┘
+                            ▼
+┌────────────────────── REPOSITORIOS ────────────────────────────────┐
+│ RegistroRepository · PerfilRepository · SesionRepository · ...     │
+└───────┬────────────────────┬────────────────────┬──────────────────┘
+        ▼                    ▼                    ▼
+  DAO / Room (SQLite)   Retrofit / API mock   SharedPreferences
+  lemac_datalab.db      GET /documentos        perfil_lemac.xml
+  gestion_documental.db (10.0.2.2:8000)        archivos (perfil.png)
+        │                    │
+        └──────── Flow / StateFlow ────────┐
+                                           ▼
+                          la UI se recompone con el dato nuevo</span></pre></div>
+<p>Si eres nuevo, piensa en la app como un restaurante:</p>
+<table>
+  <thead><tr><th style="width:17%">Capa / componente</th><th style="width:12%">Símil</th><th style="width:41%">Ruta real en el repositorio</th><th>Qué hace</th></tr></thead>
+  <tbody>
+    <tr><td><b>UI / Compose</b></td><td>El salón y el menú</td><td><code>app/src/main/java/com/example/limpio_moviles/ui/screens/*.kt</code>, <code>.../ui/components/*.kt</code>, <code>.../ui/theme/*.kt</code></td><td>Dibuja botones, formularios y listas. No guarda datos ni hace consultas: muestra estado y avisa de eventos (clics).</td></tr>
+    <tr><td><b>ViewModel</b></td><td>El jefe de sala</td><td><code>.../limpio_moviles/viewmodel/RegistroViewModel.kt</code>; <code>.../gestiondocumental/viewmodel/SesionViewModel.kt</code>, <code>DocumentosRemotosViewModel.kt</code></td><td>Guarda el estado de la pantalla, valida, llama a repositorios y lanza tareas en segundo plano (<code>viewModelScope</code>).</td></tr>
+    <tr><td><b>Repository</b></td><td>La despensa organizada</td><td><code>.../limpio_moviles/data/repository/RegistroRepository.kt</code>, <code>PerfilRepositorySharedPreferences.kt</code>; <code>.../gestiondocumental/data/repository/Repositorios.kt</code></td><td>Ofrece operaciones simples (&laquo;guardar registro&raquo;, &laquo;cargar perfil&raquo;) y oculta si el dato viene de Room, de un archivo o de una API.</td></tr>
+    <tr><td><b>Room / DAO / Entity</b></td><td>El archivo de la casa</td><td><code>.../limpio_moviles/data/local/LemacDatabase.kt</code> (<code>lemac_datalab.db</code>), <code>RegistroDao.kt</code>, <code>RegistroEntity.kt</code>; <code>.../gestiondocumental/data/local/GestionDatabase.kt</code>, <code>Sembrador.kt</code></td><td>Guarda y lee datos persistentes con SQLite a través de Room; el DAO declara las consultas y la entidad la tabla.</td></tr>
+    <tr><td><b>Red / Retrofit y API simulada</b></td><td>El mensajero</td><td>Bienestar: <code>.../data/remote/LemacApi.kt</code> / <code>FakeLemacApi</code> (simula 700 ms, sin red). Gestión: <code>.../gestiondocumental/data/remote/ApiConfig.kt</code>, <code>DocumentosApiService.kt</code> (<code>@GET("documentos")</code>), <code>DocumentoDto.kt</code>, <code>RedDocumentos.kt</code></td><td>Bienestar simula la sincronización. Gestión consume <code>GET /documentos</code> de una API REST local y muestra Cargando/Datos/Error.</td></tr>
+    <tr><td><b>Application</b></td><td>Quien abre el local</td><td><code>.../limpio_moviles/LemacApplication.kt</code> (declarada en <code>app/src/main/AndroidManifest.xml</code>)</td><td>Crea canales de notificación, las bases y los repositorios de ambos módulos, y lanza la siembra de datos demo de gestión (transaccional y tolerante a fallos).</td></tr>
+    <tr><td><b>Navegación raíz</b></td><td>El recepcionista</td><td><code>.../limpio_moviles/navigation/UnifiedApp.kt</code>, <code>AppNavigation.kt</code>; <code>.../gestiondocumental/navigation/</code></td><td><code>UnifiedApp</code> arranca en el portal y enruta a cada módulo sin mezclar dominios; cada módulo tiene su propio <code>NavHost</code>.</td></tr>
+    <tr><td><b>Notificaciones y recordatorios</b></td><td>El timbre</td><td><code>.../limpio_moviles/util/NotificacionHelper.kt</code>, <code>RecordatorioScheduler.kt</code>, <code>RecordatorioWorker.kt</code></td><td>Programan y muestran recordatorios con WorkManager. Texto genérico, sin datos sensibles.</td></tr>
+    <tr><td><b>Portal</b></td><td>El vestíbulo</td><td><code>.../limpio_moviles/ui/screens/PortalScreen.kt</code></td><td>Dos tarjetas (&laquo;Bienestar &mdash; Lemac DataLab&raquo; y &laquo;Gestión Documental RR.HH.&raquo;) más un aviso de datos ficticios.</td></tr>
+    <tr><td><b>Mock API</b></td><td>Un servidor de mentira en el PC</td><td><code>tools/mock_api/server.py</code>, <code>tools/mock_api/documentos.json</code>, <code>tools/mock_api/README.md</code></td><td>Sirve <code>GET /documentos</code> con datos ficticios para la pantalla &laquo;Documentos en línea&raquo;. No es un backend real en Internet.</td></tr>
+  </tbody>
+</table>
+<p><b>Inyección de dependencias manual:</b> no se usa Hilt, Koin ni Dagger. <code>LemacApplication</code> actúa como contenedor con <code>by lazy</code>: <code>database</code>, <code>registroRepository</code> (recibe el DAO y <code>FakeLemacApi</code>), <code>perfilRepository</code> (recibe el <code>Context</code>) y, desde la integración, <code>gestionDatabase</code>, <code>sesionRepository</code>, <code>documentoRepository</code>, <code>usuarioRepository</code> y <code>auditoriaRepository</code>. <code>RegistroViewModelFactory</code> construye el ViewModel con esas dependencias.</p>
+<div class="callout info">
+  <b>Detalle de gestión documental</b>
+  El módulo <code>com.example.gestiondocumental</code> repite el mismo patrón en su paquete con su base <code>gestion_documental.db</code>: <code>data/local/Sembrador.kt</code> (siembra transaccional y convergente), <code>data/remote/ApiConfig.kt</code> y <code>DocumentosApiService.kt</code> (Retrofit), <code>data/repository/Repositorios.kt</code> (sesión, documentos, usuarios, auditoría y remotos), <code>model/Permisos.kt</code> (RBAC de 7 roles) y sus propios ViewModels y pantallas en <code>ui/</code>. Todo dentro del mismo módulo Gradle <code>:app</code>.
+</div>
+
+<h2>0.5 Flujo de trabajo SDD con Lemoria (los 12 pasos y sus comandos)</h2>
+<p><b>SDD</b> (Specification/Software Design Driven Development) significa desarrollo guiado por especificación y diseño. <b>Lemoria</b> es la CLI que guarda en PostgreSQL la fuente de verdad del proyecto: PRD, tareas, decisiones, commits, conversaciones y bóveda. La bóveda de Obsidian es solo una representación editable; PostgreSQL manda.</p>
+<h3>Identificadores de este trabajo de traspaso</h3>
+<table>
+  <thead><tr><th style="width:24%">Identificador</th><th>Valor</th><th style="width:26%">Uso</th></tr></thead>
+  <tbody>
+    <tr><td><code>project-id</code></td><td><code>136316a2-36dd-43b5-aa80-05b9e97d3f22</code></td><td>Proyecto Lemoria (este repositorio).</td></tr>
+    <tr><td><code>prd-id</code></td><td><code>c46eb0c9-d681-40b3-99fb-c2336db498d6</code></td><td>PRD/alcance del manual de traspaso.</td></tr>
+    <tr><td><code>conv-id</code></td><td><code>46c48af9-f33b-4546-a4b0-96393bcf6eeb</code></td><td>Conversación de trabajo.</td></tr>
+    <tr><td><code>task-id</code> (HTML)</td><td><code>7bbed182-2071-4544-a16a-bbfaaddf8ad0</code></td><td>Actualización de esta guía HTML.</td></tr>
+    <tr><td><code>task-id</code> (PDF)</td><td><code>1a3ad4d5-7af7-4ef9-86fe-9d10ea0cf57f</code></td><td>Generación y verificación del PDF.</td></tr>
+    <tr><td><code>task-id</code> (auditoría)</td><td><code>f4b1d51e-13e2-4878-9164-38b2bda8b9f6</code></td><td>Auditoría documental previa.</td></tr>
+    <tr><td><code>task-id</code> (GUIA_ESTUDIO)</td><td><code>4ad8e55f-e7bd-46bc-925e-f75f64593621</code></td><td>Guía de estudio para principiantes.</td></tr>
+    <tr><td><code>task-id</code> (NOTAS_TECNICAS)</td><td><code>815d9c90-62b7-4737-82e7-c2e85026aafc</code></td><td>Notas técnicas y flujo SDD.</td></tr>
+    <tr><td><code>task-id</code> (README)</td><td><code>c20ea3bb-cc8c-4ab2-8734-64bf7fefa54f</code></td><td>Traspaso en el README.</td></tr>
+    <tr><td><code>task-id</code> (mock API README)</td><td><code>bf4cb5cc-f359-4aa5-bcda-86c2e5ea772d</code></td><td>Documentación de la API simulada.</td></tr>
+  </tbody>
+</table>
+<p class="muted">El cierre de hardening del 19-11-2026 usó otro conjunto válido: PRD <code>045a2de8-e11f-4286-930f-ed582728e411</code>, conv <code>9b337131-5f44-49d8-b4f1-8edad505507b</code> y task <code>f8dfcced-828f-4140-8a27-3e350e295a43</code>. Cada ciclo SDD tiene sus propios IDs; todos forman parte de la trazabilidad.</p>
+<h3>Placeholders de los comandos (antes de copiarlos)</h3>
+<p>Los textos entre <code>&lt;...&gt;</code> son marcadores que debes sustituir por tus valores reales: <code>&lt;project-id&gt;</code> = identificador del proyecto en Lemoria (ej. <code>136316a2-...</code>); <code>&lt;prd-id&gt;</code> = identificador del PRD/flujo (ej. <code>c46eb0c9-...</code>); <code>&lt;task-id&gt;</code> = identificador de una tarea; <code>&lt;sha&gt;</code> = hash corto del commit.</p>
+<h3>Los 12 pasos del flujo SDD</h3>
+<table>
+  <thead><tr><th style="width:17%">Paso</th><th style="width:32%">Qué significa</th><th>Comandos reales (ejemplos)</th></tr></thead>
+  <tbody>
+    <tr><td>1. User request</td><td>El usuario pide algo (bug, mejora, documentación).</td><td>(conversación; se registra en el sistema)</td></tr>
+    <tr><td>2. Conversación</td><td>Se aclara el alcance y se crea/usa una conversación de trabajo.</td><td><code>lemoria conv create &lt;project-id&gt; -t "Manual de traspaso"</code><br><code>lemoria conv add &lt;conv-id&gt; user "Actualizar docs..."</code><br><code>lemoria conv list &lt;project-id&gt;</code></td></tr>
+    <tr><td>3. PRD</td><td>Se define el PRD (documento de requisitos/alcance).</td><td><code>lemoria flow start &lt;project-id&gt; "Crear manual de traspaso para principiantes"</code><br><code>lemoria flow list &lt;project-id&gt;</code><br><code>lemoria flow status &lt;flow-id&gt;</code></td></tr>
+    <tr><td>4. Tareas (INVEST)</td><td>Se descompone en tareas pequeñas, independientes y verificables.</td><td><code>lemoria task create &lt;project-id&gt; &lt;prd-id&gt; -t "Actualizar README con traspaso"</code><br><code>lemoria task list &lt;project-id&gt;</code><br><code>lemoria task status &lt;task-id&gt; in_progress</code></td></tr>
+    <tr><td>5. Implement</td><td>Se hacen los cambios (código o documentación) según la tarea.</td><td>(editar archivos; en código se usarían herramientas de build; en docs, editar Markdown/HTML)</td></tr>
+    <tr><td>6. Test</td><td>Se verifica: compilar y correr pruebas; en docs, revisar enlaces, rutas y que no se invente nada.</td><td><code>./gradlew :app:testDebugUnitTest</code><br><code>./gradlew :app:assembleDebug</code><br>(revisión manual de Markdown y enlaces relativos)</td></tr>
+    <tr><td>7. Review</td><td>Revisión de calidad y alineación con el PRD/alcance.</td><td>(revisión; registrar resultado en conversación/tarea)</td></tr>
+    <tr><td>8. Commit</td><td>Se registra el commit en el control de versiones y en la trazabilidad.</td><td><code>git add &lt;archivos&gt;</code><br><code>git commit -m "docs: manual de traspaso para principiantes"</code><br><code>lemoria commit add &lt;sha&gt; --task &lt;task-id&gt;</code><br><code>lemoria commit list --task &lt;task-id&gt;</code></td></tr>
+    <tr><td>9. Document</td><td>Se actualiza documentación (README, <code>docs/</code>, guías) en el mismo ciclo del cambio.</td><td>(este cambio: README, GUIA_ESTUDIO, NOTAS_TECNICAS, mock API README, DISERTACION y esta guía)</td></tr>
+    <tr><td>10. <code>vault_sync</code></td><td>Se sincroniza la bóveda/exportación de conocimiento del proyecto.</td><td><code>lemoria vault sync &lt;project-id&gt;</code><br>(ej.: <code>lemoria vault sync 136316a2-36dd-43b5-aa80-05b9e97d3f22</code>)</td></tr>
+    <tr><td>11. Consolidate</td><td>Se consolidan resultados, decisiones y estado final de tareas/flujo.</td><td><code>lemoria flow step &lt;flow-id&gt; consolidate -s completed -o "Docs actualizadas"</code><br><code>lemoria task status &lt;task-id&gt; completed</code><br><code>lemoria decision log &lt;project-id&gt; -t "..." -d "..."</code><br><code>lemoria decision list &lt;project-id&gt;</code></td></tr>
+    <tr><td>12. Complete</td><td>Se cierra el flujo/ciclo.</td><td><code>lemoria flow complete &lt;flow-id&gt;</code><br><code>lemoria flow status &lt;flow-id&gt;</code></td></tr>
+  </tbody>
+</table>
+<div class="callout warn">
+  <b>Estado de este ciclo concreto</b>
+  Los pasos 1 a 9 (petición, conversación, PRD, tareas, implementación, verificación, revisión y documentación) están ejecutados. <b>Commit y <code>vault_sync</code> no se ejecutan en esta entrega</b> por instrucción explícita; el apartado 11.13 muestra los comandos para hacerlo cuando corresponda.
+</div>
+
+<h2>0.6 Comandos de build, test e instalación y estado actual</h2>
+<p>Siempre desde la <b>raíz del repositorio</b> (<code>limpio_model</code>), donde está <code>gradlew</code>. La primera vez hace falta Internet para que Gradle descargue el wrapper 9.5.0 y las dependencias.</p>
+<h3>Linux / macOS (bash)</h3>
+<pre><code><span class="c"># 1) Compilar el APK de depuración</span>
+./gradlew :app:assembleDebug
+
+<span class="c"># 2) Pruebas unitarias JVM (no necesitan emulador)</span>
+./gradlew :app:testDebugUnitTest --console=plain --no-daemon
+
+<span class="c"># 3) Compilar las 9 pruebas instrumentadas (sin dispositivo)</span>
+./gradlew :app:assembleDebugAndroidTest --console=plain --no-daemon
+
+<span class="c"># 4) Solo con adb + emulador/dispositivo API 33+</span>
+adb devices
+./gradlew :app:connectedDebugAndroidTest --console=plain --no-daemon
+
+<span class="c"># 5) Instalar en el emulador/dispositivo conectado</span>
+./gradlew :app:installDebug
+
+<span class="c"># 6) Compilación general offline (verificación usada en la integración)</span>
+./gradlew :app:assembleDebug --offline
+
+<span class="c"># Reporte HTML de pruebas unitarias</span>
+xdg-open app/build/reports/tests/testDebugUnitTest/index.html</code></pre>
+<h3>Windows (PowerShell o CMD)</h3>
+<pre><code><span class="c"># Equivalente a ./gradlew en Windows</span>
+.\gradlew.bat :app:assembleDebug
+.\gradlew.bat :app:testDebugUnitTest
+.\gradlew.bat :app:assembleDebugAndroidTest
+.\gradlew.bat :app:installDebug
+
+<span class="c"># Adb (viene con platform-tools del SDK)</span>
+adb devices</code></pre>
+<h3>Estado verificado al 19 de noviembre de 2026</h3>
+<table>
+  <thead><tr><th style="width:34%">Ítem</th><th>Resultado real</th></tr></thead>
+  <tbody>
+    <tr><td>Pruebas unitarias JVM</td><td><b>105 pruebas, 0 fallos</b> (33 de bienestar + 72 de gestión documental; +10 de <code>SesionRepositoryTest</code> en el hardening). Antes de IT3 eran 76; tras IT3, 95.</td></tr>
+    <tr><td>Pruebas instrumentadas</td><td><b>9</b> (8 <code>SembradorInstrumentedTest</code> + 1 <code>PortalSmokeTest</code>). <b>Compilan</b> con <code>assembleDebugAndroidTest</code> (&ldquo;BUILD SUCCESSFUL&rdquo;) pero <b>no se han ejecutado</b>: el entorno no tiene <code>adb</code> ni dispositivo/emulador conectado.</td></tr>
+    <tr><td>Commits del cierre</td><td><code>8832145</code> (hardening: siembra transaccional, login robusto y tests) y <code>8595fb9</code> (documentación del hardening). <b>Ambos siguen sin push</b> por falta de credenciales HTTPS. El frente IT3 y la corrección de <code>BASE_URL</code> quedaron en <code>d648c7e</code>.</td></tr>
+    <tr><td>APK de debug</td><td><code>app/build/outputs/apk/debug/app-debug.apk</code> (~62 MB; 64.915.563 bytes). Un único APK contiene los dos módulos y el portal.</td></tr>
+    <tr><td>Entorno de verificación</td><td>JVM 21, Android SDK en <code>/home/simon/Android/Sdk</code>, <code>google-chrome</code> en <code>/usr/bin/google-chrome</code>. Cleartext restringido a <code>10.0.2.2</code>, <code>localhost</code> y <code>127.0.0.1</code>; sin permiso <code>CAMERA</code> en el manifest fusionado; desde IT3 sí hay permiso <code>INTERNET</code>.</td></tr>
+  </tbody>
+</table>
+<div class="callout warn">
+  <b>Pendiente de seguimiento</b>
+  Hacer <code>git push</code> cuando haya credenciales, ejecutar las 9 instrumentadas con un emulador API 33+ y <code>adb</code>, y regenerar <code>docs/informe_arquitectura.html</code> y <code>docs/INFORME_ARQUITECTURA.pdf</code> para reflejar IT3 y el hardening.
+</div>
+
+<h2>0.7 Puesta en marcha de la API mock y solución de problemas</h2>
+<p>La pantalla &laquo;Documentos en línea&raquo; necesita un servidor local encendido. Es un programa Python de la biblioteca estándar: <b>no hay que instalar dependencias extra</b> y los datos son ficticios. Para comprobar Python: <code>python3 --version</code> (Linux) o <code>python --version</code> / <code>py -3 --version</code> (Windows).</p>
+<h3>Arranque en Linux / macOS</h3>
+<pre><code><span class="c"># Desde la raíz de limpio_model</span>
+python3 tools/mock_api/server.py
+
+<span class="c"># Otro puerto (por ejemplo 9000)</span>
+PORT=9000 python3 tools/mock_api/server.py
+
+<span class="c"># Mensaje esperado: "API simulada de documentos escuchando en el puerto 8000"</span>
+<span class="c"># Para detenerlo: Ctrl+C en esa terminal</span></code></pre>
+<h3>Arranque en Windows (CMD y PowerShell)</h3>
+<pre><code><span class="c"># CMD</span>
+python tools\mock_api\server.py
+set PORT=9000
+python tools\mock_api\server.py
+
+<span class="c"># PowerShell</span>
+python tools\mock_api\server.py
+$env:PORT = "9000"
+python tools\mock_api\server.py</code></pre>
+<p class="muted">Si tu instalación usa el lanzador de Python, sustituye <code>python</code> por <code>py -3</code>.</p>
+<h3>URLs correctas según el contexto</h3>
+<table>
+  <thead><tr><th style="width:31%">Contexto (desde dónde abres la URL)</th><th style="width:30%">URL a usar</th><th>Por qué</th></tr></thead>
+  <tbody>
+    <tr><td>Navegador en el <b>mismo PC</b> del servidor</td><td><code>http://localhost:8000/documentos</code></td><td><code>localhost</code> significa &laquo;este mismo equipo&raquo;.</td></tr>
+    <tr><td><b>Emulador de Android</b></td><td><code>http://10.0.2.2:8000/documentos</code></td><td>Dentro del emulador, <code>10.0.2.2</code> apunta al PC anfitrión. Ya está en <code>app/src/main/java/com/example/gestiondocumental/data/remote/ApiConfig.kt</code>.</td></tr>
+    <tr><td><b>Dispositivo físico por Wi-Fi</b> (misma red)</td><td><code>http://IP_LAN_DEL_PC:8000/documentos</code> (ej. <code>192.168.1.50</code>)</td><td>Hay que permitir la IP en <code>app/src/main/res/xml/network_security_config.xml</code> (cleartext), cambiar <code>BASE_URL</code> en <code>ApiConfig.kt</code> y recompilar; y abrir el puerto 8000 en el firewall.</td></tr>
+    <tr><td><b>Dispositivo físico por USB</b> (con <code>adb</code>)</td><td><code>http://127.0.0.1:8000/documentos</code> en el dispositivo</td><td>Ejecuta <code>adb reverse tcp:8000 tcp:8000</code>, cambia <code>BASE_URL</code> a <code>http://127.0.0.1:8000/</code>, recompila e instala.</td></tr>
+  </tbody>
+</table>
+<h3>Comprobación rápida</h3>
+<pre><code>http://localhost:8000/health       → {"status":"ok"}
+http://localhost:8000/documentos   → arreglo JSON de documentos</code></pre>
+<div class="callout danger">
+  <b>Problema real: &laquo;10.0.2.2 desde el navegador da timeout&raquo;</b>
+  Es <b>normal</b>: <code>10.0.2.2</code> solo funciona <b>desde el emulador de Android</b>. En el navegador del PC usa siempre <code>http://localhost:8000/documentos</code>. En el emulador, entra a Gestión Documental RR.HH. &rarr; &laquo;Documentos en línea&raquo; y deberías ver Cargando &rarr; Datos.
+</div>
+<h3>Solución de problemas (&laquo;no genera datos&raquo; / no carga)</h3>
+<table>
+  <thead><tr><th style="width:29%">Síntoma</th><th style="width:28%">Causa probable</th><th>Qué hacer</th></tr></thead>
+  <tbody>
+    <tr><td>La app muestra error o &laquo;Reintentar&raquo; y no lista documentos</td><td><b>Servidor apagado</b> (no corre <code>server.py</code>).</td><td>Inicia el servidor en una terminal, deja la ventana abierta y pulsa &laquo;Reintentar&raquo; en la app.</td></tr>
+    <tr><td>Timeout al abrir <code>http://10.0.2.2:8000/...</code> en el navegador del PC</td><td>Estás usando la URL del emulador desde el PC.</td><td>Usa <code>http://localhost:8000/documentos</code> en el PC. <code>10.0.2.2</code> solo vale desde el emulador.</td></tr>
+    <tr><td><code>Address already in use</code> / puerto ocupado</td><td>Otro programa usa el puerto 8000.</td><td>Cierra ese proceso o usa <code>PORT=9000 python3 tools/mock_api/server.py</code> (y ajusta <code>ApiConfig.kt</code> + recompila si la app debe apuntar ahí).</td></tr>
+    <tr><td>El emulador no conecta, pero <code>localhost</code> en el PC sí funciona</td><td>La app apunta a otra URL o no recompilaste tras cambiarla.</td><td>Verifica <code>ApiConfig.BASE_URL</code> (debe ser <code>http://10.0.2.2:8000/</code>) y que <code>network_security_config.xml</code> permita cleartext a <code>10.0.2.2</code>. Recompila e instala.</td></tr>
+    <tr><td>Dispositivo físico por Wi-Fi no conecta</td><td>IP incorrecta, firewall o falta permiso de cleartext para esa IP.</td><td>Usa la IP LAN correcta (<code>ipconfig</code> en Windows), abre el puerto 8000 en el firewall (regla de entrada TCP, perfil privado), agrega la IP al XML, cambia <code>BASE_URL</code> y recompila.</td></tr>
+    <tr><td>Responde pero la lista sale vacía o con error de datos</td><td>JSON inválido o contrato no esperado.</td><td>Revisa <code>tools/mock_api/documentos.json</code> y que el servidor imprima peticiones sin errores en la terminal.</td></tr>
+  </tbody>
+</table>
+<p><b>Archivos relevantes:</b> <code>tools/mock_api/server.py</code> (endpoints <code>/documentos</code> y <code>/health</code>), <code>tools/mock_api/documentos.json</code> (datos ficticios), <code>app/src/main/java/com/example/gestiondocumental/data/remote/ApiConfig.kt</code> (URL base) y <code>app/src/main/res/xml/network_security_config.xml</code> (dominios con cleartext permitido).</p>
+
+<h2>0.8 Enlaces y referencias del repositorio</h2>
+<p>Todo lo que se explica en esta guía proviene de estos archivos del repositorio <code>limpio_model</code>. Son la fuente autorizada: si algo cambia en el código, se actualizan ellos y después este PDF.</p>
+<table>
+  <thead><tr><th style="width:37%">Archivo</th><th>Contenido</th></tr></thead>
+  <tbody>
+    <tr><td><code>README.md</code></td><td>Portada del repo; sección &laquo;Traspaso y replicación para principiantes&raquo;, requisitos, primeros comandos y estado de pruebas.</td></tr>
+    <tr><td><code>docs/GUIA_ESTUDIO.md</code></td><td>Glosario, mapa de carpetas, recorrido de una pantalla, arquitectura por capas, componentes y flujos.</td></tr>
+    <tr><td><code>docs/NOTAS_TECNICAS.md</code></td><td>Flujo SDD con Lemoria (12 pasos y comandos), ADRs, hardening del 19-11-2026 y trazabilidad.</td></tr>
+    <tr><td><code>docs/DISERTACION.md</code></td><td>Guion de exposición de 10-15 minutos, demo en vivo y preguntas frecuentes del profesor.</td></tr>
+    <tr><td><code>docs/INTEGRACION.md</code></td><td>Cómo se unificaron bienestar y gestión documental en un solo APK y dos bases Room.</td></tr>
+    <tr><td><code>docs/INTEGRACION_API_IT3.md</code></td><td>Detalle técnico de <code>GET /documentos</code> con Retrofit, Gson, OkHttp y StateFlow.</td></tr>
+    <tr><td><code>tools/mock_api/README.md</code></td><td>Arranque de la API simulada en Linux/Windows, URLs por contexto y solución de problemas.</td></tr>
+    <tr><td><code>docs/GUIA_REPLICACION_COMANDOS.html</code></td><td>Fuente editable de este documento; con CSS A4 para generar el PDF con LibreOffice.</td></tr>
+    <tr><td><code>~/Descargas/Guia_Estudio_y_Replicacion_Lemac_DataLab.pdf</code></td><td>PDF final entregado, generado desde el HTML anterior.</td></tr>
+  </tbody>
+</table>
+<div class="callout tip">
+  <b>Siguiente lectura recomendada</b>
+  Si nunca has visto Android, lee ahora la <b>sección 1</b> (cómo usar la guía) y después la <b>2</b> (resumen ejecutivo). Si quieres replicar el proyecto, ve a la <b>11</b>; si quieres repetir el flujo de trabajo, la <b>11.13</b> y la <b>0.5</b> son tus referencias.
+</div>
+
 <!-- ============================ 1 ============================ -->
 <h1>1. Como usar esta guia</h1>
-<p>Esta guia tiene tres lecturas posibles. No es necesario leerla completa de principio a fin: elige la ruta segun lo que necesites en este momento.</p>
+<p>Si nunca has trabajado en Android, <b>empieza por la seccion 0</b> (glosario, mapa de carpetas, recorrido de una pantalla, arquitectura, flujo SDD, comandos y API mock). El resto de la guia tiene tres lecturas posibles. No es necesario leerla completa de principio a fin: elige la ruta segun lo que necesites en este momento.</p>
 
 <h2>1.1 Ruta A: estudiar la aplicacion</h2>
 <p>Lee en orden las secciones 2 a 10. Empieza por el resumen ejecutivo y el stack, sigue con la arquitectura por capas y el arbol de carpetas, y detente en los componentes y el flujo de datos. Las secciones 7, 8 y 10 son las que mas se preguntan en una defensa tecnica: modelo de datos, flujo de extremo a extremo y pruebas.</p>
@@ -233,7 +571,8 @@
 <h2>2.2 Estado real y metricas</h2>
 <div class="kpi">
   <div><b>96</b><span>archivos Kotlin</span></div>
-  <div><b>76</b><span>pruebas JVM verdes</span></div>
+  <div><b>105</b><span>pruebas JVM verdes</span></div>
+  <div><b>9</b><span>instrumentadas (compilan)</span></div>
   <div><b>2</b><span>bases Room separadas</span></div>
   <div><b>16</b><span>pantallas Compose</span></div>
   <div><b>7</b><span>roles RBAC</span></div>
@@ -243,20 +582,24 @@
   <thead><tr><th style="width:34%">Indicador</th><th>Valor verificado</th></tr></thead>
   <tbody>
     <tr><td>Build de debug</td><td><code>BUILD SUCCESSFUL</code> con <code>assembleDebug</code> (verificado el 12-11-2026)</td></tr>
-    <tr><td>Pruebas unitarias</td><td>76/76 aprobadas, 0 fallidas, 0 errores (33 bienestar + 43 gestion)</td></tr>
+    <tr><td>Pruebas unitarias</td><td>105/105 aprobadas, 0 fallidas, 0 errores (33 bienestar + 72 gestion) en el cierre del 19-11-2026 (commit <code>8832145</code>)</td></tr>
+    <tr><td>Pruebas instrumentadas</td><td>9 compiladas (8 <code>SembradorInstrumentedTest</code> + 1 <code>PortalSmokeTest</code>); no ejecutadas: sin <code>adb</code>/dispositivo en el entorno</td></tr>
     <tr><td>APK de debug</td><td><code>app/build/outputs/apk/debug/app-debug.apk</code> (~62 MB; 64.915.563 bytes)</td></tr>
     <tr><td>Base de bienestar</td><td><code>lemac_datalab.db</code>, version 1, 1 entidad (<code>registros</code>)</td></tr>
     <tr><td>Base de gestion</td><td><code>gestion_documental.db</code>, version 2, 6 entidades</td></tr>
-    <tr><td>Rama de trabajo</td><td><code>entrega_hito2</code>; integracion en <code>13ef480</code>; ultimos commits <code>ded8cde</code> (tests) y <code>8e87e82</code> (docs/PDF)</td></tr>
+    <tr><td>Rama de trabajo</td><td><code>entrega_hito2</code>; integracion en <code>13ef480</code>, IT3 en <code>d648c7e</code>; cierre de hardening en <code>8832145</code> y docs del hardening en <code>8595fb9</code>, <b>ambos sin push</b> (credenciales HTTPS pendientes)</td></tr>
     <tr><td>Repositorio local</td><td><code>&lt;ruta-del-repositorio&gt;/limpio_model</code></td></tr>
   </tbody>
 </table>
 
 <div class="callout info">
   <b>Precision importante</b>
-  El proyecto no tiene backend real, no pide permiso de <code>INTERNET</code> y no usa datos reales de salud.
-  La sincronizacion es simulada (<code>FakeLemacApi</code>) y la exportacion es local via Storage Access Framework.
-  Esto no es una carencia accidental: es una decision de alcance y privacidad documentada en los ADR.
+  El proyecto no tiene backend real en la nube y no usa datos reales de salud. La sincronizacion de bienestar
+  es simulada (<code>FakeLemacApi</code>) y la exportacion es local via Storage Access Framework.
+  Desde IT3 el manifiesto <b>si declara el permiso <code>INTERNET</code></b> para una API REST <b>simulada y local</b>:
+  el trafico en claro queda restringido a <code>10.0.2.2</code>, <code>localhost</code> y <code>127.0.0.1</code>
+  (<code>res/xml/network_security_config.xml</code>). Antes de IT3 no se declaraba. Esto no es una carencia
+  accidental: es una decision de alcance y privacidad documentada en los ADR.
 </div>
 
 <h2>2.3 Alcance y limites</h2>
@@ -320,6 +663,15 @@
   <li><b>Conexion a Internet la primera vez</b>, para que Gradle descargue el wrapper y las dependencias.</li>
   <li><b>Git</b> para el control de versiones y <b>Lemoria</b> para el flujo SDD (opcional al replicar la app, obligatorio si repites el proceso de trazabilidad).</li>
 </ul>
+<h3>Instalar las herramientas desde cero (si tu equipo está vacío)</h3>
+<p>Si tu equipo no tiene nada instalado, sigue estos pasos en orden. Son los mismos requisitos de arriba, explicados para alguien que empieza de cero:</p>
+<ol>
+  <li><b>Python 3.</b> Descárgalo de <code>https://www.python.org/downloads/</code> y ejecuta el instalador. <b>En Windows marca la casilla &laquo;Add Python to PATH&raquo;</b> antes de terminar. Verifica con <code>python3 --version</code> (en Windows, <code>python --version</code>).</li>
+  <li><b>Android Studio.</b> Descárgalo de <code>https://developer.android.com/studio</code> e instálalo: incluye el <b>JDK</b> (Java) y el <b>Android SDK</b>. Después crea un <b>emulador con API 33 o superior (Android 13)</b>. Comprueba que en la raíz del repositorio existe <code>gradlew</code> (en Windows, <code>gradlew.bat</code>).</li>
+  <li><b>adb.</b> Viene dentro del Android SDK, en la carpeta <code>platform-tools</code>. Agrega esa carpeta al <b>PATH</b> y verifica con <code>adb devices</code>. Si no está en el PATH, usa la ruta absoluta del SDK (por ejemplo <code>/home/simon/Android/Sdk/platform-tools/adb devices</code>). Si no conectaste ningún dispositivo, la lista aparece vacía: es normal.</li>
+  <li><b>Lemoria CLI.</b> Es la herramienta que registra el flujo SDD; <b>no es necesario para compilar la app</b>, solo para seguir el flujo de trabajo. Está en <code>https://github.com/devcristianlopez/lemoria</code>: clona ese repositorio y ejecuta <code>./install.sh</code> desde él (consulta su <code>INSTALL.md</code> si algo falla). Verifica con <code>lemoria --version</code> (en este entorno da <code>0.3.0</code>).</li>
+  <li><b>Git.</b> Indispensable para clonar el repositorio y hacer commits. Verifica con <code>git --version</code>.</li>
+</ol>
 <pre><code><span class="c"># Verificaciones rapidas del entorno</span>
 java -version
 ./gradlew --version
@@ -341,7 +693,7 @@ lemoria --version</code></pre>
                               | eventos (onClick, onSave...)
                               v
 +-------------------------------------------------------------+
-|  ViewModel (StateFlow<UiState>)                             |
+|  ViewModel (StateFlow&lt;UiState&gt;)                         |
 |  Orquesta casos de uso, valida, expone estado y mensajes.   |
 +-----------------------------+-------------------------------+
                               | llama
@@ -832,7 +1184,8 @@ existente != null  -&gt; copia(fechaHora = existente.fechaHora, sincronizado = f
 <!-- ============================ 10 ============================ -->
 <h1>10. Pruebas y calidad</h1>
 
-<h2>10.1 Las 76 pruebas</h2>
+<h2>10.1 Las 105 pruebas</h2>
+<p>Historial real: 76 antes de IT3 (12-11-2026), 95 tras IT3 (+14 de red con <code>MockWebServer</code> y +5 de regresion de <code>BASE_URL</code>, commit <code>d648c7e</code>) y 105 tras el hardening (+10 de <code>SesionRepositoryTest</code>, commit <code>8832145</code>). El informe de IT3 cito 90 por omitir <code>ApiConfigTest</code> del inventario; el recuento correcto es 95.</p>
 <table>
   <thead><tr><th>Modulo</th><th>Archivo</th><th style="width:12%">Pruebas</th><th>Que cubre</th></tr></thead>
   <tbody>
@@ -842,16 +1195,33 @@ existente != null  -&gt; copia(fechaHora = existente.fechaHora, sincronizado = f
     <tr><td><code>RegistroRepositoryTest</code></td><td>5</td><td>Insertar, editar conservando fecha, inexistente, demo vacia y sin duplicar.</td></tr>
     <tr><td><code>RegistroViewModelTest</code></td><td>7</td><td>Crear, editar, editar inexistente, validacion y tres ramas de <code>cargarDemo</code>.</td></tr>
     <tr><td colspan="2"><b>Subtotal</b></td><td><b>33</b></td></tr>
-    <tr><td rowspan="7">Gestion (43)</td><td><code>ValidadoresTest</code></td><td>4</td><td>RUT, correo y campos.</td></tr>
+    <tr><td rowspan="12">Gestion (72)</td><td><code>ValidadoresTest</code></td><td>4</td><td>RUT, correo y campos.</td></tr>
     <tr><td><code>PermisosTest</code></td><td>7</td><td>Matriz RBAC por rol y categoria.</td></tr>
     <tr><td><code>PermisosCargaTest</code></td><td>9</td><td>Carga de permisos y casos sensibles.</td></tr>
     <tr><td><code>FlujoModificacionTest</code></td><td>6</td><td>Aprobar, rechazar y aplicar cambios.</td></tr>
     <tr><td><code>ReportesTest</code></td><td>9</td><td>Agregados y filtros por rol.</td></tr>
     <tr><td><code>ArchivosMimeTest</code></td><td>8</td><td>Tipos MIME y validacion de adjuntos.</td></tr>
-    <tr><td colspan="2"><b>Subtotal</b></td><td><b>43</b></td></tr>
-    <tr><td colspan="2"><b>TOTAL</b></td><td><b>76</b></td><td>JUnit 4, sin Robolectric, ejecutadas en la JVM.</td></tr>
+    <tr><td><code>ApiConfigTest</code></td><td>5</td><td>Regresion de <code>BASE_URL = http://10.0.2.2:8000/</code> (IT3).</td></tr>
+    <tr><td><code>DocumentoDtoTest</code></td><td>6</td><td>Contrato JSON de <code>GET /documentos</code> (IT3).</td></tr>
+    <tr><td><code>DocumentosRemotosRepositoryTest</code></td><td>4</td><td>Repositorio remoto con <code>MockWebServer</code> (IT3).</td></tr>
+    <tr><td><code>DocumentosRemotosViewModelTest</code></td><td>4</td><td>ViewModel remoto con fake de la API (IT3).</td></tr>
+    <tr><td><code>SesionRepositoryTest</code></td><td>10</td><td>Login robusto, auditoria best-effort y <code>CancellationException</code> (hardening).</td></tr>
+    <tr><td colspan="2"><b>Subtotal</b></td><td><b>72</b></td></tr>
+    <tr><td colspan="2"><b>TOTAL (JVM)</b></td><td><b>105</b></td><td>JUnit 4, sin Robolectric, ejecutadas en la JVM: 105/105, 0 fallos.</td></tr>
   </tbody>
 </table>
+<h3>Pruebas instrumentadas (9, compiladas pero no ejecutadas)</h3>
+<table>
+  <thead><tr><th style="width:36%">Archivo</th><th style="width:12%">Pruebas</th><th>Cobertura</th></tr></thead>
+  <tbody>
+    <tr><td><code>app/src/androidTest/.../gestiondocumental/data/local/SembradorInstrumentedTest.kt</code></td><td>8</td><td>Room real en memoria: conteos, idempotencia, reparacion de siembras parciales, ids reales con <code>sqlite_sequence</code> adelantado, reversion transaccional por trigger e integridad referencial de versiones.</td></tr>
+    <tr><td><code>app/src/androidTest/.../limpio_moviles/PortalSmokeTest.kt</code></td><td>1</td><td><code>createAndroidComposeRule&lt;MainActivity&gt;()</code>: el portal muestra las dos tarjetas sin esperar la siembra asincrona.</td></tr>
+  </tbody>
+</table>
+<div class="callout warn">
+  <b>Limitacion verificada</b>
+  <code>./gradlew :app:assembleDebugAndroidTest</code> termina en <code>BUILD SUCCESSFUL</code>, pero <code>./gradlew :app:connectedDebugAndroidTest</code> <b>no se ejecuto</b>: <code>adb</code> no está en el PATH y no hay dispositivo/emulador conectado en el entorno.
+</div>
 
 <h2>10.2 Como ejecutarlas</h2>
 <pre><code><span class="c"># Solo las pruebas unitarias</span>
@@ -860,16 +1230,21 @@ existente != null  -&gt; copia(fechaHora = existente.fechaHora, sincronizado = f
 <span class="c"># Verificacion completa usada en el cierre (recomendada)</span>
 ./gradlew clean compileDebugKotlin testDebugUnitTest assembleDebug
 
+<span class="c"># Pruebas instrumentadas: compilar siempre; ejecutar solo con adb + emulador/dispositivo API 33+</span>
+./gradlew :app:assembleDebugAndroidTest --console=plain --no-daemon
+adb devices
+./gradlew :app:connectedDebugAndroidTest --console=plain --no-daemon
+
 <span class="c"># Reporte HTML</span>
 xdg-open app/build/reports/tests/testDebugUnitTest/index.html</code></pre>
-<p>Resultado esperado: <code>BUILD SUCCESSFUL</code>, 76 pruebas aprobadas, 0 fallidas y 0 errores.</p>
+<p>Resultado esperado: <code>BUILD SUCCESSFUL</code>, 105 pruebas JVM aprobadas, 0 fallidas y 0 errores. Las 9 instrumentadas compilan; ejecutarlas requiere <code>adb</code> y un emulador/dispositivo.</p>
 
 <h2>10.3 Cobertura y deuda tecnica</h2>
 <table>
   <thead><tr><th>Cubierto</th><th>No cubierto (deuda declarada)</th></tr></thead>
   <tbody>
     <tr><td>Validadores, permisos, flujo, reportes, CSV, repositorio con doble, ViewModel con dobles.</td><td>Room real, navegacion, UI Compose, WorkManager, SAF/<code>ContentResolver</code> real, pantalla de portal y pantallas de gestion.</td></tr>
-    <tr><td>Logica pura de ambos modulos.</td><td>Pruebas instrumentadas (<code>androidTest</code> no existe).</td></tr>
+    <tr><td>Logica pura de ambos modulos y smoke del portal.</td><td>9 pruebas instrumentadas: compilan, pero no se ejecutaron aqui (sin <code>adb</code>/dispositivo). Falta cobertura de Room de bienestar, WorkManager y SAF real.</td></tr>
     <tr><td>Build de debug y compilacion Kotlin.</td><td>Build de release firmado y pruebas en dispositivos fisicos variados.</td></tr>
   </tbody>
 </table>
@@ -1494,7 +1869,7 @@ lemoria task list "$PROJECT_ID"</code></pre>
 
 lemoria task status "&lt;TASK_ID&gt;" completed
 lemoria flow step "$PRD_ID" implement --status completed --output "Implementado: Room + repositorio"
-lemoria flow step "$PRD_ID" test      --status completed --output "76/76 pruebas, build OK"
+lemoria flow step "$PRD_ID" test      --status completed --output "105/105 pruebas, build OK"
 lemoria flow step "$PRD_ID" review    --status completed --output "Aprobado con observaciones menores"</code></pre>
 
 <h3>Paso 12.6 Commit con trazabilidad</h3>
@@ -1518,7 +1893,7 @@ lemoria flow step "$PRD_ID" commit --status completed --output "Commit $SHA con 
 lemoria vault sync "$PROJECT_ID"
 lemoria flow step "$PRD_ID" vault_sync --status completed --output "Vault sincronizado"
 
-lemoria conv add "$CONV_ID" agent "Resumen: tareas completadas, pruebas 76/76, commit $SHA"
+lemoria conv add "$CONV_ID" agent "Resumen: tareas completadas, pruebas 105/105, commit $SHA"
 lemoria flow step "$PRD_ID" consolidate --status completed --output "Conversacion consolidada"
 
 <span class="c"># Checklist final</span>
@@ -1618,7 +1993,8 @@ lemoria flow status "$PRD_ID"</code></pre>
     <tr><td><code>./gradlew :app:installDebug</code></td><td>Compila e instala en el dispositivo conectado.</td></tr>
     <tr><td><code>./gradlew :app:compileDebugKotlin</code></td><td>Compila solo Kotlin (verificacion rapida).</td></tr>
     <tr><td><code>./gradlew :app:testDebugUnitTest</code></td><td>Ejecuta las pruebas unitarias JVM.</td></tr>
-    <tr><td><code>./gradlew :app:connectedDebugAndroidTest</code></td><td>Ejecuta pruebas instrumentadas (no hay en este proyecto).</td></tr>
+    <tr><td><code>./gradlew :app:assembleDebugAndroidTest</code></td><td>Compila las 9 pruebas instrumentadas (no necesita dispositivo).</td></tr>
+    <tr><td><code>./gradlew :app:connectedDebugAndroidTest</code></td><td>Ejecuta las 9 pruebas instrumentadas (requiere <code>adb</code> y emulador/dispositivo API 33+; no ejecutadas en este entorno).</td></tr>
     <tr><td><code>./gradlew :app:lintDebug</code></td><td>Analisis estatico de Android Lint.</td></tr>
     <tr><td><code>./gradlew :app:dependencies</code></td><td>Arbol de dependencias resuelto.</td></tr>
     <tr><td><code>./gradlew --offline ...</code></td><td>Usa solo dependencias cacheadas (util sin red).</td></tr>
@@ -1701,7 +2077,10 @@ lemoria flow status "$PRD_ID"</code></pre>
     <tr><td><code>tree -L 3 -I "build|.gradle"</code></td><td>Muestra el arbol sin artefactos.</td></tr>
     <tr><td><code>xdg-open reporte.html</code></td><td>Abre un archivo con la app por defecto.</td></tr>
     <tr><td><code>cp archivo.pdf ~/Descargas/</code></td><td>Copia el entregable a Descargas.</td></tr>
-    <tr><td><code>google-chrome --headless --print-to-pdf=salida.pdf archivo.html</code></td><td>Convierte HTML a PDF (como este documento).</td></tr>
+    <tr><td><code>libreoffice --headless --convert-to pdf --outdir docs docs/GUIA_REPLICACION_COMANDOS.html</code></td><td>Genera este PDF desde el HTML con CSS A4 (m&eacute;todo usado en esta entrega).</td></tr>
+    <tr><td><code>google-chrome --headless --print-to-pdf=salida.pdf archivo.html</code></td><td>Alternativa para convertir HTML a PDF.</td></tr>
+    <tr><td><code>python3 tools/mock_api/server.py</code></td><td>Arranca la API simulada local en el puerto 8000 (ver secci&oacute;n 0.7).</td></tr>
+    <tr><td><code>cp docs/GUIA_REPLICACION_COMANDOS.pdf ~/Descargas/Guia_Estudio_y_Replicacion_Lemac_DataLab.pdf</code></td><td>Copia el PDF final a Descargas.</td></tr>
   </tbody>
 </table>
 
@@ -1724,11 +2103,14 @@ lemoria flow status "$PRD_ID"</code></pre>
     <tr><td>La app muestra datos viejos tras cambiar el esquema</td><td>Migracion no declarada y <code>fallbackToDestructiveMigration</code> no aplicada.</td><td>Desinstala, borra datos con <code>adb shell pm clear</code> o agrega una <code>Migration</code>.</td></tr>
     <tr><td>Lemoria no conecta a la base</td><td>PostgreSQL no esta corriendo en el puerto 5433.</td><td><code>docker compose -f ~/lemoria/docker-compose.yml up -d db</code> y <code>lemoria init</code>.</td></tr>
     <tr><td><code>lemoria flow step</code> rechaza el paso</td><td>Nombre de paso distinto al del flujo.</td><td>Usa <code>prd</code>, <code>tasks</code>, <code>implement</code>, <code>test</code>, <code>review</code>, <code>commit</code>, <code>document</code>, <code>vault_sync</code>, <code>consolidate</code>, <code>complete</code>.</td></tr>
+    <tr><td>&laquo;Documentos en línea&raquo; no genera datos / da timeout con <code>10.0.2.2</code></td><td>Servidor mock apagado o URL del emulador abierta en el navegador del PC.</td><td>Arranca <code>python3 tools/mock_api/server.py</code>, usa <code>http://localhost:8000/documentos</code> en el PC y <code>http://10.0.2.2:8000/documentos</code> solo en el emulador. Tabla completa en la secci&oacute;n 0.7.</td></tr>
+    <tr><td>El emulador no conecta a la API pero <code>localhost</code> s&iacute; funciona</td><td><code>BASE_URL</code> desactualizada o falta cleartext para <code>10.0.2.2</code>.</td><td>Revisa <code>ApiConfig.kt</code> y <code>network_security_config.xml</code>, recompila e instala (secci&oacute;n 0.7).</td></tr>
   </tbody>
 </table>
 
 <!-- ============================ 14 ============================ -->
 <h1>14. Glosario</h1>
+<p>Para los t&eacute;rminos b&aacute;sicos (Android Studio, Kotlin, Gradle, Compose, Activity, ViewModel, Repository, Room, DAO, Retrofit, JSON, emulador, <code>10.0.2.2</code> y <code>localhost</code>) usa el <b>glosario para principiantes de la secci&oacute;n 0.1</b>. Aqu&iacute; se recogen los t&eacute;rminos avanzados que aparecen en el resto de la gu&iacute;a.</p>
 <table>
   <thead><tr><th style="width:22%">Termino</th><th>Definicion</th></tr></thead>
   <tbody>
@@ -1799,8 +2181,11 @@ lemoria flow status "$PRD_ID"</code></pre>
 
 <h2>Anexo C: commits relevantes</h2>
 <table>
-  <thead><tr><th style="width:12%">SHA</th><th>Mensaje</th><th>Rama</th></tr></thead>
+  <thead><tr><th style="width:12%">SHA</th><th>Mensaje</th><th>Rama / estado</th></tr></thead>
   <tbody>
+    <tr><td><code>8595fb9</code></td><td>docs: documentacion del cierre de hardening (19-11-2026)</td><td>entrega_hito2 &middot; <b>sin push</b></td></tr>
+    <tr><td><code>8832145</code></td><td>hardening: siembra transaccional, login robusto, tests JVM e instrumentados</td><td>entrega_hito2 &middot; <b>sin push</b></td></tr>
+    <tr><td><code>d648c7e</code></td><td>IT3: GET /documentos con Retrofit + correccion de BASE_URL y 5 tests de regresion</td><td>entrega_hito2</td></tr>
     <tr><td><code>8e87e82</code></td><td>docs: informe de arquitectura y guias a 76/33/43</td><td>entrega_hito2</td></tr>
     <tr><td><code>ded8cde</code></td><td>test: refactor de testabilidad y RegistroViewModelTest</td><td>entrega_hito2</td></tr>
     <tr><td><code>452b274</code></td><td>docs: flujo de camara y semantica de edicion</td><td>entrega_hito2</td></tr>
@@ -1886,11 +2271,14 @@ lemoria flow step "$PRD_ID" complete --status completed --output "Flujo cerrado"
 </ul>
 
 <div class="footer-note">
-  Documento generado para el proyecto <b>Lemac DataLab + Gestion Documental</b>.
+  Documento generado para el proyecto <b>Lemac DataLab + Gestion Documental</b> el <b>19 de noviembre de 2026</b>
+  para una <b>audiencia principiante sin conocimientos previos</b>.
   Fuentes: repositorio <code>limpio_model</code>, guias del proyecto (<code>README.md</code>,
-  <code>docs/GUIA_ESTUDIO.md</code>, <code>docs/DISERTACION.md</code>, <code>docs/INTEGRACION.md</code>),
-  base de datos Lemoria (PRDs, tareas, decisiones, commits) y verificacion de build del 12-11-2026.
-  El PDF final se entrega en <code>~/Descargas</code>.
+  <code>docs/GUIA_ESTUDIO.md</code>, <code>docs/NOTAS_TECNICAS.md</code>, <code>docs/DISERTACION.md</code>,
+  <code>docs/INTEGRACION.md</code>, <code>docs/INTEGRACION_API_IT3.md</code> y
+  <code>tools/mock_api/README.md</code>), base de datos Lemoria (PRDs, tareas, decisiones, commits) y
+  verificacion de build del cierre de hardening del 19-11-2026 (105 pruebas JVM, 9 instrumentadas compiladas).
+  El PDF final se entrega en <code>~/Descargas/Guia_Estudio_y_Replicacion_Lemac_DataLab.pdf</code>.
 </div>
 
 </body>
