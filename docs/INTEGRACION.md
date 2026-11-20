@@ -2,7 +2,7 @@
 
 Este documento explica como y por que se fusionaron dos aplicaciones Android —el autorregistro de bienestar **Lemac DataLab** y el sistema **Gestión Documental RR.HH.**— en una sola app, en la rama `integracion` del proyecto `limpio_model`. Es la referencia de la decision tomada, del inventario de lo integrado, de la politica de respaldo, del estado de build y pruebas, y de la deuda tecnica conocida.
 
-- Fecha del informe: 10 de noviembre de 2026; actualizado el 11 de noviembre de 2026 para registrar el commit final.
+- Fecha del informe: 10 de noviembre de 2026; actualizado el 11 de noviembre de 2026 para registrar el commit final y el 20 de noviembre de 2026 para registrar la limpieza P0 de modelos documentales duplicados (seccion 13).
 - Rama de la integracion: `integracion` (rama principal: `main`; el trabajo posterior sigue en `entrega_hito2`).
 - Estado: integracion compilada, probada y **commiteada**. El commit final es `13ef480` ("feat: integracion de portal unificado (Gestion Documental RRHH + Lemac DataLab Bienestar)"), seguido del ajuste `690359f` ("fix: suprimir advertencia de permisos en NotificacionHelper"). Ver la seccion de trazabilidad.
 
@@ -29,7 +29,7 @@ Requisitos funcionales aceptados para la unificacion: portal de acceso, dos base
 
 - El usuario percibe una sola app con un centro de aplicaciones; cada modulo sigue siendo navegable y testeable por separado.
 - La logica de ninguno de los dos modulos originales se reescribio: solo se re-apunto la obtencion del contenedor de dependencias en gestion documental.
-- Quedan dos bases Room separadas (mas infraestructura duplicada) y el paquete de gestion convive con modelos documentales duplicados y sin uso en el paquete de bienestar (deuda tecnica, seccion 7).
+- Quedan dos bases Room separadas (mas infraestructura duplicada). Los modelos documentales duplicados y sin uso que habia en el paquete de bienestar **ya fueron eliminados** en la limpieza P0 del 20 de noviembre de 2026 (seccion 7, punto 1, y seccion 13).
 
 ### Decisiones lemoria asociadas
 
@@ -185,7 +185,7 @@ Las mismas reglas se aplican en tres lugares: `backup_rules.xml` (full backup, A
 
 ## 7. Deuda tecnica y limitaciones conocidas
 
-1. **Modelos documentales duplicados y sin uso en `com.example.limpio_moviles.model`.** El checkpoint previo a la integracion (`769e20d`) copio `Entidades.kt`, `Enums.kt`, `FlujoModificacion.kt`, `Permisos.kt`, `Reportes.kt` y `Validadores.kt` del dominio documental al paquete de bienestar. La integracion final conservo el paquete original `com.example.gestiondocumental`, por lo que esas copias en `limpio_moviles.model` quedaron **sin referencias**. Hay que eliminarlas o, si se quiere compartir dominio, extraerlas a un modulo comun. Mientras existan, confunden al leer el arbol de paquetes.
+1. **Modelos documentales duplicados y sin uso en `com.example.limpio_moviles.model`: YA ELIMINADOS (limpieza P0, 20/11/2026).** El checkpoint previo a la integracion (`769e20d`) copio `Entidades.kt`, `Enums.kt`, `FlujoModificacion.kt`, `Permisos.kt`, `Reportes.kt` y `Validadores.kt` del dominio documental al paquete de bienestar. La integracion final conservo el paquete original `com.example.gestiondocumental`, por lo que esas copias en `limpio_moviles.model` quedaron **sin referencias**. **Resuelto:** las seis copias se eliminaron el **20 de noviembre de 2026** en la limpieza P0 (PRD `ed7a51cd-d10c-4d80-9779-5a35ba479c29`, task `41618648-6cab-4336-82c4-0426b829b6b5`). La fuente de verdad sigue siendo `com.example.gestiondocumental/model`, intacta; el build y las 105 pruebas JVM quedaron en verde. Esta deuda ya no esta pendiente (detalle en la seccion 13).
 
 2. **Literales de interfaz sin externalizar.** Casi todos los textos de ambos modulos (incluido `PortalScreen.kt`) estan hardcodeados en Kotlin; `strings.xml` solo tiene `app_name` y las 4 strings del canal/recordatorio de bienestar. Falta externalizar a recursos para consistencia, accesibilidad y futura localizacion.
 
@@ -318,3 +318,11 @@ Cierre documentado de los cuatro frentes del PRD `045a2de8-e11f-4286-930f-ed5827
 Hallazgos de revisión resueltos: **M1** (propagar cancelación en login/auditoría), **M2** (siembra convergente por clave estable con ids reales), **m10** (sesión consistente ante cancelación de auditoría) y el ajuste post-review (re-lanzar cancelación en el seed; AndroidX test alineado a 1.6.1). Review final: **APROBADO CON OBSERVACIONES** (observaciones resueltas).
 
 Trazabilidad Lemoria: proyecto `136316a2-36dd-43b5-aa80-05b9e97d3f22`, PRD `045a2de8-e11f-4286-930f-ed582728e411`, conversación `9b337131-5f44-49d8-b4f1-8edad505507b`, task de documentación `f8dfcced-828f-4140-8a27-3e350e295a43`. ADRs: `37d7d92c` (M1), `e32848b6` (M2), `b0bf8edc` (m10), `ab094bb8` (`isReturnDefaultValues`), más `42d32a6e`, `4e2dd090`, `30e5e778` y `abaccc4f` de soporte. El commit `8832145` **no está pusheado** aún por falta de credenciales HTTPS. Detalle cronológico en [NOTAS_TECNICAS.md](NOTAS_TECNICAS.md) y comportamiento explicado en el README, sección [Hardening de gestion documental y arranque](../README.md#hardening-de-gestion-documental-y-arranque).
+
+## 13. Actualización limpieza P0 (20 de noviembre de 2026)
+
+Se eliminaron los seis archivos de dominio documental sin uso `Entidades.kt`, `Enums.kt`, `FlujoModificacion.kt`, `Permisos.kt`, `Reportes.kt` y `Validadores.kt` de `app/src/main/java/com/example/limpio_moviles/model/`. Eran copias del checkpoint `769e20d` que, una vez conservado `com.example.gestiondocumental` como paquete de la integración, no tenían referencias y confundían al leer el árbol de paquetes. La fuente de verdad, `com.example.gestiondocumental/model`, permanece intacta.
+
+Verificación: build correcto y **105 pruebas JVM en verde**; el `git status` previo a esta actualización documental reflejaba únicamente esas seis bajas (a la espera de commit). Con esto se cierra el punto 1 de la deuda técnica de la sección 7; los puntos 2 a 6 siguen vigentes.
+
+Trazabilidad Lemoria: proyecto `136316a2-36dd-43b5-aa80-05b9e97d3f22`, PRD `ed7a51cd-d10c-4d80-9779-5a35ba479c29`, task `41618648-6cab-4336-82c4-0426b829b6b5`, conversación `691596d4-5eaf-4621-a021-dccd3a9907af`.
